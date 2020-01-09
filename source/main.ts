@@ -66,19 +66,45 @@ const enum PrimitiveType {
   Null
 }
 
+type PrimitiveNumber = {
+  type: TypeExprType.Primitive;
+  primitive: PrimitiveType.Number;
+};
+type PrimitiveString = {
+  type: TypeExprType.Primitive;
+  primitive: PrimitiveType.String;
+};
+
 type ExportVariable = {
   readonly name: string;
   readonly document: string;
-  readonly expr: Expr;
+  readonly expr: Expr<TypeExpr>;
 };
 
-type Expr = NumberLiteral | NumberOperator | StringLiteral | NodeGlobalVariable;
+type Expr<type extends TypeExpr> = type extends {
+  type: TypeExprType.Primitive;
+  primitive: infer primitive;
+}
+  ? primitive extends PrimitiveType.Number
+    ? NumberLiteral | NumberOperator
+    : primitive extends PrimitiveType.String
+    ? StringLiteral | StringConcatenate
+    : never
+  : type extends {
+      type: TypeExprType.Function;
+      parameterList: infer parameterListType;
+      return: TypeExpr;
+    }
+  ? Lambda<type["return"]>
+  : never;
 
 const enum ExprType {
   NumberLiteral,
   NumberOperator,
   StringLiteral,
-  NodeGlobalVariable
+  StringConcatenate,
+  NodeGlobalVariable,
+  Lambda
 }
 
 type NumberLiteral = { type: ExprType.NumberLiteral; value: string };
@@ -86,19 +112,29 @@ type NumberLiteral = { type: ExprType.NumberLiteral; value: string };
 type NumberOperator = {
   type: ExprType.NumberOperator;
   operator: NumberOperatorOperator;
-  left: NumberLiteral | NumberOperator;
-  right: NumberLiteral | NumberOperator;
+  left: Expr<PrimitiveNumber>;
+  right: Expr<PrimitiveNumber>;
 };
 
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
 
 type StringLiteral = { type: ExprType.StringLiteral; value: string };
 
+type StringConcatenate = {
+  type: ExprType.StringConcatenate;
+  left: Expr<PrimitiveString>;
+  right: Expr<PrimitiveString>;
+};
+
 type NodeGlobalVariable = {
   type: ExprType.NodeGlobalVariable;
   variable: "console";
 };
 
+type Lambda<returnType extends TypeExpr> = {
+  type: ExprType.Lambda;
+  expr: Expr<returnType>;
+};
 /**
  * ブラウザで向けのコード
  */
@@ -146,10 +182,10 @@ export const string: TypeExpr = {
  * @param document ドキュメント
  * @param expr 式
  */
-export const exportVariable = (
+export const exportVariable = <T extends TypeExpr>(
   name: string,
   document: string,
-  expr: Expr
+  expr: Expr<T>
 ): ExportVariable => ({
   name: name,
   document: document,
@@ -255,4 +291,5 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
         " = " +
         typeExprToString(exportTypeAlias.typeExpr)
     )
-    .join(";");
+    .join(";") +
+  ";";
