@@ -4,7 +4,13 @@ import { performance } from "perf_hooks";
 describe("test", () => {
   const sampleCode: main.NodeJsCode = {
     importNodeModuleList: [main.importNodeModule("sampleModulePath", "id")],
-    exportTypeAliasList: [],
+    exportTypeAliasList: [
+      main.exportTypeAlias(
+        "SampleType",
+        "サンプルの型のドキュメント",
+        main.string
+      )
+    ],
     exportVariableList: []
   };
   const start = performance.now();

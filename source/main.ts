@@ -134,6 +134,13 @@ export const exportTypeAlias = (
 });
 
 /**
+ * プリミティブの型のstring
+ */
+export const string: TypeExpr = {
+  type: TypeExprType.Primitive,
+  primitive: PrimitiveType.String
+};
+/**
  * 外部に公開する変数、関数
  * @param name 変数、関数の名前
  * @param document ドキュメント
