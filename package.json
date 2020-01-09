@@ -2,7 +2,7 @@
   "name": "jstscodegenerator",
   "version": "0.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "distribution/main.js",
   "scripts": {
     "test": "jest"
   },
@@ -43,7 +43,7 @@
       }
     },
     "testMatch": [
-      "test/**.ts"
+      "**/test/*.ts"
     ]
   }
 }

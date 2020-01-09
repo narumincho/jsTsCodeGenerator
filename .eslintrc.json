@@ -37,6 +37,5 @@
     "@typescript-eslint/no-unused-expressions": ["error"],
     "@typescript-eslint/prefer-for-of": ["error"],
     "@typescript-eslint/require-array-sort-compare": ["error"]
-  },
-  "ignorePatterns": ["webpack.config.js"]
+  }
 }

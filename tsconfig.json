@@ -8,6 +8,5 @@
     "removeComments": true,
     "newLine": "LF",
     "outDir": "distribution"
-  },
-  "files": ["source/index.ts"]
+  }
 }
