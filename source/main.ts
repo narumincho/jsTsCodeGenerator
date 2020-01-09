@@ -28,25 +28,43 @@ type ExportTypeAlias = {
   readonly typeExpr: TypeExpr;
 };
 
+/**
+ * 型の式 {id:string | number} みたいな
+ * TODO 外部に公開する型だけ、プロパティ名やドキュメントを指定できるようにしたいが
+ */
 export type TypeExpr =
   | {
-      type: "object";
-      members: ReadonlyArray<{
+      type: TypeExprType.Object;
+      memberList: ReadonlyArray<{
         name: string;
         document: string;
         typeExpr: TypeExpr;
       }>;
     }
-  | { type: "referenceExportTypeAlias"; name: string }
-  | { type: "primitive"; primitive: PrimitiveType }
-  | { type: "union"; types: ReadonlyArray<TypeExpr> };
+  | { type: TypeExprType.ReferenceExportTypeAlias; name: string }
+  | { type: TypeExprType.Primitive; primitive: PrimitiveType }
+  | { type: TypeExprType.Union; types: ReadonlyArray<TypeExpr> }
+  | {
+      type: TypeExprType.Function;
+      parameterList: ReadonlyArray<TypeExpr>;
+      return: TypeExpr;
+    };
 
-export type PrimitiveType =
-  | "string"
-  | "number"
-  | "boolean"
-  | "undefined"
-  | "null";
+const enum TypeExprType {
+  Object,
+  Primitive,
+  Union,
+  ReferenceExportTypeAlias,
+  Function
+}
+
+const enum PrimitiveType {
+  String,
+  Number,
+  Boolean,
+  Undefined,
+  Null
+}
 
 type ExportVariable = {
   readonly name: string;
@@ -54,14 +72,16 @@ type ExportVariable = {
   readonly expr: Expr;
 };
 
-type Expr = NumberLiteral | NumberOperator;
+type Expr = NumberLiteral | NumberOperator | StringLiteral | NodeGlobalVariable;
 
 const enum ExprType {
   NumberLiteral,
-  NumberOperator
+  NumberOperator,
+  StringLiteral,
+  NodeGlobalVariable
 }
 
-type NumberLiteral = { type: ExprType.NumberLiteral; number: string };
+type NumberLiteral = { type: ExprType.NumberLiteral; value: string };
 
 type NumberOperator = {
   type: ExprType.NumberOperator;
@@ -71,6 +91,13 @@ type NumberOperator = {
 };
 
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
+
+type StringLiteral = { type: ExprType.StringLiteral; value: string };
+
+type NodeGlobalVariable = {
+  type: ExprType.NodeGlobalVariable;
+  variable: "console";
+};
 
 /**
  * ブラウザで向けのコード
@@ -122,23 +149,29 @@ export const exportVariable = (
   expr: expr
 });
 
-export const numberLiteral = (number: string): NumberLiteral => ({
+export const numberLiteral = (value: string): NumberLiteral => ({
   type: ExprType.NumberLiteral,
-  number: number
+  value: value
 });
 
-export const numberOperator = (
-  operator: NumberOperatorOperator,
+/**
+ * 数値の足し算 ??? + ???
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const add = (
   left: NumberLiteral | NumberOperator,
   right: NumberLiteral | NumberOperator
 ): NumberOperator => ({
   type: ExprType.NumberOperator,
-  operator: operator,
+  operator: "+",
   left: left,
   right: right
 });
+
 /**
  * TODO スコープを考えて識別子を作れなければならない
+ * 予約語やグローバルにある識別子との衝突考慮しなければならない
  * @param index
  */
 const createIdentifer = (index: number): string => {
@@ -149,10 +182,69 @@ const createIdentifer = (index: number): string => {
   return identifer;
 };
 
+const primitiveTypeToString = (primitiveType: PrimitiveType): string => {
+  switch (primitiveType) {
+    case PrimitiveType.String:
+      return "string";
+    case PrimitiveType.Number:
+      return "number";
+    case PrimitiveType.Boolean:
+      return "boolean";
+    case PrimitiveType.Null:
+      return "null";
+    case PrimitiveType.Undefined:
+      return "undefined";
+  }
+};
+
+const typeExprToString = (typeExpr: TypeExpr): string => {
+  switch (typeExpr.type) {
+    case TypeExprType.Object:
+      return (
+        "{" +
+        typeExpr.memberList
+          .map(member => member.name + ":" + typeExprToString(member.typeExpr))
+          .join(",") +
+        "}"
+      );
+    case TypeExprType.Primitive:
+      return primitiveTypeToString(typeExpr.primitive);
+    case TypeExprType.Function:
+      return (
+        "(" +
+        typeExpr.parameterList
+          .map(
+            (parameter, index) =>
+              createIdentifer(index) + ":" + typeExprToString(parameter)
+          )
+          .join(",") +
+        ")=>" +
+        typeExprToString(typeExpr.return)
+      );
+    case TypeExprType.ReferenceExportTypeAlias:
+      return "";
+    case TypeExprType.Union:
+      return typeExpr.types.map(typeExprToString).join("|");
+  }
+};
+
 export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
   nodeJsCode.importNodeModuleList
     .map(
-      (e, index) =>
-        "import * as " + createIdentifer(index) + ' from "' + e.path + '"'
+      (importNodeModule, index) =>
+        "import * as " +
+        createIdentifer(index) +
+        ' from "' +
+        importNodeModule.path +
+        '"'
+    )
+    .join(";") +
+  nodeJsCode.exportTypeAliasList
+    .map(
+      exportTypeAlias =>
+        "type" +
+        exportTypeAlias.name +
+        " = " +
+        typeExprToString(exportTypeAlias.typeExpr)
     )
     .join(";");
