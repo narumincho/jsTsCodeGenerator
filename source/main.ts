@@ -239,10 +239,11 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
         '"'
     )
     .join(";") +
+  ";" +
   nodeJsCode.exportTypeAliasList
     .map(
       exportTypeAlias =>
-        "type" +
+        "type " +
         exportTypeAlias.name +
         " = " +
         typeExprToString(exportTypeAlias.typeExpr)
