@@ -28,21 +28,23 @@ type ExportTypeAlias = {
   readonly typeExpr: TypeExpr;
 };
 
+/* ======================================================================================
+ *                                      Type Expr
+ * ====================================================================================== */
+
 /**
  * 型の式 {id:string | number} みたいな
  * TODO 外部に公開する型だけ、プロパティ名やドキュメントを指定できるようにしたいが
  */
 export type TypeExpr =
+  | { type: TypeExprType.Primitive; primitive: PrimitiveType }
   | {
       type: TypeExprType.Object;
-      memberList: ReadonlyArray<{
-        name: string;
-        document: string;
-        typeExpr: TypeExpr;
-      }>;
+      memberList: {
+        [name in string]: { typeExpr: TypeExpr; document: string };
+      };
     }
   | { type: TypeExprType.ReferenceExportTypeAlias; name: string }
-  | { type: TypeExprType.Primitive; primitive: PrimitiveType }
   | { type: TypeExprType.Union; types: ReadonlyArray<TypeExpr> }
   | {
       type: TypeExprType.Function;
@@ -66,14 +68,21 @@ const enum PrimitiveType {
   Null
 }
 
-type PrimitiveNumber = {
-  type: TypeExprType.Primitive;
-  primitive: PrimitiveType.Number;
-};
-type PrimitiveString = {
-  type: TypeExprType.Primitive;
-  primitive: PrimitiveType.String;
-};
+/**
+ * プリミティブの型のnumber
+ */
+export const number = {
+  type: TypeExprType.Primitive,
+  primitive: PrimitiveType.Number
+} as const;
+
+/**
+ * プリミティブの型のstring
+ */
+export const string = {
+  type: TypeExprType.Primitive,
+  primitive: PrimitiveType.String
+} as const;
 
 type ExportVariable = {
   readonly name: string;
@@ -81,28 +90,57 @@ type ExportVariable = {
   readonly expr: Expr<TypeExpr>;
 };
 
-type Expr<type extends TypeExpr> = type extends {
-  type: TypeExprType.Primitive;
-  primitive: infer primitive;
-}
-  ? primitive extends PrimitiveType.Number
-    ? NumberLiteral | NumberOperator
-    : primitive extends PrimitiveType.String
-    ? StringLiteral | StringConcatenate
-    : never
-  : type extends {
+/* ======================================================================================
+ *                                        Expr
+ * ====================================================================================== */
+
+type Expr<type extends TypeExpr> =
+  | (type extends {
+      type: TypeExprType.Primitive;
+      primitive: infer primitive;
+    }
+      ?
+          | (primitive extends PrimitiveType.Number
+              ? NumberLiteral | NumberOperator
+              : never)
+          | (primitive extends PrimitiveType.String
+              ? StringLiteral | StringConcatenate
+              : never)
+          | (primitive extends PrimitiveType.Boolean ? BooleanLiteral : never)
+          | (primitive extends PrimitiveType.Null ? NullLiteral : never)
+          | (primitive extends PrimitiveType.Undefined
+              ? UndefinedLiteral
+              : never)
+      : never)
+  | (type extends {
+      type: TypeExprType.Object;
+      memberList: {
+        [name in string]: { typeExpr: TypeExpr; document: string };
+      };
+    }
+      ? ObjectLiteral<
+          {
+            [key in keyof type["memberList"]]: type["memberList"][key]["typeExpr"];
+          }
+        >
+      : never)
+  | (type extends {
       type: TypeExprType.Function;
       parameterList: infer parameterListType;
       return: TypeExpr;
     }
-  ? Lambda<type["return"]>
-  : never;
+      ? Lambda<type["return"]>
+      : never);
 
 const enum ExprType {
   NumberLiteral,
   NumberOperator,
   StringLiteral,
   StringConcatenate,
+  BooleanLiteral,
+  NullLiteral,
+  UndefinedLiteral,
+  ObjectLiteral,
   NodeGlobalVariable,
   Lambda
 }
@@ -112,8 +150,8 @@ type NumberLiteral = { type: ExprType.NumberLiteral; value: string };
 type NumberOperator = {
   type: ExprType.NumberOperator;
   operator: NumberOperatorOperator;
-  left: Expr<PrimitiveNumber>;
-  right: Expr<PrimitiveNumber>;
+  left: Expr<typeof number>;
+  right: Expr<typeof number>;
 };
 
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
@@ -122,8 +160,26 @@ type StringLiteral = { type: ExprType.StringLiteral; value: string };
 
 type StringConcatenate = {
   type: ExprType.StringConcatenate;
-  left: Expr<PrimitiveString>;
-  right: Expr<PrimitiveString>;
+  left: Expr<typeof string>;
+  right: Expr<typeof string>;
+};
+
+type BooleanLiteral = {
+  type: ExprType.BooleanLiteral;
+  value: boolean;
+};
+
+type NullLiteral = {
+  type: ExprType.NullLiteral;
+};
+
+type UndefinedLiteral = {
+  type: ExprType.UndefinedLiteral;
+};
+
+type ObjectLiteral<T extends { [name in string]: TypeExpr }> = {
+  type: ExprType.ObjectLiteral;
+  values: { [key in keyof T]: Expr<T[key]> };
 };
 
 type NodeGlobalVariable = {
@@ -170,13 +226,6 @@ export const exportTypeAlias = (
 });
 
 /**
- * プリミティブの型のstring
- */
-export const string: TypeExpr = {
-  type: TypeExprType.Primitive,
-  primitive: PrimitiveType.String
-};
-/**
  * 外部に公開する変数、関数
  * @param name 変数、関数の名前
  * @param document ドキュメント
@@ -203,8 +252,8 @@ export const numberLiteral = (value: string): NumberLiteral => ({
  * @param right 右辺
  */
 export const add = (
-  left: NumberLiteral | NumberOperator,
-  right: NumberLiteral | NumberOperator
+  left: Expr<typeof number>,
+  right: Expr<typeof number>
 ): NumberOperator => ({
   type: ExprType.NumberOperator,
   operator: "+",
@@ -212,6 +261,50 @@ export const add = (
   right: right
 });
 
+/**
+ * 数値の引き算
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const sub = (
+  left: Expr<typeof number>,
+  right: Expr<typeof number>
+): NumberOperator => ({
+  type: ExprType.NumberOperator,
+  operator: "-",
+  left: left,
+  right: right
+});
+
+/**
+ * 数値の掛け算
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const mul = (
+  left: Expr<typeof number>,
+  right: Expr<typeof number>
+): NumberOperator => ({
+  type: ExprType.NumberOperator,
+  operator: "*",
+  left: left,
+  right: right
+});
+
+/**
+ * 数値の割り算
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const div = (
+  left: Expr<typeof number>,
+  right: Expr<typeof number>
+): NumberOperator => ({
+  type: ExprType.NumberOperator,
+  operator: "/",
+  left: left,
+  right: right
+});
 /**
  * TODO スコープを考えて識別子を作れなければならない
  * 予約語やグローバルにある識別子との衝突考慮しなければならない
@@ -245,8 +338,11 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
     case TypeExprType.Object:
       return (
         "{" +
-        typeExpr.memberList
-          .map(member => member.name + ":" + typeExprToString(member.typeExpr))
+        Object.entries(typeExpr.memberList)
+          .map(
+            ([name, typeAndDocument]) =>
+              name + ":" + typeExprToString(typeAndDocument.typeExpr)
+          )
           .join(",") +
         "}"
       );
@@ -270,6 +366,13 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
       return typeExpr.types.map(typeExprToString).join("|");
   }
 };
+
+// const exprToString = (expr: Expr<unknown>): string => {
+//   switch (expr.type) {
+//     case ExprType.NumberLiteral:
+//       return expr.value;
+//   }
+// };
 
 export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
   nodeJsCode.importNodeModuleList
