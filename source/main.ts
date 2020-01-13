@@ -43,40 +43,42 @@ type ExportVariableWithId = {
   readonly expr: Expr<TypeExpr>;
 };
 
-type ImportTypeDefinition = {
-  path: string;
-  typeList: { [key in string]: { id: TypeId; typeExpr: TypeExpr } };
-  variableList: { [key in string]: { id: VariableId; typeExpr: TypeExpr } };
+type ModuleOrGlobalDefinition = {
+  typeList: { [key in string]: TypeExpr };
+  variableList: { [key in string]: TypeExpr };
 };
 
-type ExportNodeJsCode = {
-  exportTypeAliasList: ReadonlyArray<Omit<ExportTypeAliasWithId, "id">>;
-  exportVariableList: ReadonlyArray<Omit<ExportVariableWithId, "id">>;
+type Global<definition extends ModuleOrGlobalDefinition> = {
+  typeList: {
+    [key in keyof definition["typeList"]]: {
+      type: TypeExprType.GlobalType;
+      name: key;
+    };
+  };
+  variableList: {
+    [key in keyof definition["variableList"]]: {
+      type: ExprType.GlobalVariable;
+      name: key;
+      _type: definition["variableList"][key];
+    };
+  };
 };
-/**
- * Node.js向けの外部のライブラリを読み込むimport文
- * @param path パス
- * @param id 識別するためのID
- */
-export const importNodeModule = <Import extends ImportTypeDefinition>(
-  importTypeDefinition: Import,
-  body: (importDefinition: {
-    typeList: Import["typeList"];
-    variableList: Import["variableList"];
-  }) => ExportNodeJsCode
-): NodeJsCodeWithId => {
-  const bodyWithId = body;
-  return {
-    globalType: {},
-    globalVariable: {},
-    importList: [
-      {
-        path: importTypeDefinition.path,
-        id: "sorena" as ImportId
-      }
-    ],
-    exportTypeAliasList: [],
-    exportVariableList: []
+
+type Module<definition extends ModuleOrGlobalDefinition> = {
+  typeList: {
+    [key in keyof definition["typeList"]]: {
+      type: TypeExprType.ImportedType;
+      id: ImportId;
+      name: key;
+    };
+  };
+  variableList: {
+    [key in keyof definition["variableList"]]: {
+      type: ExprType.ImportedVariable;
+      importId: ImportId;
+      name: key;
+      _type: definition["variableList"][key];
+    };
   };
 };
 
@@ -95,19 +97,21 @@ export type TypeExpr =
         [name in string]: { typeExpr: TypeExpr; document: string };
       };
     }
-  | { type: TypeExprType.ReferenceExportTypeAlias; name: string }
-  | { type: TypeExprType.Union; types: ReadonlyArray<TypeExpr> }
   | {
       type: TypeExprType.Function;
       functionType: FunctionType;
-    };
+    }
+  | { type: TypeExprType.Union; types: ReadonlyArray<TypeExpr> }
+  | { type: TypeExprType.ImportedType; id: ImportId; name: string }
+  | { type: TypeExprType.GlobalType; name: string };
 
 const enum TypeExprType {
-  Object,
   Primitive,
+  Object,
+  Function,
   Union,
-  ReferenceExportTypeAlias,
-  Function
+  ImportedType,
+  GlobalType
 }
 
 const enum PrimitiveType {
@@ -249,7 +253,9 @@ type Expr<type extends TypeExpr> =
       return: TypeExpr;
     }
       ? Lambda<type["parameterList"], type["return"]>
-      : never);
+      : never)
+  | GlobalVariable<type>
+  | ImportedVariable<type>;
 
 const enum ExprType {
   NumberLiteral,
@@ -260,7 +266,8 @@ const enum ExprType {
   NullLiteral,
   UndefinedLiteral,
   ObjectLiteral,
-  NodeGlobalVariable,
+  GlobalVariable,
+  ImportedVariable,
   Lambda
 }
 
@@ -301,11 +308,6 @@ type ObjectLiteral<T extends { [name in string]: TypeExpr }> = {
   values: { [key in keyof T]: Expr<T[key]> };
 };
 
-type NodeGlobalVariable = {
-  type: ExprType.NodeGlobalVariable;
-  variable: "console";
-};
-
 type Lambda<
   parameterList extends ReadonlyArray<{
     name: string;
@@ -317,6 +319,109 @@ type Lambda<
   type: ExprType.Lambda;
   parameter: keyof parameterList["values"];
   expr: Expr<returnType>;
+};
+
+type GlobalVariable<type extends TypeExpr> = {
+  type: ExprType.GlobalVariable;
+  name: string;
+  _type: type;
+};
+
+type ImportedVariable<type extends TypeExpr> = {
+  type: ExprType.ImportedVariable;
+  importId: ImportId;
+  name: string;
+  _type: type;
+};
+
+/* ======================================================================================
+ *                                      Module
+ * ====================================================================================== */
+
+const objectMap = <objectKeys extends string, input, output>(
+  input: { [key in objectKeys]: input },
+  func: (key: objectKeys, input: input) => output
+): { [key in objectKeys]: output } =>
+  Object.entries<input>(input).reduce(
+    (previous, [key, value]) => ({
+      ...previous,
+      [key]: func(key as objectKeys, value)
+    }),
+    {} as { [key in objectKeys]: output }
+  );
+
+const globalModuleDefinitionToModule = <
+  moduleDefinition extends ModuleOrGlobalDefinition
+>(
+  moduleDefinition: moduleDefinition
+): Global<moduleDefinition> => ({
+  typeList: objectMap(moduleDefinition.typeList, (name, _typeExpr) => ({
+    type: TypeExprType.GlobalType,
+    name: name
+  })) as Global<moduleDefinition>["typeList"],
+  variableList: objectMap(moduleDefinition.variableList, (name, typeExpr) => ({
+    type: ExprType.GlobalVariable,
+    name: name,
+    _type: typeExpr
+  })) as Global<moduleDefinition>["variableList"]
+});
+
+export const addGlobal = <
+  globalModuleDefinition extends ModuleOrGlobalDefinition
+>(
+  global: globalModuleDefinition,
+  body: (global: Global<globalModuleDefinition>) => NodeJsCodeWithId
+): NodeJsCodeWithId => {
+  return body(globalModuleDefinitionToModule(global));
+};
+
+const moduleDefinitionToModule = <
+  moduleDefinition extends ModuleOrGlobalDefinition
+>(
+  moduleDefinition: moduleDefinition,
+  importId: ImportId
+): Module<moduleDefinition> => ({
+  typeList: objectMap(moduleDefinition.typeList, (name, _typeExpr) => ({
+    type: TypeExprType.ImportedType,
+    id: importId,
+    name: name
+  })) as Module<moduleDefinition>["typeList"],
+  variableList: objectMap(moduleDefinition.variableList, (name, typeExpr) => ({
+    type: ExprType.ImportedVariable,
+    importId: importId,
+    name: name,
+    _type: typeExpr
+  })) as Module<moduleDefinition>["variableList"]
+});
+
+/**
+ * Node.js向けの外部のライブラリを読み込むimport文
+ * @param path パス
+ * @param id 識別するためのID
+ */
+export const importNodeModule = <
+  moduleDefinition extends ModuleOrGlobalDefinition
+>(
+  path: string,
+  moduleDefinition: moduleDefinition,
+  rootIdentiferIndex: number,
+  body: (module: Module<moduleDefinition>) => NodeJsCodeWithId
+): { code: NodeJsCodeWithId; identiferIndex: number } => {
+  const importIdentiferData = createIdentifer(rootIdentiferIndex, []);
+  const importId = importIdentiferData.string as ImportId;
+  const code = body(moduleDefinitionToModule(moduleDefinition, importId));
+  return {
+    code: {
+      ...code,
+      importList: code.importList.concat([
+        {
+          id: importId,
+          path: path
+        }
+      ])
+    },
+    identiferIndex: importIdentiferData.nextIndex
+  };
 };
 
 export const numberLiteral = (value: string): NumberLiteral => ({
@@ -533,6 +638,8 @@ const functionTypeExprToString = (functionType: FunctionType): string => {
 /** 型の式をコードに表す */
 const typeExprToString = (typeExpr: TypeExpr): string => {
   switch (typeExpr.type) {
+    case TypeExprType.Primitive:
+      return primitiveTypeToString(typeExpr.primitive);
     case TypeExprType.Object:
       return (
         "{" +
@@ -544,14 +651,14 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
           .join(",") +
         "}"
       );
-    case TypeExprType.Primitive:
-      return primitiveTypeToString(typeExpr.primitive);
     case TypeExprType.Function:
       return functionTypeExprToString(typeExpr.functionType);
-    case TypeExprType.ReferenceExportTypeAlias:
-      return "";
     case TypeExprType.Union:
       return typeExpr.types.map(typeExprToString).join("|");
+    case TypeExprType.ImportedType:
+      return (typeExpr.id as string) + "." + typeExpr.name;
+    case TypeExprType.GlobalType:
+      return typeExpr.name;
   }
 };
 
@@ -563,7 +670,7 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
 // };
 
 export const toNodeJsCodeAsTypeScript = (
-  nodeJsCode: ExportNodeJsCode
+  nodeJsCode: NodeJsCodeWithId
 ): string =>
   nodeJsCode.importNodeModuleList
     .map(
@@ -610,9 +717,23 @@ export const toNodeJsCodeAsTypeScript = (
  *
  */
 
-const func = importNodeModule(
+const innerCode = importNodeModule(
+  "lib",
   {
-    path: "core",
+    typeList: {
+      libType: string
+    },
+    variableList: {
+      libVar: string
+    }
+  },
+  0,
+  (libImportDefinition): NodeJsCodeWithId => ({})
+);
+
+const func = importNodeModule(
+  "core",
+  {
     typeList: {
       stringAlias: string
     },
@@ -620,18 +741,6 @@ const func = importNodeModule(
       coreSampleVar: string
     }
   },
-  (coreImportDefinition): ExportNodeJsCode => {
-    importNodeModule(
-      {
-        path: "lib",
-        typeList: {
-          libType: string
-        },
-        variableList: {
-          libVar: string
-        }
-      },
-      (libImportDefinition): ExportNodeJsCode => ({})
-    );
-  }
+  innerCode.identiferIndex,
+  coreImportDefinition => innerCode.code
 );
