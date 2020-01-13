@@ -16,7 +16,7 @@ type VariableId = string & { _variableId: never };
 /**
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
-export type NodeJsCodeWithId = {
+export type NodeJsCode = {
   importList: ReadonlyArray<Import>;
   exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
   exportVariableList: ReadonlyArray<ExportVariable<TypeExpr>>;
@@ -372,8 +372,8 @@ export const addGlobal = <
   globalModuleDefinition extends ModuleOrGlobalDefinition
 >(
   global: globalModuleDefinition,
-  body: (global: Global<globalModuleDefinition>) => NodeJsCodeWithId
-): NodeJsCodeWithId => body(globalDefinitionToGlobal(global));
+  body: (global: Global<globalModuleDefinition>) => NodeJsCode
+): NodeJsCode => body(globalDefinitionToGlobal(global));
 
 const moduleDefinitionToModule = <
   moduleDefinition extends ModuleOrGlobalDefinition
@@ -407,8 +407,8 @@ export const importNodeModule = <
   path: string,
   moduleDefinition: moduleDefinition,
   rootIdentiferIndex: number,
-  body: (module: Module<moduleDefinition>) => NodeJsCodeWithId
-): { code: NodeJsCodeWithId; identiferIndex: number } => {
+  body: (module: Module<moduleDefinition>) => NodeJsCode
+): { code: NodeJsCode; identiferIndex: number } => {
   const importIdentiferData = createIdentifer(rootIdentiferIndex, []);
   const importId = importIdentiferData.string as ImportId;
   const code = body(moduleDefinitionToModule(moduleDefinition, importId));
@@ -446,8 +446,8 @@ export const addExportVariable = <
     type: ExprType.GlobalVariable;
     name: string;
     _type: typeExpr;
-  }) => NodeJsCodeWithId
-): NodeJsCodeWithId => {
+  }) => NodeJsCode
+): NodeJsCode => {
   const code = body({
     type: ExprType.GlobalVariable,
     name: name,
@@ -468,7 +468,7 @@ export const addExportVariable = <
 /**
  * 空のNode.js用コード
  */
-export const emptyNodeJsCode: NodeJsCodeWithId = {
+export const emptyNodeJsCode: NodeJsCode = {
   importList: [],
   exportTypeAliasList: [],
   exportVariableList: []
@@ -730,9 +730,7 @@ const exprToString = <typeExpr extends TypeExpr>(
   return "";
 };
 
-export const toNodeJsCodeAsTypeScript = (
-  nodeJsCode: NodeJsCodeWithId
-): string =>
+export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
   nodeJsCode.importList
     .map(
       importNodeModule =>

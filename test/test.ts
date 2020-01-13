@@ -25,7 +25,7 @@ describe("test", () => {
    *
    */
   const importPath = "./sampleModulePath";
-  const sampleCode: main.NodeJsCodeWithId = main.importNodeModule(
+  const sampleCode: main.NodeJsCode = main.importNodeModule(
     importPath,
     {
       typeList: {},
