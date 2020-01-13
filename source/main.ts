@@ -16,12 +16,12 @@ type VariableId = string & { _variableId: never };
 /**
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
-type NodeJsCodeWithId = {
+export type NodeJsCodeWithId = {
   globalType: { [key in string]: TypeExpr };
   globalVariable: { [key in string]: TypeExpr };
   importList: ReadonlyArray<Import>;
-  exportTypeAliasList: ReadonlyArray<ExportTypeAliasWithId>;
-  exportVariableList: ReadonlyArray<ExportVariableWithId>;
+  exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
+  exportVariableList: ReadonlyArray<ExportVariable<TypeExpr>>;
 };
 
 type Import = {
@@ -29,18 +29,17 @@ type Import = {
   id: ImportId;
 };
 
-type ExportTypeAliasWithId = {
-  readonly id: string;
+type ExportTypeAlias = {
   readonly name: string;
   readonly document: string;
   readonly typeExpr: TypeExpr;
 };
 
-type ExportVariableWithId = {
-  readonly id: string;
+type ExportVariable<typeExpr extends TypeExpr> = {
   readonly name: string;
+  readonly typeExpr: typeExpr;
   readonly document: string;
-  readonly expr: Expr<TypeExpr>;
+  readonly expr: Expr<typeExpr>;
 };
 
 type ModuleOrGlobalDefinition = {
@@ -429,6 +428,48 @@ export const importNodeModule = <
   };
 };
 
+/**
+ * 外部に公開する変数を定義する
+ * @param name 変数名
+ * @param typeExpr 型
+ * @param expr 式
+ * @param document ドキュメント
+ * @param body コード本体
+ */
+export const addExportVariable = <
+  name extends string,
+  typeExpr extends TypeExpr
+>(
+  name: name,
+  typeExpr: typeExpr,
+  expr: Expr<typeExpr>,
+  document: string,
+  body: (variable: {
+    type: ExprType.GlobalVariable;
+    name: string;
+    _type: typeExpr;
+  }) => NodeJsCodeWithId
+): NodeJsCodeWithId => {
+  const code = body({
+    type: ExprType.GlobalVariable,
+    name: name,
+    _type: typeExpr
+  });
+  return {
+    ...code,
+    exportVariableList: code.exportVariableList.concat([
+      {
+        name: name,
+        typeExpr: typeExpr,
+        expr: expr,
+        document: document
+      } as ExportVariable<typeExpr>
+    ])
+  };
+};
+/**
+ * 空のNode.js用コード
+ */
 export const emptyNodeJsCode: NodeJsCodeWithId = {
   globalType: {},
   globalVariable: {},
@@ -442,6 +483,14 @@ export const numberLiteral = (value: string): NumberLiteral => ({
   value: value
 });
 
+/**
+ * 文字列リテラル
+ * @param string 文字列。エスケープする必要はない
+ */
+export const stringLiteral = (string: string): StringLiteral => ({
+  type: ExprType.StringLiteral,
+  value: string
+});
 /**
  * 数値の足し算 ??? + ???
  * @param left 左辺
@@ -675,12 +724,15 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
   }
 };
 
-// const exprToString = (expr: Expr<unknown>): string => {
-//   switch (expr.type) {
-//     case ExprType.NumberLiteral:
-//       return expr.value;
-//   }
-// };
+const exprToString = <typeExpr extends TypeExpr>(
+  expr: Expr<typeExpr>
+): string => {
+  switch (expr.type) {
+    case ExprType.NumberLiteral:
+      return "12345";
+  }
+  return "";
+};
 
 export const toNodeJsCodeAsTypeScript = (
   nodeJsCode: NodeJsCodeWithId
@@ -705,55 +757,14 @@ export const toNodeJsCodeAsTypeScript = (
         typeExprToString(exportTypeAlias.typeExpr)
     )
     .join(";") +
-  ";";
-
-/**
- * 作りたいコード
- *
- * import * as api from "./api";
- *
- * const leb128toNumber = (number):number => {
- *
- * }
- *
- * export const middleware = (request, response) => {
- *   if(request.accept==="text/html") {
- *      response.setHeader("", "");
- *      response.send("")
- *   }
- *   const a = request.body;
- *   if(a[0] === 0 ){
- *      response.send(api.getUser(a[32]))
- *   }
- *   response.send()
- * }
- *
- */
-
-const innerCode = importNodeModule(
-  "lib",
-  {
-    typeList: {
-      libType: string
-    },
-    variableList: {
-      libVar: string
-    }
-  },
-  0,
-  (libImportDefinition): NodeJsCodeWithId => emptyNodeJsCode
-);
-
-const func = importNodeModule(
-  "core",
-  {
-    typeList: {
-      stringAlias: string
-    },
-    variableList: {
-      coreSampleVar: string
-    }
-  },
-  innerCode.identiferIndex,
-  coreImportDefinition => innerCode.code
-);
+  nodeJsCode.exportVariableList
+    .map(
+      exportVariable =>
+        "const " +
+        exportVariable.name +
+        ":" +
+        typeExprToString(exportVariable.typeExpr) +
+        "=" +
+        exprToString(exportVariable.expr)
+    )
+    .join(";");
