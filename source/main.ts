@@ -429,6 +429,14 @@ export const importNodeModule = <
   };
 };
 
+export const emptyNodeJsCode: NodeJsCodeWithId = {
+  globalType: {},
+  globalVariable: {},
+  importList: [],
+  exportTypeAliasList: [],
+  exportVariableList: []
+};
+
 export const numberLiteral = (value: string): NumberLiteral => ({
   type: ExprType.NumberLiteral,
   value: value
@@ -733,7 +741,7 @@ const innerCode = importNodeModule(
     }
   },
   0,
-  (libImportDefinition): NodeJsCodeWithId => ({})
+  (libImportDefinition): NodeJsCodeWithId => emptyNodeJsCode
 );
 
 const func = importNodeModule(
