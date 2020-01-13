@@ -350,7 +350,7 @@ const objectMap = <objectKeys extends string, input, output>(
     {} as { [key in objectKeys]: output }
   );
 
-const globalModuleDefinitionToModule = <
+const globalDefinitionToGlobal = <
   moduleDefinition extends ModuleOrGlobalDefinition
 >(
   moduleDefinition: moduleDefinition
@@ -366,14 +366,17 @@ const globalModuleDefinitionToModule = <
   })) as Global<moduleDefinition>["variableList"]
 });
 
+/**
+ * グローバル空間の型と変数の型情報を渡して使えるようにする
+ * @param global グローバル空間の型と変数の型情報
+ * @param body コード本体
+ */
 export const addGlobal = <
   globalModuleDefinition extends ModuleOrGlobalDefinition
 >(
   global: globalModuleDefinition,
   body: (global: Global<globalModuleDefinition>) => NodeJsCodeWithId
-): NodeJsCodeWithId => {
-  return body(globalModuleDefinitionToModule(global));
-};
+): NodeJsCodeWithId => body(globalDefinitionToGlobal(global));
 
 const moduleDefinitionToModule = <
   moduleDefinition extends ModuleOrGlobalDefinition
@@ -395,9 +398,11 @@ const moduleDefinitionToModule = <
 });
 
 /**
- * Node.js向けの外部のライブラリを読み込むimport文
+ * Node.js向けの外部のライブラリをimportして使えるようにする
  * @param path パス
- * @param id 識別するためのID
+ * @param moduleDefinition モジュールの公開している型と変数の型情報
+ * @param rootIdentiferIndex 識別子を生成するためのインデックス
+ * @param body コード本体
  */
 export const importNodeModule = <
   moduleDefinition extends ModuleOrGlobalDefinition
@@ -672,11 +677,11 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
 export const toNodeJsCodeAsTypeScript = (
   nodeJsCode: NodeJsCodeWithId
 ): string =>
-  nodeJsCode.importNodeModuleList
+  nodeJsCode.importList
     .map(
-      (importNodeModule, index) =>
+      importNodeModule =>
         "import * as " +
-        createIdentifer(index) +
+        (importNodeModule.id as string) +
         ' from "' +
         importNodeModule.path +
         '"'
