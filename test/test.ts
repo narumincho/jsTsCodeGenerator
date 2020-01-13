@@ -3,7 +3,7 @@ import { performance } from "perf_hooks";
 
 describe("test", () => {
   const sampleCode: main.NodeJsCode = {
-    importNodeModuleList: [main.importNodeModule("sampleModulePath", "id")],
+    importNodeModuleList: [],
     exportTypeAliasList: [
       main.exportTypeAlias(
         "SampleType",

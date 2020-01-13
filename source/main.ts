@@ -1,31 +1,83 @@
-type NodeModulePath = string & { _nodeModulePath: never };
+/**
+ * 外部のモジュールを識別するためのID
+ */
+type ImportId = string & { _importId: never };
+
+/**
+ * 外部の型を識別するためのID
+ */
+type TypeId = string & { _typeId: never };
+
+/**
+ * 変数の型を識別するためのID
+ */
+type VariableId = string & { _variableId: never };
 
 /**
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
-export type NodeJsCode = {
-  readonly importNodeModuleList: ReadonlyArray<ImportNodeModule>;
-  readonly exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
-  readonly exportVariableList: ReadonlyArray<ExportVariable>;
+type NodeJsCodeWithId = {
+  globalType: { [key in string]: TypeExpr };
+  globalVariable: { [key in string]: TypeExpr };
+  importList: ReadonlyArray<Import>;
+  exportTypeAliasList: ReadonlyArray<ExportTypeAliasWithId>;
+  exportVariableList: ReadonlyArray<ExportVariableWithId>;
 };
 
-/**
- * import * as ??? from "path"
- */
-type ImportNodeModule = {
-  readonly path: string;
-  readonly id: NodeModulePath;
+type Import = {
+  path: string;
+  id: ImportId;
 };
 
-/**
- * / * * document * /
- *
- * type name = typeExpr
- */
-type ExportTypeAlias = {
+type ExportTypeAliasWithId = {
+  readonly id: string;
   readonly name: string;
   readonly document: string;
   readonly typeExpr: TypeExpr;
+};
+
+type ExportVariableWithId = {
+  readonly id: string;
+  readonly name: string;
+  readonly document: string;
+  readonly expr: Expr<TypeExpr>;
+};
+
+type ImportTypeDefinition = {
+  path: string;
+  typeList: { [key in string]: { id: TypeId; typeExpr: TypeExpr } };
+  variableList: { [key in string]: { id: VariableId; typeExpr: TypeExpr } };
+};
+
+type ExportNodeJsCode = {
+  exportTypeAliasList: ReadonlyArray<Omit<ExportTypeAliasWithId, "id">>;
+  exportVariableList: ReadonlyArray<Omit<ExportVariableWithId, "id">>;
+};
+/**
+ * Node.js向けの外部のライブラリを読み込むimport文
+ * @param path パス
+ * @param id 識別するためのID
+ */
+export const importNodeModule = <Import extends ImportTypeDefinition>(
+  importTypeDefinition: Import,
+  body: (importDefinition: {
+    typeList: Import["typeList"];
+    variableList: Import["variableList"];
+  }) => ExportNodeJsCode
+): NodeJsCodeWithId => {
+  const bodyWithId = body;
+  return {
+    globalType: {},
+    globalVariable: {},
+    importList: [
+      {
+        path: importTypeDefinition.path,
+        id: "sorena" as ImportId
+      }
+    ],
+    exportTypeAliasList: [],
+    exportVariableList: []
+  };
 };
 
 /* ======================================================================================
@@ -81,12 +133,6 @@ export const string = {
   type: TypeExprType.Primitive,
   primitive: PrimitiveType.String
 } as const;
-
-type ExportVariable = {
-  readonly name: string;
-  readonly document: string;
-  readonly expr: Expr<TypeExpr>;
-};
 
 type FunctionType = {
   return: TypeExpr;
@@ -272,39 +318,6 @@ type Lambda<
   parameter: keyof parameterList["values"];
   expr: Expr<returnType>;
 };
-/**
- * ブラウザで向けのコード
- */
-type BrowserCode = {};
-
-/**
- * Node.js向けの外部のライブラリを読み込むimport文
- * @param path パス
- * @param id 識別するためのID
- */
-export const importNodeModule = (
-  path: string,
-  id: string
-): ImportNodeModule => ({
-  path: path,
-  id: id as NodeModulePath
-});
-
-/**
- * 外部に公開する型
- * @param name 型の名前
- * @param document ドキュメント
- * @param typeExpr 別名を付ける型
- */
-export const exportTypeAlias = (
-  name: string,
-  document: string,
-  typeExpr: TypeExpr
-): ExportTypeAlias => ({
-  name: name,
-  document: document,
-  typeExpr: typeExpr
-});
 
 export const numberLiteral = (value: string): NumberLiteral => ({
   type: ExprType.NumberLiteral,
@@ -370,17 +383,50 @@ export const div = (
   left: left,
   right: right
 });
+
 /**
- * TODO スコープを考えて識別子を作れなければならない
- * 予約語やグローバルにある識別子との衝突考慮しなければならない
+ * 識別子を生成する
+ */
+const createIdentifer = (
+  index: number,
+  reserved: ReadonlyArray<string>
+): { string: string; nextIndex: number } => {
+  while (true) {
+    const result = createIdentiferByIndex(index);
+    if (reserved.includes(result)) {
+      index += 1;
+      continue;
+    }
+    return { string: result, nextIndex: index + 1 };
+  }
+};
+
+/**
+ * indexから識別子を生成する (予約語を考慮しない)
  * @param index
  */
-const createIdentifer = (index: number): string => {
-  const identifer = "abcdefghijklmnopqrstuvwxyz"[index];
-  if (identifer === undefined) {
-    throw new Error("識別子の数が多すぎる!");
+const createIdentiferByIndex = (index: number): string => {
+  const headIdentiferCharTable =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const noHeadIdentiferCharTable = headIdentiferCharTable + "0123456789";
+  if (index < headIdentiferCharTable.length) {
+    return headIdentiferCharTable[index];
   }
-  return identifer;
+  let result = "";
+  index -= headIdentiferCharTable.length;
+  while (true) {
+    const quotient = Math.floor(index / noHeadIdentiferCharTable.length);
+    const remainder = index % noHeadIdentiferCharTable.length;
+    if (quotient < headIdentiferCharTable.length) {
+      return (
+        headIdentiferCharTable[quotient] +
+        noHeadIdentiferCharTable[remainder] +
+        result
+      );
+    }
+    result = noHeadIdentiferCharTable[remainder] + result;
+    index = quotient;
+  }
 };
 
 const primitiveTypeToString = (primitiveType: PrimitiveType): string => {
@@ -516,7 +562,9 @@ const typeExprToString = (typeExpr: TypeExpr): string => {
 //   }
 // };
 
-export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
+export const toNodeJsCodeAsTypeScript = (
+  nodeJsCode: ExportNodeJsCode
+): string =>
   nodeJsCode.importNodeModuleList
     .map(
       (importNodeModule, index) =>
@@ -561,3 +609,29 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
  * }
  *
  */
+
+const func = importNodeModule(
+  {
+    path: "core",
+    typeList: {
+      stringAlias: string
+    },
+    variableList: {
+      coreSampleVar: string
+    }
+  },
+  (coreImportDefinition): ExportNodeJsCode => {
+    importNodeModule(
+      {
+        path: "lib",
+        typeList: {
+          libType: string
+        },
+        variableList: {
+          libVar: string
+        }
+      },
+      (libImportDefinition): ExportNodeJsCode => ({})
+    );
+  }
+);
