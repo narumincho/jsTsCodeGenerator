@@ -17,8 +17,6 @@ type VariableId = string & { _variableId: never };
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
 export type NodeJsCodeWithId = {
-  globalType: { [key in string]: TypeExpr };
-  globalVariable: { [key in string]: TypeExpr };
   importList: ReadonlyArray<Import>;
   exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
   exportVariableList: ReadonlyArray<ExportVariable<TypeExpr>>;
@@ -471,8 +469,6 @@ export const addExportVariable = <
  * 空のNode.js用コード
  */
 export const emptyNodeJsCode: NodeJsCodeWithId = {
-  globalType: {},
-  globalVariable: {},
   importList: [],
   exportTypeAliasList: [],
   exportVariableList: []
