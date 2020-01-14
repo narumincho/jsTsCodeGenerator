@@ -225,7 +225,7 @@ const parameterAndReturnToString = (
   ")=>" +
   (returnType === null ? "void" : typeExprToString(returnType));
 
-const parameterToOneParameterList = (
+export const parameterToOneParameterList = (
   parameter: Parameter
 ): ReadonlyArray<OneParameter> => {
   switch (parameter.type) {

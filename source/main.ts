@@ -173,11 +173,12 @@ type ObjectLiteral<T extends typeExpr.Object_> = {
 type LambdaWithReturn<T extends typeExpr.FunctionWithReturn> = {
   type: ExprType.LambdaWithReturn;
   parameter: T["parameter"];
+  returnType: T["return"];
   body: ExprFilterByType<T["return"]>;
 };
 
 type LambdaReturnVoid<T extends typeExpr.FunctionReturnVoid> = {
-  type: ExprType.LambdaWithReturn;
+  type: ExprType.LambdaReturnVoid;
   parameter: T["parameter"];
   body: ExprVoid;
 };
@@ -494,7 +495,28 @@ const exprToString = (expr: Expr): string => {
         "}"
       );
     case ExprType.LambdaWithReturn:
-      return "():void=>";
+      return (
+        "(" +
+        typeExpr
+          .parameterToOneParameterList(expr.parameter)
+          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+          .join(",") +
+        "): " +
+        typeExpr.typeExprToString(expr.returnType) +
+        "=>" +
+        exprToString(expr.body)
+      );
+
+    case ExprType.LambdaReturnVoid:
+      return (
+        "(" +
+        typeExpr
+          .parameterToOneParameterList(expr.parameter)
+          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+          .join(",") +
+        "): void=>" +
+        exprToString(expr.body)
+      );
 
     case ExprType.GlobalVariable:
       return expr.name;
