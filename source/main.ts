@@ -83,7 +83,11 @@ type Expr =
   | BooleanLiteral
   | NullLiteral
   | UndefinedLiteral
-  | ObjectLiteral<typeExpr.Object_>
+  | ObjectLiteral<
+      typeExpr.Object_<{
+        [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
+      }>
+    >
   | LambdaWithReturn<typeExpr.FunctionWithReturn>
   | LambdaReturnVoid<typeExpr.FunctionReturnVoid>
   | GlobalVariable<typeExpr.TypeExpr>
@@ -115,7 +119,9 @@ type ExprFilterByType<typeExpr extends typeExpr.TypeExpr> =
       ? UndefinedLiteral
       : typeExpr extends typeof typeExpr.typeNull
       ? NullLiteral
-      : typeExpr extends typeExpr.Object_
+      : typeExpr extends typeExpr.Object_<{
+          [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
+        }>
       ? ObjectLiteral<typeExpr>
       : never)
   | GlobalVariable<typeExpr>
@@ -161,7 +167,11 @@ type UndefinedLiteral = {
   type: ExprType.UndefinedLiteral;
 };
 
-type ObjectLiteral<T extends typeExpr.Object_> = {
+type ObjectLiteral<
+  T extends typeExpr.Object_<{
+    [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
+  }>
+> = {
   type: ExprType.ObjectLiteral;
   values: {
     [key in keyof T["memberList"]]: ExprFilterByType<
@@ -409,6 +419,22 @@ export const division = (
   left: left,
   right: right
 });
+
+/**
+ * オブジェクトリテラル
+ */
+export const createObjectLiteral = <
+  memberList extends {
+    [x in string]: { typeExpr: typeExpr.TypeExpr; document: string };
+  }
+>(
+  member: memberList
+): typeExpr.Object_<memberList> => {
+  return {
+    type: typeExpr.TypeExprType.Object,
+    memberList: member
+  };
+};
 
 /**
  * 識別子を生成する

@@ -11,7 +11,7 @@ export type TypeExpr =
   | Boolean_
   | Undefined
   | Null
-  | Object_
+  | Object_<{ [key in string]: { typeExpr: TypeExpr; document: string } }>
   | FunctionWithReturn
   | FunctionReturnVoid
   | Union
@@ -105,10 +105,21 @@ export const typeNull: Null = {
 /**
  * オブジェクト
  */
-export type Object_ = {
+export type Object_<
+  T extends { [key in string]: { typeExpr: TypeExpr; document: string } }
+> = {
   type: TypeExprType.Object;
-  memberList: { [key in string]: { typeExpr: TypeExpr; document: string } };
+  memberList: T;
 };
+
+export const object = <
+  T extends { [key in string]: { typeExpr: TypeExpr; document: string } }
+>(
+  memberList: T
+): Object_<T> => ({
+  type: TypeExprType.Object,
+  memberList: memberList
+});
 
 /**
  * 戻り値がある関数
