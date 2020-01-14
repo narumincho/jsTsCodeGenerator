@@ -1,0 +1,37 @@
+name: npm publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@master
+      - name: setup Node.js
+        uses: actions/setup-node@master
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
+      - name: npm test (using jest)
+        run: npm test
+
+  npm-publish:
+    name: npm publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@master
+      - name: setup Node.js
+        uses: actions/setup-node@master
+      - name: Install npm dependencies (npm ci)
+        run: npm ci
+      - name: Transpile TypeScript (npx tsc)
+        run: npx tsc
+      - name: npm publish
+        uses: pascalgn/npm-publish-action@1.1.0
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
