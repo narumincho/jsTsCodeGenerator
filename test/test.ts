@@ -7,10 +7,6 @@ describe("test", () => {
    *
    * import * as api from "./api";
    *
-   * const leb128toNumber = (number):number => {
-   *
-   * }
-   *
    * export const middleware = (request, response) => {
    *   if(request.accept==="text/html") {
    *      response.setHeader("", "");
@@ -24,7 +20,7 @@ describe("test", () => {
    * }
    *
    */
-  const importPath = "./sampleModulePath";
+  const importPath = "./api";
   const sampleCode: main.NodeJsCode = main.importNodeModule(
     importPath,
     {
@@ -34,18 +30,11 @@ describe("test", () => {
     0,
     () =>
       main.addExportVariable(
-        "sampleVar",
+        "middleware",
         main.typeString,
         main.stringLiteral("文字列のリテラル"),
         "サンプルの文字列の変数",
-        () =>
-          main.addExportVariable(
-            "sorena",
-            main.typeNumber,
-            main.numberLiteral("134"),
-            "ドキュメント",
-            () => main.emptyNodeJsCode
-          )
+        () => main.emptyNodeJsCode
       )
   ).code;
 

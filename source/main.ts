@@ -786,25 +786,30 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
         importNodeModule.path +
         '"'
     )
-    .join(";") +
-  ";" +
+    .join(";\n") +
+  ";\n" +
   nodeJsCode.exportTypeAliasList
     .map(
       exportTypeAlias =>
-        "type " +
+        "/** " +
+        exportTypeAlias.document +
+        " */export type " +
         exportTypeAlias.name +
         " = " +
         typeExprToString(exportTypeAlias.typeExpr)
     )
-    .join(";") +
+    .join(";\n") +
+  "\n" +
   nodeJsCode.exportVariableList
     .map(
       exportVariable =>
-        "const " +
+        "/** " +
+        exportVariable.document +
+        " */\nexport const " +
         exportVariable.name +
-        ":" +
+        ": " +
         typeExprToString(exportVariable.typeExpr) +
-        "=" +
+        " = " +
         exprToString(exportVariable.expr)
     )
-    .join(";");
+    .join(";\n");

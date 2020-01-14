@@ -8,5 +8,6 @@
     "removeComments": true,
     "newLine": "LF",
     "outDir": "distribution"
-  }
+  },
+  "include": ["./source/main.ts"]
 }
