@@ -11,7 +11,7 @@ type VariableId = string & { _variableId: never };
 export type NodeJsCode = {
   importList: ReadonlyArray<Import>;
   exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
-  exportVariableList: ReadonlyArray<ExportVariable<typeExpr.TypeExpr>>;
+  exportVariableList: ReadonlyArray<ExportVariable>;
 };
 
 type Import = {
@@ -25,11 +25,11 @@ type ExportTypeAlias = {
   readonly typeExpr: typeExpr.TypeExpr;
 };
 
-type ExportVariable<typeExpr extends typeExpr.TypeExpr> = {
+type ExportVariable = {
   readonly name: string;
-  readonly typeExpr: typeExpr;
+  readonly typeExpr: typeExpr.TypeExpr;
   readonly document: string;
-  readonly expr: ExprFilterByType<typeExpr>;
+  readonly expr: Expr;
 };
 
 type ModuleOrGlobalDefinition = {
@@ -83,15 +83,11 @@ type Expr =
   | BooleanLiteral
   | NullLiteral
   | UndefinedLiteral
-  | ObjectLiteral<
-      typeExpr.Object_<{
-        [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
-      }>
-    >
-  | LambdaWithReturn<typeExpr.FunctionWithReturn>
-  | LambdaReturnVoid<typeExpr.FunctionReturnVoid>
-  | GlobalVariable<typeExpr.TypeExpr>
-  | ImportedVariable<typeExpr.TypeExpr>;
+  | ObjectLiteral
+  | LambdaWithReturn
+  | LambdaReturnVoid
+  | GlobalVariable
+  | ImportedVariable;
 
 const enum ExprType {
   NumberLiteral,
@@ -108,27 +104,6 @@ const enum ExprType {
   ImportedVariable
 }
 
-type ExprFilterByType<typeExpr extends typeExpr.TypeExpr> =
-  | (typeExpr extends typeExpr.Number_
-      ? NumberLiteral | NumberOperator
-      : typeExpr extends typeof typeExpr.typeString
-      ? StringLiteral | StringConcatenate
-      : typeExpr extends typeof typeExpr.typeBoolean
-      ? BooleanLiteral
-      : typeExpr extends typeof typeExpr.typeUndefined
-      ? UndefinedLiteral
-      : typeExpr extends typeof typeExpr.typeNull
-      ? NullLiteral
-      : typeExpr extends typeExpr.Object_<{
-          [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
-        }>
-      ? ObjectLiteral<typeExpr>
-      : never)
-  | GlobalVariable<typeExpr>
-  | ImportedVariable<typeExpr>;
-
-type ExprVoid = never;
-
 type NumberLiteral = {
   type: ExprType.NumberLiteral;
   value: string;
@@ -137,8 +112,8 @@ type NumberLiteral = {
 type NumberOperator = {
   type: ExprType.NumberOperator;
   operator: NumberOperatorOperator;
-  left: ExprFilterByType<typeExpr.Number_>;
-  right: ExprFilterByType<typeExpr.Number_>;
+  left: Expr;
+  right: Expr;
 };
 
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
@@ -150,8 +125,8 @@ type StringLiteral = {
 
 type StringConcatenate = {
   type: ExprType.StringConcatenate;
-  left: ExprFilterByType<typeExpr.String_>;
-  right: ExprFilterByType<typeExpr.String_>;
+  left: Expr;
+  right: Expr;
 };
 
 type BooleanLiteral = {
@@ -167,41 +142,31 @@ type UndefinedLiteral = {
   type: ExprType.UndefinedLiteral;
 };
 
-type ObjectLiteral<
-  T extends typeExpr.Object_<{
-    [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
-  }>
-> = {
+type ObjectLiteral = {
   type: ExprType.ObjectLiteral;
-  values: {
-    [key in keyof T["memberList"]]: ExprFilterByType<
-      T["memberList"][key]["typeExpr"]
-    >;
-  };
+  memberList: Map<string, Expr>;
 };
 
-type LambdaWithReturn<T extends typeExpr.FunctionWithReturn> = {
+type LambdaWithReturn = {
   type: ExprType.LambdaWithReturn;
-  parameter: T["parameter"];
-  returnType: T["return"];
-  body: ExprFilterByType<T["return"]>;
+  parameter: ReadonlyArray<typeExpr.Parameter>;
+  returnType: typeExpr.TypeExpr;
+  body: Expr;
 };
 
-type LambdaReturnVoid<T extends typeExpr.FunctionReturnVoid> = {
+type LambdaReturnVoid = {
   type: ExprType.LambdaReturnVoid;
-  parameter: T["parameter"];
-  body: ExprVoid;
+  parameter: ReadonlyArray<typeExpr.Parameter>;
+  body: Expr;
 };
 
-type GlobalVariable<typeExpr extends typeExpr.TypeExpr> = {
+type GlobalVariable = {
   type: ExprType.GlobalVariable;
-  typeExpr: typeExpr;
   name: string;
 };
 
-type ImportedVariable<typeExpr extends typeExpr.TypeExpr> = {
+type ImportedVariable = {
   type: ExprType.ImportedVariable;
-  typeExpr: typeExpr;
   importId: string;
   name: string;
 };
@@ -315,7 +280,7 @@ export const addExportVariable = <
 >(
   name: name,
   typeExpr: typeExpr,
-  expr: ExprFilterByType<typeExpr>,
+  expr: Expr,
   document: string,
   body: (variable: {
     type: ExprType.GlobalVariable;
@@ -365,10 +330,7 @@ export const stringLiteral = (string: string): StringLiteral => ({
  * @param left 左辺
  * @param right 右辺
  */
-export const add = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const add = (left: Expr, right: Expr): NumberOperator => ({
   type: ExprType.NumberOperator,
   operator: "+",
   left: left,
@@ -380,10 +342,7 @@ export const add = (
  * @param left 左辺
  * @param right 右辺
  */
-export const sub = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const sub = (left: Expr, right: Expr): NumberOperator => ({
   type: ExprType.NumberOperator,
   operator: "-",
   left: left,
@@ -395,10 +354,7 @@ export const sub = (
  * @param left 左辺
  * @param right 右辺
  */
-export const mul = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const mul = (left: Expr, right: Expr): NumberOperator => ({
   type: ExprType.NumberOperator,
   operator: "*",
   left: left,
@@ -410,10 +366,7 @@ export const mul = (
  * @param left 左辺
  * @param right 右辺
  */
-export const division = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const division = (left: Expr, right: Expr): NumberOperator => ({
   type: ExprType.NumberOperator,
   operator: "/",
   left: left,
@@ -423,16 +376,12 @@ export const division = (
 /**
  * オブジェクトリテラル
  */
-export const createObjectLiteral = <
-  memberList extends {
-    [x in string]: { typeExpr: typeExpr.TypeExpr; document: string };
-  }
->(
-  member: memberList
-): typeExpr.Object_<memberList> => {
+export const createObjectLiteral = (
+  memberList: Map<string, Expr>
+): ObjectLiteral => {
   return {
-    type: typeExpr.TypeExprType.Object,
-    memberList: member
+    type: ExprType.ObjectLiteral,
+    memberList: memberList
   };
 };
 
@@ -515,7 +464,7 @@ const exprToString = (expr: Expr): string => {
     case ExprType.ObjectLiteral:
       return (
         "{" +
-        Object.entries(expr.values)
+        Object.entries(expr.memberList)
           .map(([key, value]) => key + ":" + exprToString(value))
           .join(",") +
         "}"
@@ -523,8 +472,7 @@ const exprToString = (expr: Expr): string => {
     case ExprType.LambdaWithReturn:
       return (
         "(" +
-        typeExpr
-          .parameterToOneParameterList(expr.parameter)
+        expr.parameter
           .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
           .join(",") +
         "): " +
@@ -536,8 +484,7 @@ const exprToString = (expr: Expr): string => {
     case ExprType.LambdaReturnVoid:
       return (
         "(" +
-        typeExpr
-          .parameterToOneParameterList(expr.parameter)
+        expr.parameter
           .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
           .join(",") +
         "): void=>" +

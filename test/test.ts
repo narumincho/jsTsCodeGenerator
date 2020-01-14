@@ -38,10 +38,14 @@ describe("test", () => {
         () =>
           main.addExportVariable(
             "sorena",
-            typeExpr.object({
-              name: { document: "", typeExpr: typeExpr.typeString }
-            }),
-            main.createObjectLiteral({ name: main.stringLiteral("sorena") }),
+            typeExpr.object(
+              new Map([
+                ["name", { document: "", typeExpr: typeExpr.typeString }]
+              ])
+            ),
+            main.createObjectLiteral(
+              new Map([["name", main.stringLiteral("sorena")]])
+            ),
             "ドキュメント",
             () => main.emptyNodeJsCode
           )
