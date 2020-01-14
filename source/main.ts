@@ -245,9 +245,24 @@ export const typeNull = {
  *                                        Expr
  * ====================================================================================== */
 
-type ExprFilterByType<type extends TypeExpr> = Expr["typeExpr"] extends type
-  ? Expr
-  : never;
+type ExprFilterByType<typeExpr extends TypeExpr> =
+  | (typeExpr extends TypePrimitive
+      ? typeExpr["typeType"] extends PrimitiveTypeType.Number
+        ? NumberLiteral | NumberOperator
+        : typeExpr["typeType"] extends PrimitiveTypeType.String
+        ? StringLiteral | StringConcatenate
+        : typeExpr["typeType"] extends PrimitiveTypeType.Boolean
+        ? BooleanLiteral
+        : typeExpr["typeType"] extends PrimitiveTypeType.Undefined
+        ? UndefinedLiteral
+        : typeExpr["typeType"] extends PrimitiveTypeType.Null
+        ? NullLiteral
+        : never
+      : typeExpr extends TypeObject
+      ? ObjectLiteral<typeExpr>
+      : never)
+  | GlobalVariable<typeExpr>
+  | ImportedVariable<typeExpr>;
 
 type Expr =
   | NumberLiteral
@@ -258,8 +273,8 @@ type Expr =
   | NullLiteral
   | UndefinedLiteral
   | ObjectLiteral<TypeObject>
-  | GlobalVariable
-  | ImportedVariable;
+  | GlobalVariable<TypeExpr>
+  | ImportedVariable<TypeExpr>;
 
 const enum ExprType {
   NumberLiteral,
@@ -276,13 +291,11 @@ const enum ExprType {
 
 type NumberLiteral = {
   type: ExprType.NumberLiteral;
-  typeExpr: typeof typeNumber;
   value: string;
 };
 
 type NumberOperator = {
   type: ExprType.NumberOperator;
-  typeExpr: typeof typeNumber;
   operator: NumberOperatorOperator;
   left: ExprFilterByType<typeof typeNumber>;
   right: ExprFilterByType<typeof typeNumber>;
@@ -292,36 +305,30 @@ type NumberOperatorOperator = "+" | "-" | "*" | "/";
 
 type StringLiteral = {
   type: ExprType.StringLiteral;
-  typeExpr: typeof typeString;
   value: string;
 };
 
 type StringConcatenate = {
   type: ExprType.StringConcatenate;
-  typeExpr: typeof typeString;
   left: ExprFilterByType<typeof typeString>;
   right: ExprFilterByType<typeof typeString>;
 };
 
 type BooleanLiteral = {
   type: ExprType.BooleanLiteral;
-  typeExpr: typeof typeBoolean;
   value: boolean;
 };
 
 type NullLiteral = {
   type: ExprType.NullLiteral;
-  typeExpr: typeof typeNull;
 };
 
 type UndefinedLiteral = {
   type: ExprType.UndefinedLiteral;
-  typeExpr: typeof typeUndefined;
 };
 
 type ObjectLiteral<T extends TypeObject> = {
   type: ExprType.ObjectLiteral;
-  typeExpr: T;
   values: {
     [key in keyof T["memberList"]]: ExprFilterByType<
       T["memberList"][key]["typeExpr"]
@@ -329,15 +336,15 @@ type ObjectLiteral<T extends TypeObject> = {
   };
 };
 
-type GlobalVariable = {
+type GlobalVariable<typeExpr extends TypeExpr> = {
   type: ExprType.GlobalVariable;
-  typeExpr: TypeExpr;
+  typeExpr: typeExpr;
   name: string;
 };
 
-type ImportedVariable = {
+type ImportedVariable<typeExpr extends TypeExpr> = {
   type: ExprType.ImportedVariable;
-  typeExpr: TypeExpr;
+  typeExpr: typeExpr;
   importId: ImportId;
   name: string;
 };
@@ -471,7 +478,7 @@ export const addExportVariable = <
       typeExpr: typeExpr,
       expr: expr,
       document: document
-    } as ExportVariable<typeExpr>)
+    })
   };
 };
 /**
@@ -485,7 +492,6 @@ export const emptyNodeJsCode: NodeJsCode = {
 
 export const numberLiteral = (value: string): NumberLiteral => ({
   type: ExprType.NumberLiteral,
-  typeExpr: typeNumber,
   value: value
 });
 
@@ -495,7 +501,6 @@ export const numberLiteral = (value: string): NumberLiteral => ({
  */
 export const stringLiteral = (string: string): StringLiteral => ({
   type: ExprType.StringLiteral,
-  typeExpr: typeString,
   value: string
 });
 /**
@@ -508,7 +513,6 @@ export const add = (
   right: ExprFilterByType<typeof typeNumber>
 ): NumberOperator => ({
   type: ExprType.NumberOperator,
-  typeExpr: typeNumber,
   operator: "+",
   left: left,
   right: right
@@ -524,7 +528,6 @@ export const sub = (
   right: ExprFilterByType<typeof typeNumber>
 ): NumberOperator => ({
   type: ExprType.NumberOperator,
-  typeExpr: typeNumber,
   operator: "-",
   left: left,
   right: right
@@ -540,7 +543,6 @@ export const mul = (
   right: ExprFilterByType<typeof typeNumber>
 ): NumberOperator => ({
   type: ExprType.NumberOperator,
-  typeExpr: typeNumber,
   operator: "*",
   left: left,
   right: right
@@ -556,7 +558,6 @@ export const div = (
   right: ExprFilterByType<typeof typeNumber>
 ): NumberOperator => ({
   type: ExprType.NumberOperator,
-  typeExpr: typeNumber,
   operator: "/",
   left: left,
   right: right

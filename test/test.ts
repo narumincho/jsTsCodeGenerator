@@ -35,10 +35,17 @@ describe("test", () => {
     () =>
       main.addExportVariable(
         "sampleVar",
-        main.string,
+        main.typeString,
         main.stringLiteral("文字列のリテラル"),
         "サンプルの文字列の変数",
-        () => main.emptyNodeJsCode
+        () =>
+          main.addExportVariable(
+            "sorena",
+            main.typeNumber,
+            main.numberLiteral("134"),
+            "ドキュメント",
+            () => main.emptyNodeJsCode
+          )
       )
   ).code;
 
