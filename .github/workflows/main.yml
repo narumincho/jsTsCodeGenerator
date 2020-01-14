@@ -14,10 +14,12 @@ jobs:
         uses: actions/checkout@master
       - name: setup Node.js
         uses: actions/setup-node@master
+        with:
+          node-version: "12.x"
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: npm test (using jest)
-        run: npm test
+        run: npx jest --verbose false
 
   npm-publish:
     name: npm publish
@@ -27,6 +29,8 @@ jobs:
         uses: actions/checkout@master
       - name: setup Node.js
         uses: actions/setup-node@master
+        with:
+          node-version: "12.x"
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Transpile TypeScript (npx tsc)
@@ -34,4 +38,5 @@ jobs:
       - name: npm publish
         uses: pascalgn/npm-publish-action@1.1.0
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
