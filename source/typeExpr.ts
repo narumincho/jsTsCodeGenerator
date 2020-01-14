@@ -6,16 +6,17 @@
  * 型を表現する式
  */
 export type TypeExpr =
-  | TypeNumber
-  | TypeString
-  | TypeBoolean
-  | TypeUndefined
-  | TypeNull
-  | TypeObject
-  | TypeFunction
-  | TypeUnion
-  | TypeImported
-  | TypeGlobal;
+  | Number_
+  | String_
+  | Boolean_
+  | Undefined
+  | Null
+  | Object_
+  | FunctionWithReturn
+  | FunctionReturnVoid
+  | Union
+  | Imported
+  | Global;
 
 export const enum TypeExprType {
   Number,
@@ -24,7 +25,8 @@ export const enum TypeExprType {
   Undefined,
   Null,
   Object,
-  Function,
+  FunctionWithReturn,
+  FunctionReturnVoid,
   Union,
   ImportedType,
   GlobalType
@@ -33,139 +35,152 @@ export const enum TypeExprType {
 /**
  * プリミティブの型のnumber
  */
-export type TypeNumber = {
+export type Number_ = {
   type: TypeExprType.Number;
 };
 
 /**
  * プリミティブの型のnumber
  */
-export const typeNumber: TypeNumber = {
+export const typeNumber: Number_ = {
   type: TypeExprType.Number
 };
 
 /**
  * プリミティブの型のstring
  */
-export type TypeString = {
+export type String_ = {
   type: TypeExprType.String;
 };
 
 /**
  * プリミティブの型のstring
  */
-export const typeString: TypeString = {
+export const typeString: String_ = {
   type: TypeExprType.String
 };
 
 /**
  * プリミティブの型のboolean
  */
-export type TypeBoolean = {
+export type Boolean_ = {
   type: TypeExprType.Boolean;
 };
 
 /**
  * プリミティブの型のboolean
  */
-export const typeBoolean: TypeBoolean = {
+export const typeBoolean: Boolean_ = {
   type: TypeExprType.Boolean
 };
 
 /**
  * プリミティブの型のundefined
  */
-export type TypeUndefined = {
+export type Undefined = {
   type: TypeExprType.Undefined;
 };
 
 /**
  * プリミティブの型のundefined
  */
-export const typeUndefined: TypeUndefined = {
+export const typeUndefined: Undefined = {
   type: TypeExprType.Undefined
 };
 
 /**
  * プリミティブの型のnull
  */
-export type TypeNull = {
+export type Null = {
   type: TypeExprType.Null;
 };
 
 /**
  * プリミティブの型のnull
  */
-export const typeNull: TypeNull = {
+export const typeNull: Null = {
   type: TypeExprType.Null
 };
 
 /**
  * オブジェクト
  */
-export type TypeObject = {
+export type Object_ = {
   type: TypeExprType.Object;
   memberList: { [key in string]: { typeExpr: TypeExpr; document: string } };
 };
 
 /**
- * 関数
+ * 戻り値がある関数
  */
-export type TypeFunction = {
-  type: TypeExprType.Function;
-  return?: TypeExpr;
-} & (
-  | { typeType: FunctionTypeType.Parameter0 }
+export type FunctionWithReturn = {
+  type: TypeExprType.FunctionWithReturn;
+  parameter: Parameter;
+  return: TypeExpr;
+};
+
+/**
+ * 戻り値がない関数
+ */
+export type FunctionReturnVoid = {
+  type: TypeExprType.FunctionReturnVoid;
+  parameter: Parameter;
+};
+
+/**
+ * 関数のパラメーター
+ */
+export type Parameter =
+  | { type: FunctionTypeType.Parameter0 }
   | {
-      typeType: FunctionTypeType.Parameter1;
-      parameter0: Parameter;
+      type: FunctionTypeType.Parameter1;
+      parameter0: OneParameter;
     }
   | {
-      typeType: FunctionTypeType.Parameter2;
-      parameter0: Parameter;
-      parameter1: Parameter;
+      type: FunctionTypeType.Parameter2;
+      parameter0: OneParameter;
+      parameter1: OneParameter;
     }
   | {
-      typeType: FunctionTypeType.Parameter3;
-      parameter0: Parameter;
-      parameter1: Parameter;
-      parameter2: Parameter;
+      type: FunctionTypeType.Parameter3;
+      parameter0: OneParameter;
+      parameter1: OneParameter;
+      parameter2: OneParameter;
     }
   | {
-      typeType: FunctionTypeType.Parameter4;
-      parameter0: Parameter;
-      parameter1: Parameter;
-      parameter2: Parameter;
-      parameter3: Parameter;
+      type: FunctionTypeType.Parameter4;
+      parameter0: OneParameter;
+      parameter1: OneParameter;
+      parameter2: OneParameter;
+      parameter3: OneParameter;
     }
   | {
-      typeType: FunctionTypeType.Parameter5;
-      parameter0: Parameter;
-      parameter1: Parameter;
-      parameter2: Parameter;
-      parameter3: Parameter;
-      parameter4: Parameter;
+      type: FunctionTypeType.Parameter5;
+      parameter0: OneParameter;
+      parameter1: OneParameter;
+      parameter2: OneParameter;
+      parameter3: OneParameter;
+      parameter4: OneParameter;
     }
   | {
-      typeType: FunctionTypeType.Parameter6;
-      parameter0: Parameter;
-      parameter1: Parameter;
-      parameter2: Parameter;
-      parameter3: Parameter;
-      parameter4: Parameter;
-      parameter5: Parameter;
+      type: FunctionTypeType.Parameter6;
+      parameter0: OneParameter;
+      parameter1: OneParameter;
+      parameter2: OneParameter;
+      parameter3: OneParameter;
+      parameter4: OneParameter;
+      parameter5: OneParameter;
     }
   | {
-      typeType: FunctionTypeType.Parameter7;
-      parameter0: Parameter;
-      parameter1: Parameter;
-      parameter2: Parameter;
-      parameter3: Parameter;
-      parameter4: Parameter;
-      parameter5: Parameter;
-      parameter6: Parameter;
-    }
-);
+      type: FunctionTypeType.Parameter7;
+      parameter0: OneParameter;
+      parameter1: OneParameter;
+      parameter2: OneParameter;
+      parameter3: OneParameter;
+      parameter4: OneParameter;
+      parameter5: OneParameter;
+      parameter6: OneParameter;
+    };
 
 const enum FunctionTypeType {
   Parameter0,
@@ -178,125 +193,109 @@ const enum FunctionTypeType {
   Parameter7
 }
 
-type Parameter = {
+type OneParameter = {
   name: string;
   document: string;
   typeExpr: TypeExpr;
 };
 
-export type TypeUnion = {
+export type Union = {
   type: TypeExprType.Union;
   types: ReadonlyArray<TypeExpr>;
 };
 
-export type TypeImported = {
+export type Imported = {
   type: TypeExprType.ImportedType;
   id: string;
   typeExpr: TypeExpr;
   name: string;
 };
 
-export type TypeGlobal = { type: TypeExprType.GlobalType; name: string };
+export type Global = { type: TypeExprType.GlobalType; name: string };
 
 /** 関数の引数と戻り値の型を文字列にする */
 const parameterAndReturnToString = (
-  parameterList: ReadonlyArray<Parameter>,
-  returnType: TypeExpr | undefined
+  parameterList: ReadonlyArray<OneParameter>,
+  returnType: TypeExpr | null
 ): string =>
   "(" +
   parameterList
     .map(parameter => typeExprToString(parameter.typeExpr))
     .join(",") +
   ")=>" +
-  (returnType === undefined ? "void" : typeExprToString(returnType));
+  (returnType === null ? "void" : typeExprToString(returnType));
 
-/** 関数の型を文字列にする */
-const functionTypeExprToString = (functionType: TypeFunction): string => {
-  switch (functionType.typeType) {
+const parameterToOneParameterList = (
+  parameter: Parameter
+): ReadonlyArray<OneParameter> => {
+  switch (parameter.type) {
     case FunctionTypeType.Parameter0:
-      return parameterAndReturnToString([], functionType.return);
+      return [];
+
     case FunctionTypeType.Parameter1:
-      return parameterAndReturnToString(
-        [functionType.parameter0],
-        functionType.return
-      );
+      return [parameter.parameter0];
+
     case FunctionTypeType.Parameter2:
-      return parameterAndReturnToString(
-        [functionType.parameter0, functionType.parameter1],
-        functionType.return
-      );
+      return [parameter.parameter0, parameter.parameter1];
+
     case FunctionTypeType.Parameter3:
-      return parameterAndReturnToString(
-        [
-          functionType.parameter0,
-          functionType.parameter1,
-          functionType.parameter2
-        ],
-        functionType.return
-      );
+      return [parameter.parameter0, parameter.parameter1, parameter.parameter2];
     case FunctionTypeType.Parameter4:
-      return parameterAndReturnToString(
-        [
-          functionType.parameter0,
-          functionType.parameter1,
-          functionType.parameter2,
-          functionType.parameter3
-        ],
-        functionType.return
-      );
+      return [
+        parameter.parameter0,
+        parameter.parameter1,
+        parameter.parameter2,
+        parameter.parameter3
+      ];
     case FunctionTypeType.Parameter5:
-      return parameterAndReturnToString(
-        [
-          functionType.parameter0,
-          functionType.parameter1,
-          functionType.parameter2,
-          functionType.parameter3,
-          functionType.parameter4
-        ],
-        functionType.return
-      );
+      return [
+        parameter.parameter0,
+        parameter.parameter1,
+        parameter.parameter2,
+        parameter.parameter3,
+        parameter.parameter4
+      ];
     case FunctionTypeType.Parameter6:
-      return parameterAndReturnToString(
-        [
-          functionType.parameter0,
-          functionType.parameter1,
-          functionType.parameter2,
-          functionType.parameter3,
-          functionType.parameter4,
-          functionType.parameter5
-        ],
-        functionType.return
-      );
+      return [
+        parameter.parameter0,
+        parameter.parameter1,
+        parameter.parameter2,
+        parameter.parameter3,
+        parameter.parameter4,
+        parameter.parameter5
+      ];
     case FunctionTypeType.Parameter7:
-      return parameterAndReturnToString(
-        [
-          functionType.parameter0,
-          functionType.parameter1,
-          functionType.parameter2,
-          functionType.parameter3,
-          functionType.parameter4,
-          functionType.parameter4,
-          functionType.parameter5,
-          functionType.parameter6
-        ],
-        functionType.return
-      );
+      return [
+        parameter.parameter0,
+        parameter.parameter1,
+        parameter.parameter2,
+        parameter.parameter3,
+        parameter.parameter4,
+        parameter.parameter4,
+        parameter.parameter5,
+        parameter.parameter6
+      ];
   }
 };
 
 /** 型の式をコードに表す */
 export const typeExprToString = (typeExpr: TypeExpr): string => {
   switch (typeExpr.type) {
-    case TypeExprType.String:
-      return "string";
     case TypeExprType.Number:
       return "number";
+
+    case TypeExprType.String:
+      return "string";
+
     case TypeExprType.Boolean:
       return "boolean";
+
     case TypeExprType.Null:
       return "null";
+
     case TypeExprType.Undefined:
       return "undefined";
+
     case TypeExprType.Object:
       return (
         "{" +
@@ -308,12 +307,25 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
           .join(",") +
         "}"
       );
-    case TypeExprType.Function:
-      return functionTypeExprToString(typeExpr);
+
+    case TypeExprType.FunctionWithReturn:
+      return parameterAndReturnToString(
+        parameterToOneParameterList(typeExpr.parameter),
+        typeExpr.return
+      );
+
+    case TypeExprType.FunctionReturnVoid:
+      return parameterAndReturnToString(
+        parameterToOneParameterList(typeExpr.parameter),
+        null
+      );
+
     case TypeExprType.Union:
       return typeExpr.types.map(typeExprToString).join("|");
+
     case TypeExprType.ImportedType:
       return (typeExpr.id as string) + "." + typeExpr.name;
+
     case TypeExprType.GlobalType:
       return typeExpr.name;
   }
