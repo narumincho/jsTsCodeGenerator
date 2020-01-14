@@ -1,4 +1,5 @@
 import * as main from "../source/main";
+import * as typeExpr from "../source/typeExpr";
 import { performance } from "perf_hooks";
 
 describe("test", () => {
@@ -31,7 +32,7 @@ describe("test", () => {
     () =>
       main.addExportVariable(
         "middleware",
-        main.typeString,
+        typeExpr.typeString,
         main.stringLiteral("文字列のリテラル"),
         "サンプルの文字列の変数",
         () => main.emptyNodeJsCode

@@ -7,7 +7,8 @@
     "moduleResolution": "node",
     "removeComments": true,
     "newLine": "LF",
-    "outDir": "distribution"
+    "outDir": "distribution",
+    "declaration": true
   },
   "include": ["./source/main.ts"]
 }
