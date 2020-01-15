@@ -14,7 +14,6 @@ type VariableId = string & { _variableId: never };
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
 export type NodeJsCode = {
-  importList: ReadonlyArray<Import>;
   exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
   exportVariableList: ReadonlyArray<ExportVariable>;
 };
@@ -267,12 +266,11 @@ export const addExportVariable = <
  * 空のNode.js用コード
  */
 export const emptyNodeJsCode: NodeJsCode = {
-  importList: [],
   exportTypeAliasList: [],
   exportVariableList: []
 };
 
-export const numberLiteral = (value: string): NumberLiteral => ({
+export const numberLiteral = (value: string): Expr => ({
   type: ExprType.NumberLiteral,
   value: value
 });
@@ -281,7 +279,7 @@ export const numberLiteral = (value: string): NumberLiteral => ({
  * 文字列リテラル
  * @param string 文字列。エスケープする必要はない
  */
-export const stringLiteral = (string: string): StringLiteral => ({
+export const stringLiteral = (string: string): Expr => ({
   type: ExprType.StringLiteral,
   value: string
 });
@@ -290,7 +288,7 @@ export const stringLiteral = (string: string): StringLiteral => ({
  * @param left 左辺
  * @param right 右辺
  */
-export const add = (left: Expr, right: Expr): NumberOperator => ({
+export const add = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "+",
   left: left,
@@ -302,7 +300,7 @@ export const add = (left: Expr, right: Expr): NumberOperator => ({
  * @param left 左辺
  * @param right 右辺
  */
-export const sub = (left: Expr, right: Expr): NumberOperator => ({
+export const sub = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "-",
   left: left,
@@ -314,7 +312,7 @@ export const sub = (left: Expr, right: Expr): NumberOperator => ({
  * @param left 左辺
  * @param right 右辺
  */
-export const mul = (left: Expr, right: Expr): NumberOperator => ({
+export const mul = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "*",
   left: left,
@@ -326,7 +324,7 @@ export const mul = (left: Expr, right: Expr): NumberOperator => ({
  * @param left 左辺
  * @param right 右辺
  */
-export const division = (left: Expr, right: Expr): NumberOperator => ({
+export const division = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "/",
   left: left,
@@ -336,9 +334,7 @@ export const division = (left: Expr, right: Expr): NumberOperator => ({
 /**
  * オブジェクトリテラル
  */
-export const createObjectLiteral = (
-  memberList: Map<string, Expr>
-): ObjectLiteral => {
+export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
   return {
     type: ExprType.ObjectLiteral,
     memberList: memberList
@@ -424,7 +420,7 @@ const exprToString = (expr: Expr): string => {
     case ExprType.ObjectLiteral:
       return (
         "{" +
-        Object.entries(expr.memberList)
+        [...expr.memberList.entries()]
           .map(([key, value]) => key + ":" + exprToString(value))
           .join(",") +
         "}"
@@ -460,40 +456,104 @@ const exprToString = (expr: Expr): string => {
   }
 };
 
-export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
-  nodeJsCode.importList
-    .map(
-      importNodeModule =>
-        "import * as " +
-        (importNodeModule.id as string) +
-        ' from "' +
-        importNodeModule.path +
-        '"'
-    )
-    .join(";\n") +
-  ";\n" +
-  nodeJsCode.exportTypeAliasList
-    .map(
-      exportTypeAlias =>
-        "/** " +
-        exportTypeAlias.document +
-        " */export type " +
-        exportTypeAlias.name +
-        " = " +
-        typeExpr.typeExprToString(exportTypeAlias.typeExpr)
-    )
-    .join(";\n") +
-  "\n" +
-  nodeJsCode.exportVariableList
-    .map(
-      exportVariable =>
-        "/** " +
-        exportVariable.document +
-        " */\nexport const " +
-        exportVariable.name +
-        ": " +
-        typeExpr.typeExprToString(exportVariable.typeExpr) +
-        " = " +
-        exprToString(exportVariable.expr)
-    )
-    .join(";\n");
+const collectGlobalNameFromExpr = (
+  expr: Expr,
+  globalNameSet: Set<string>
+): void => {
+  switch (expr.type) {
+    case ExprType.NumberLiteral:
+    case ExprType.NumberOperator:
+    case ExprType.StringLiteral:
+    case ExprType.BooleanLiteral:
+    case ExprType.UndefinedLiteral:
+    case ExprType.NullLiteral:
+      return;
+
+    case ExprType.ObjectLiteral:
+      for (const [, member] of expr.memberList) {
+        collectGlobalNameFromExpr(member, globalNameSet);
+      }
+      return;
+
+    case ExprType.LambdaWithReturn:
+      for (const oneParameter of expr.parameter) {
+        typeExpr.collectGlobalName(oneParameter.typeExpr, globalNameSet);
+      }
+      typeExpr.collectGlobalName(expr.returnType, globalNameSet);
+      collectGlobalNameFromExpr(expr.body, globalNameSet);
+      return;
+
+    case ExprType.LambdaReturnVoid:
+      for (const oneParameter of expr.parameter) {
+        typeExpr.collectGlobalName(oneParameter.typeExpr, globalNameSet);
+      }
+      collectGlobalNameFromExpr(expr.body, globalNameSet);
+      return;
+
+    case ExprType.GlobalVariable:
+      globalNameSet.add(expr.name);
+      return;
+
+    case ExprType.ImportedVariable:
+      return;
+  }
+};
+
+const collectGlobalNameFromNodeJsCode = (
+  nodeJsCode: NodeJsCode
+): Set<string> => {
+  const globalNameSet = new Set<string>();
+  for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
+    globalNameSet.add(exportTypeAlias.name);
+    typeExpr.collectGlobalName(exportTypeAlias.typeExpr, globalNameSet);
+  }
+  for (const exportVariable of nodeJsCode.exportVariableList) {
+    globalNameSet.add(exportVariable.name);
+    typeExpr.collectGlobalName(exportVariable.typeExpr, globalNameSet);
+  }
+  return globalNameSet;
+};
+
+export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
+  // グローバル空間にある名前を集める
+  const globalNameSet = collectGlobalNameFromNodeJsCode(nodeJsCode);
+
+  return (
+    nodeJsCode.importList
+      .map(
+        importNodeModule =>
+          "import * as " +
+          (importNodeModule.id as string) +
+          ' from "' +
+          importNodeModule.path +
+          '"'
+      )
+      .join(";\n") +
+    ";\n" +
+    nodeJsCode.exportTypeAliasList
+      .map(
+        exportTypeAlias =>
+          "/** " +
+          exportTypeAlias.document +
+          " */export type " +
+          exportTypeAlias.name +
+          " = " +
+          typeExpr.typeExprToString(exportTypeAlias.typeExpr)
+      )
+      .join(";\n") +
+    "\n" +
+    nodeJsCode.exportVariableList
+      .map(
+        exportVariable =>
+          "/** " +
+          exportVariable.document +
+          " */\nexport const " +
+          exportVariable.name +
+          ": " +
+          typeExpr.typeExprToString(exportVariable.typeExpr) +
+          " = " +
+          exprToString(exportVariable.expr)
+      )
+      .join(";\n")
+  );
+};
