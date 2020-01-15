@@ -22,11 +22,10 @@ describe("test", () => {
    *
    */
   const importPath = "./express";
-  const expressImportedModule = main.createImportNodeModule(
-    importPath,
+  const expressImportedModule = main.createImportNodeModule<
     ["Request", "Response"],
     []
-  );
+  >(importPath, ["Request", "Response"], []);
   const globalNamespace = main.createGlobalNamespace<
     ["Uint8Array"],
     ["console"]
@@ -34,7 +33,18 @@ describe("test", () => {
 
   const sampleCode: main.NodeJsCode = main.addExportVariable(
     "middleware",
-    typeExpr.functionReturnVoid([]),
+    typeExpr.functionReturnVoid([
+      {
+        name: "request",
+        document: "expressのリクエスト",
+        typeExpr: expressImportedModule.typeList.Request
+      },
+      {
+        name: "response",
+        document: "expressのレスポンス",
+        typeExpr: expressImportedModule.typeList.Response
+      }
+    ]),
     main.stringLiteral("文字列のリテラル"),
     "サンプルの文字列の変数",
     () =>
@@ -44,10 +54,7 @@ describe("test", () => {
           new Map([["name", { document: "", typeExpr: typeExpr.typeString }]])
         ),
         main.createObjectLiteral(
-          new Map([
-            ["name", main.stringLiteral("sorena")],
-            ["consoleFromGlobal", globalNamespace.variableList.console]
-          ])
+          new Map([["name", main.stringLiteral("sorena")]])
         ),
         "ドキュメント",
         () => main.emptyNodeJsCode

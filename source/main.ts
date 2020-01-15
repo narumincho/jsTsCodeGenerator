@@ -387,7 +387,15 @@ const createIdentiferByIndex = (index: number): string => {
   }
 };
 
-const exprToString = (expr: Expr): string => {
+/**
+ * 式をコードに変換する
+ * @param expr 式
+ * @param importedModuleNameMap インポートされたモジュールのパスと名前空間識別子のマップ
+ */
+const exprToString = (
+  expr: Expr,
+  importedModuleNameMap: Map<string, string>
+): string => {
   switch (expr.type) {
     case ExprType.NumberLiteral:
       return expr.value;
@@ -395,9 +403,9 @@ const exprToString = (expr: Expr): string => {
     case ExprType.NumberOperator:
       return (
         "(" +
-        exprToString(expr.left) +
+        exprToString(expr.left, importedModuleNameMap) +
         expr.operator +
-        exprToString(expr.right) +
+        exprToString(expr.right, importedModuleNameMap) +
         ")"
       );
 
@@ -406,7 +414,11 @@ const exprToString = (expr: Expr): string => {
 
     case ExprType.StringConcatenate:
       return (
-        "(" + exprToString(expr.left) + "+" + exprToString(expr.right) + ")"
+        "(" +
+        exprToString(expr.left, importedModuleNameMap) +
+        "+" +
+        exprToString(expr.right, importedModuleNameMap) +
+        ")"
       );
 
     case ExprType.BooleanLiteral:
@@ -422,38 +434,55 @@ const exprToString = (expr: Expr): string => {
       return (
         "{" +
         [...expr.memberList.entries()]
-          .map(([key, value]) => key + ":" + exprToString(value))
-          .join(",") +
+          .map(
+            ([key, value]) =>
+              key + ":" + exprToString(value, importedModuleNameMap)
+          )
+          .join(", ") +
         "}"
       );
     case ExprType.LambdaWithReturn:
       return (
         "(" +
         expr.parameter
-          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
-          .join(",") +
+          .map(
+            o =>
+              o.name +
+              ": " +
+              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
+          )
+          .join(", ") +
         "): " +
-        typeExpr.typeExprToString(expr.returnType) +
+        typeExpr.typeExprToString(expr.returnType, importedModuleNameMap) +
         "=>" +
-        exprToString(expr.body)
+        exprToString(expr.body, importedModuleNameMap)
       );
 
     case ExprType.LambdaReturnVoid:
       return (
         "(" +
         expr.parameter
-          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+          .map(
+            o =>
+              o.name +
+              ": " +
+              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
+          )
           .join(",") +
         "): void=>" +
-        exprToString(expr.body)
+        exprToString(expr.body, importedModuleNameMap)
       );
 
     case ExprType.GlobalVariable:
       return expr.name;
 
-    case ExprType.ImportedVariable:
-      // TODO 識別子生成
-      return expr.path + "の間に挟む識別子がほしいところ" + "." + expr.name;
+    case ExprType.ImportedVariable: {
+      const importedModuleName = importedModuleNameMap.get(expr.path);
+      if (importedModuleName === undefined) {
+        throw new Error("収集されなかったモジュールがある! path=" + expr.path);
+      }
+      return importedModuleName + "." + expr.name;
+    }
   }
 };
 
@@ -575,7 +604,10 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
           " */export type " +
           exportTypeAlias.name +
           " = " +
-          typeExpr.typeExprToString(exportTypeAlias.typeExpr)
+          typeExpr.typeExprToString(
+            exportTypeAlias.typeExpr,
+            importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          )
       )
       .join(";\n") +
     "\n" +
@@ -587,9 +619,15 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
           " */\nexport const " +
           exportVariable.name +
           ": " +
-          typeExpr.typeExprToString(exportVariable.typeExpr) +
+          typeExpr.typeExprToString(
+            exportVariable.typeExpr,
+            importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          ) +
           " = " +
-          exprToString(exportVariable.expr)
+          exprToString(
+            exportVariable.expr,
+            importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          )
       )
       .join(";\n")
   );
