@@ -1,3 +1,4 @@
+import * as scanType from "./scanType";
 /* ======================================================================================
  *                                      Type Expr
  * ====================================================================================== */
@@ -196,11 +197,11 @@ const parameterAndReturnToString = (
 /**
  * グローバル空間に出ている型の名前を集める
  * @param typeExpr 型の式
- * @param globalNameSet グローバルで使われている名前の集合。上書きする
+ * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-export const collectGlobalName = (
+export const scan = (
   typeExpr: TypeExpr,
-  globalNameSet: Set<string>
+  scanData: scanType.NodeJsCodeScanData
 ): void => {
   switch (typeExpr.type) {
     case TypeExprType.Number:
@@ -212,34 +213,35 @@ export const collectGlobalName = (
 
     case TypeExprType.Object:
       for (const [, value] of typeExpr.memberList) {
-        collectGlobalName(value.typeExpr, globalNameSet);
+        scan(value.typeExpr, scanData);
       }
       return;
 
     case TypeExprType.FunctionWithReturn:
       for (const oneParameter of typeExpr.parameter) {
-        collectGlobalName(oneParameter.typeExpr, globalNameSet);
+        scan(oneParameter.typeExpr, scanData);
       }
-      collectGlobalName(typeExpr.return, globalNameSet);
+      scan(typeExpr.return, scanData);
       return;
 
     case TypeExprType.FunctionReturnVoid:
       for (const oneParameter of typeExpr.parameter) {
-        collectGlobalName(oneParameter.typeExpr, globalNameSet);
+        scan(oneParameter.typeExpr, scanData);
       }
       return;
 
     case TypeExprType.Union:
       for (const oneType of typeExpr.types) {
-        collectGlobalName(oneType, globalNameSet);
+        scan(oneType, scanData);
       }
       return;
 
     case TypeExprType.ImportedType:
+      scanData.importedModulePath.add(typeExpr.path);
       return;
 
     case TypeExprType.GlobalType:
-      globalNameSet.add(typeExpr.name);
+      scanData.globalName.add(typeExpr.name);
       return;
   }
 };

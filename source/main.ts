@@ -1,4 +1,5 @@
 import * as typeExpr from "./typeExpr";
+import * as scanType from "./scanType";
 
 /**
  * 型を識別するためのID
@@ -456,10 +457,12 @@ const exprToString = (expr: Expr): string => {
   }
 };
 
-const collectGlobalNameFromExpr = (
-  expr: Expr,
-  globalNameSet: Set<string>
-): void => {
+/**
+ * 名前をつけたり、するために式を走査する
+ * @param expr 式
+ * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
+ */
+const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
   switch (expr.type) {
     case ExprType.NumberLiteral:
     case ExprType.NumberOperator:
@@ -471,52 +474,57 @@ const collectGlobalNameFromExpr = (
 
     case ExprType.ObjectLiteral:
       for (const [, member] of expr.memberList) {
-        collectGlobalNameFromExpr(member, globalNameSet);
+        scanExpr(member, scanData);
       }
       return;
 
     case ExprType.LambdaWithReturn:
       for (const oneParameter of expr.parameter) {
-        typeExpr.collectGlobalName(oneParameter.typeExpr, globalNameSet);
+        typeExpr.scan(oneParameter.typeExpr, scanData);
       }
-      typeExpr.collectGlobalName(expr.returnType, globalNameSet);
-      collectGlobalNameFromExpr(expr.body, globalNameSet);
+      typeExpr.scan(expr.returnType, scanData);
+      scanExpr(expr.body, scanData);
       return;
 
     case ExprType.LambdaReturnVoid:
       for (const oneParameter of expr.parameter) {
-        typeExpr.collectGlobalName(oneParameter.typeExpr, globalNameSet);
+        typeExpr.scan(oneParameter.typeExpr, scanData);
       }
-      collectGlobalNameFromExpr(expr.body, globalNameSet);
+      scanExpr(expr.body, scanData);
       return;
 
     case ExprType.GlobalVariable:
-      globalNameSet.add(expr.name);
+      scanData.globalName.add(expr.name);
       return;
 
     case ExprType.ImportedVariable:
+      scanData.importedModulePath.add(expr.path);
       return;
   }
 };
 
-const collectGlobalNameFromNodeJsCode = (
+const scanNodeJsCode = (
   nodeJsCode: NodeJsCode
-): Set<string> => {
-  const globalNameSet = new Set<string>();
+): scanType.NodeJsCodeScanData => {
+  const scanData: scanType.NodeJsCodeScanData = {
+    globalName: new Set(),
+    importedModulePath: new Set()
+  };
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
-    globalNameSet.add(exportTypeAlias.name);
-    typeExpr.collectGlobalName(exportTypeAlias.typeExpr, globalNameSet);
+    scanData.globalName.add(exportTypeAlias.name);
+    typeExpr.scan(exportTypeAlias.typeExpr, scanData);
   }
   for (const exportVariable of nodeJsCode.exportVariableList) {
-    globalNameSet.add(exportVariable.name);
-    typeExpr.collectGlobalName(exportVariable.typeExpr, globalNameSet);
+    scanData.globalName.add(exportVariable.name);
+    typeExpr.scan(exportVariable.typeExpr, scanData);
+    scanExpr(exportVariable.expr, scanData);
   }
-  return globalNameSet;
+  return scanData;
 };
 
 export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   // グローバル空間にある名前を集める
-  const globalNameSet = collectGlobalNameFromNodeJsCode(nodeJsCode);
+  const scanData = scanNodeJsCode(nodeJsCode);
 
   return (
     nodeJsCode.importList
