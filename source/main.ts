@@ -1,7 +1,13 @@
 import * as typeExpr from "./typeExpr";
+import * as scanType from "./scanType";
 
 /**
- * 内部で使う変数の型を識別するためのID
+ * 型を識別するためのID
+ */
+type TypeId = string & { _variableId: never };
+
+/**
+ * 変数を識別するためのID
  */
 type VariableId = string & { _variableId: never };
 
@@ -9,9 +15,8 @@ type VariableId = string & { _variableId: never };
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
 export type NodeJsCode = {
-  importList: ReadonlyArray<Import>;
   exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
-  exportVariableList: ReadonlyArray<ExportVariable<typeExpr.TypeExpr>>;
+  exportVariableList: ReadonlyArray<ExportVariable>;
 };
 
 type Import = {
@@ -25,57 +30,18 @@ type ExportTypeAlias = {
   readonly typeExpr: typeExpr.TypeExpr;
 };
 
-type ExportVariable<typeExpr extends typeExpr.TypeExpr> = {
+type ExportVariable = {
   readonly name: string;
-  readonly typeExpr: typeExpr;
+  readonly typeExpr: typeExpr.TypeExpr;
   readonly document: string;
-  readonly expr: ExprFilterByType<typeExpr>;
-};
-
-type ModuleOrGlobalDefinition = {
-  typeList: { [key in string]: typeExpr.TypeExpr };
-  variableList: { [key in string]: typeExpr.TypeExpr };
-};
-
-type Global<definition extends ModuleOrGlobalDefinition> = {
-  typeList: {
-    [key in keyof definition["typeList"]]: {
-      type: typeExpr.TypeExprType.GlobalType;
-      name: key;
-    };
-  };
-  variableList: {
-    [key in keyof definition["variableList"]]: {
-      type: ExprType.GlobalVariable;
-      name: key;
-      _type: definition["variableList"][key];
-    };
-  };
-};
-
-type Module<definition extends ModuleOrGlobalDefinition> = {
-  typeList: {
-    [key in keyof definition["typeList"]]: {
-      type: typeExpr.TypeExprType.ImportedType;
-      id: string;
-      name: key;
-    };
-  };
-  variableList: {
-    [key in keyof definition["variableList"]]: {
-      type: ExprType.ImportedVariable;
-      importId: string;
-      name: key;
-      _type: definition["variableList"][key];
-    };
-  };
+  readonly expr: Expr;
 };
 
 /* ======================================================================================
  *                                        Expr
  * ====================================================================================== */
 
-type Expr =
+export type Expr =
   | NumberLiteral
   | NumberOperator
   | StringLiteral
@@ -83,15 +49,11 @@ type Expr =
   | BooleanLiteral
   | NullLiteral
   | UndefinedLiteral
-  | ObjectLiteral<
-      typeExpr.Object_<{
-        [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
-      }>
-    >
-  | LambdaWithReturn<typeExpr.FunctionWithReturn>
-  | LambdaReturnVoid<typeExpr.FunctionReturnVoid>
-  | GlobalVariable<typeExpr.TypeExpr>
-  | ImportedVariable<typeExpr.TypeExpr>;
+  | ObjectLiteral
+  | LambdaWithReturn
+  | LambdaReturnVoid
+  | GlobalVariable
+  | ImportedVariable;
 
 const enum ExprType {
   NumberLiteral,
@@ -108,27 +70,6 @@ const enum ExprType {
   ImportedVariable
 }
 
-type ExprFilterByType<typeExpr extends typeExpr.TypeExpr> =
-  | (typeExpr extends typeExpr.Number_
-      ? NumberLiteral | NumberOperator
-      : typeExpr extends typeof typeExpr.typeString
-      ? StringLiteral | StringConcatenate
-      : typeExpr extends typeof typeExpr.typeBoolean
-      ? BooleanLiteral
-      : typeExpr extends typeof typeExpr.typeUndefined
-      ? UndefinedLiteral
-      : typeExpr extends typeof typeExpr.typeNull
-      ? NullLiteral
-      : typeExpr extends typeExpr.Object_<{
-          [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
-        }>
-      ? ObjectLiteral<typeExpr>
-      : never)
-  | GlobalVariable<typeExpr>
-  | ImportedVariable<typeExpr>;
-
-type ExprVoid = never;
-
 type NumberLiteral = {
   type: ExprType.NumberLiteral;
   value: string;
@@ -137,8 +78,8 @@ type NumberLiteral = {
 type NumberOperator = {
   type: ExprType.NumberOperator;
   operator: NumberOperatorOperator;
-  left: ExprFilterByType<typeExpr.Number_>;
-  right: ExprFilterByType<typeExpr.Number_>;
+  left: Expr;
+  right: Expr;
 };
 
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
@@ -150,8 +91,8 @@ type StringLiteral = {
 
 type StringConcatenate = {
   type: ExprType.StringConcatenate;
-  left: ExprFilterByType<typeExpr.String_>;
-  right: ExprFilterByType<typeExpr.String_>;
+  left: Expr;
+  right: Expr;
 };
 
 type BooleanLiteral = {
@@ -167,140 +108,124 @@ type UndefinedLiteral = {
   type: ExprType.UndefinedLiteral;
 };
 
-type ObjectLiteral<
-  T extends typeExpr.Object_<{
-    [x: string]: { typeExpr: typeExpr.TypeExpr; document: string };
-  }>
-> = {
+type ObjectLiteral = {
   type: ExprType.ObjectLiteral;
-  values: {
-    [key in keyof T["memberList"]]: ExprFilterByType<
-      T["memberList"][key]["typeExpr"]
-    >;
-  };
+  memberList: Map<string, Expr>;
 };
 
-type LambdaWithReturn<T extends typeExpr.FunctionWithReturn> = {
+type LambdaWithReturn = {
   type: ExprType.LambdaWithReturn;
-  parameter: T["parameter"];
-  returnType: T["return"];
-  body: ExprFilterByType<T["return"]>;
+  parameter: ReadonlyArray<typeExpr.OneParameter>;
+  returnType: typeExpr.TypeExpr;
+  body: Expr;
 };
 
-type LambdaReturnVoid<T extends typeExpr.FunctionReturnVoid> = {
+type LambdaReturnVoid = {
   type: ExprType.LambdaReturnVoid;
-  parameter: T["parameter"];
-  body: ExprVoid;
+  parameter: ReadonlyArray<typeExpr.OneParameter>;
+  body: Expr;
 };
 
-type GlobalVariable<typeExpr extends typeExpr.TypeExpr> = {
+type GlobalVariable = {
   type: ExprType.GlobalVariable;
-  typeExpr: typeExpr;
   name: string;
 };
 
-type ImportedVariable<typeExpr extends typeExpr.TypeExpr> = {
+type ImportedVariable = {
   type: ExprType.ImportedVariable;
-  typeExpr: typeExpr;
-  importId: string;
+  path: string;
   name: string;
 };
 
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
+type ImportedModule = {
+  path: string;
+  typeList: { [name in string]: TypeId };
+  variableList: { [name in string]: VariableId };
+};
 
-const objectMap = <objectKeys extends string, input, output>(
-  input: { [key in objectKeys]: input },
-  func: (key: objectKeys, input: input) => output
-): { [key in objectKeys]: output } =>
-  Object.entries<input>(input).reduce(
-    (previous, [key, value]) => ({
-      ...previous,
-      [key]: func(key as objectKeys, value)
-    }),
-    {} as { [key in objectKeys]: output }
-  );
+type ValueOf<T> = T[keyof T];
 
-const globalDefinitionToGlobal = <
-  moduleDefinition extends ModuleOrGlobalDefinition
+/**
+ * Node.js向けの外部のライブラリをimportして使えるようにする
+ */
+export const createImportNodeModule = <
+  typeList extends Array<string>,
+  variableList extends Array<string>
 >(
-  moduleDefinition: moduleDefinition
-): Global<moduleDefinition> => ({
-  typeList: objectMap(moduleDefinition.typeList, (name, _typeExpr) => ({
-    type: typeExpr.TypeExprType.GlobalType,
-    name: name
-  })) as Global<moduleDefinition>["typeList"],
-  variableList: objectMap(moduleDefinition.variableList, (name, typeExpr) => ({
-    type: ExprType.GlobalVariable,
-    name: name,
-    _type: typeExpr
-  })) as Global<moduleDefinition>["variableList"]
-});
+  path: string,
+  typeList: typeList,
+  variableList: variableList
+): {
+  typeList: { [name in ValueOf<typeList> & string]: typeExpr.Imported };
+  variableList: { [name in ValueOf<variableList> & string]: ImportedVariable };
+} => {
+  const typeListObject = {} as {
+    [name in ValueOf<typeList> & string]: typeExpr.Imported;
+  };
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: ImportedVariable;
+  };
+  for (const typeName of typeList) {
+    typeListObject[typeName as ValueOf<typeList> & string] = {
+      type: typeExpr.TypeExprType.ImportedType,
+      path: path,
+      name: typeName
+    };
+  }
+  for (const variableName of variableList) {
+    variableListObject[variableName as ValueOf<variableList> & string] = {
+      type: ExprType.ImportedVariable,
+      path: path,
+      name: variableName
+    };
+  }
+  return {
+    typeList: typeListObject,
+    variableList: variableListObject
+  };
+};
 
 /**
  * グローバル空間の型と変数の型情報を渡して使えるようにする
  * @param global グローバル空間の型と変数の型情報
  * @param body コード本体
  */
-export const addGlobal = <
-  globalModuleDefinition extends ModuleOrGlobalDefinition
+export const createGlobalNamespace = <
+  typeList extends Array<string>,
+  variableList extends Array<string>
 >(
-  global: globalModuleDefinition,
-  body: (global: Global<globalModuleDefinition>) => NodeJsCode
-): NodeJsCode => body(globalDefinitionToGlobal(global));
-
-const moduleDefinitionToModule = <
-  moduleDefinition extends ModuleOrGlobalDefinition
->(
-  moduleDefinition: moduleDefinition,
-  importId: string
-): Module<moduleDefinition> => ({
-  typeList: objectMap(moduleDefinition.typeList, (name, _typeExpr) => ({
-    type: typeExpr.TypeExprType.ImportedType,
-    id: importId,
-    name: name
-  })) as Module<moduleDefinition>["typeList"],
-  variableList: objectMap(moduleDefinition.variableList, (name, typeExpr) => ({
-    type: ExprType.ImportedVariable,
-    importId: importId,
-    name: name,
-    _type: typeExpr
-  })) as Module<moduleDefinition>["variableList"]
-});
-
-/**
- * Node.js向けの外部のライブラリをimportして使えるようにする
- * @param path パス
- * @param moduleDefinition モジュールの公開している型と変数の型情報
- * @param rootIdentiferIndex 識別子を生成するためのインデックス
- * @param body コード本体
- */
-export const importNodeModule = <
-  moduleDefinition extends ModuleOrGlobalDefinition
->(
-  path: string,
-  moduleDefinition: moduleDefinition,
-  rootIdentiferIndex: number,
-  body: (module: Module<moduleDefinition>) => NodeJsCode
-): { code: NodeJsCode; identiferIndex: number } => {
-  const importIdentiferData = createIdentifer(rootIdentiferIndex, []);
-  const importId = importIdentiferData.string;
-  const code = body(moduleDefinitionToModule(moduleDefinition, importId));
+  typeList: typeList,
+  variableList: variableList
+): {
+  typeList: { [name in ValueOf<typeList> & string]: typeExpr.Global };
+  variableList: { [name in ValueOf<variableList> & string]: GlobalVariable };
+} => {
+  const typeListObject = {} as {
+    [name in ValueOf<typeList> & string]: typeExpr.Global;
+  };
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: GlobalVariable;
+  };
+  for (const typeName of typeList) {
+    typeListObject[typeName as ValueOf<typeList> & string] = {
+      type: typeExpr.TypeExprType.GlobalType,
+      name: typeName
+    };
+  }
+  for (const variableName of variableList) {
+    variableListObject[variableName as ValueOf<variableList> & string] = {
+      type: ExprType.GlobalVariable,
+      name: variableName
+    };
+  }
   return {
-    code: {
-      ...code,
-      importList: code.importList.concat([
-        {
-          id: importId,
-          path: path
-        }
-      ])
-    },
-    identiferIndex: importIdentiferData.nextIndex
+    typeList: typeListObject,
+    variableList: variableListObject
   };
 };
-
 /**
  * 外部に公開する変数を定義する
  * @param name 変数名
@@ -315,7 +240,7 @@ export const addExportVariable = <
 >(
   name: name,
   typeExpr: typeExpr,
-  expr: ExprFilterByType<typeExpr>,
+  expr: Expr,
   document: string,
   body: (variable: {
     type: ExprType.GlobalVariable;
@@ -342,12 +267,11 @@ export const addExportVariable = <
  * 空のNode.js用コード
  */
 export const emptyNodeJsCode: NodeJsCode = {
-  importList: [],
   exportTypeAliasList: [],
   exportVariableList: []
 };
 
-export const numberLiteral = (value: string): NumberLiteral => ({
+export const numberLiteral = (value: string): Expr => ({
   type: ExprType.NumberLiteral,
   value: value
 });
@@ -356,7 +280,7 @@ export const numberLiteral = (value: string): NumberLiteral => ({
  * 文字列リテラル
  * @param string 文字列。エスケープする必要はない
  */
-export const stringLiteral = (string: string): StringLiteral => ({
+export const stringLiteral = (string: string): Expr => ({
   type: ExprType.StringLiteral,
   value: string
 });
@@ -365,10 +289,7 @@ export const stringLiteral = (string: string): StringLiteral => ({
  * @param left 左辺
  * @param right 右辺
  */
-export const add = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const add = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "+",
   left: left,
@@ -380,10 +301,7 @@ export const add = (
  * @param left 左辺
  * @param right 右辺
  */
-export const sub = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const sub = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "-",
   left: left,
@@ -395,10 +313,7 @@ export const sub = (
  * @param left 左辺
  * @param right 右辺
  */
-export const mul = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const mul = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "*",
   left: left,
@@ -410,10 +325,7 @@ export const mul = (
  * @param left 左辺
  * @param right 右辺
  */
-export const division = (
-  left: ExprFilterByType<typeExpr.Number_>,
-  right: ExprFilterByType<typeExpr.Number_>
-): NumberOperator => ({
+export const division = (left: Expr, right: Expr): Expr => ({
   type: ExprType.NumberOperator,
   operator: "/",
   left: left,
@@ -423,16 +335,10 @@ export const division = (
 /**
  * オブジェクトリテラル
  */
-export const createObjectLiteral = <
-  memberList extends {
-    [x in string]: { typeExpr: typeExpr.TypeExpr; document: string };
-  }
->(
-  member: memberList
-): typeExpr.Object_<memberList> => {
+export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
   return {
-    type: typeExpr.TypeExprType.Object,
-    memberList: member
+    type: ExprType.ObjectLiteral,
+    memberList: memberList
   };
 };
 
@@ -440,16 +346,16 @@ export const createObjectLiteral = <
  * 識別子を生成する
  */
 const createIdentifer = (
-  index: number,
-  reserved: ReadonlyArray<string>
-): { string: string; nextIndex: number } => {
+  identiferIndex: number,
+  reserved: Set<string>
+): { identifer: string; nextIdentiferIndex: number } => {
   while (true) {
-    const result = createIdentiferByIndex(index);
-    if (reserved.includes(result)) {
-      index += 1;
+    const result = createIdentiferByIndex(identiferIndex);
+    if (reserved.has(result)) {
+      identiferIndex += 1;
       continue;
     }
-    return { string: result, nextIndex: index + 1 };
+    return { identifer: result, nextIdentiferIndex: identiferIndex + 1 };
   }
 };
 
@@ -481,7 +387,15 @@ const createIdentiferByIndex = (index: number): string => {
   }
 };
 
-const exprToString = (expr: Expr): string => {
+/**
+ * 式をコードに変換する
+ * @param expr 式
+ * @param importedModuleNameMap インポートされたモジュールのパスと名前空間識別子のマップ
+ */
+const exprToString = (
+  expr: Expr,
+  importedModuleNameMap: Map<string, string>
+): string => {
   switch (expr.type) {
     case ExprType.NumberLiteral:
       return expr.value;
@@ -489,9 +403,9 @@ const exprToString = (expr: Expr): string => {
     case ExprType.NumberOperator:
       return (
         "(" +
-        exprToString(expr.left) +
+        exprToString(expr.left, importedModuleNameMap) +
         expr.operator +
-        exprToString(expr.right) +
+        exprToString(expr.right, importedModuleNameMap) +
         ")"
       );
 
@@ -500,7 +414,11 @@ const exprToString = (expr: Expr): string => {
 
     case ExprType.StringConcatenate:
       return (
-        "(" + exprToString(expr.left) + "+" + exprToString(expr.right) + ")"
+        "(" +
+        exprToString(expr.left, importedModuleNameMap) +
+        "+" +
+        exprToString(expr.right, importedModuleNameMap) +
+        ")"
       );
 
     case ExprType.BooleanLiteral:
@@ -515,77 +433,202 @@ const exprToString = (expr: Expr): string => {
     case ExprType.ObjectLiteral:
       return (
         "{" +
-        Object.entries(expr.values)
-          .map(([key, value]) => key + ":" + exprToString(value))
-          .join(",") +
+        [...expr.memberList.entries()]
+          .map(
+            ([key, value]) =>
+              key + ":" + exprToString(value, importedModuleNameMap)
+          )
+          .join(", ") +
         "}"
       );
     case ExprType.LambdaWithReturn:
       return (
         "(" +
-        typeExpr
-          .parameterToOneParameterList(expr.parameter)
-          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
-          .join(",") +
+        expr.parameter
+          .map(
+            o =>
+              o.name +
+              ": " +
+              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
+          )
+          .join(", ") +
         "): " +
-        typeExpr.typeExprToString(expr.returnType) +
+        typeExpr.typeExprToString(expr.returnType, importedModuleNameMap) +
         "=>" +
-        exprToString(expr.body)
+        exprToString(expr.body, importedModuleNameMap)
       );
 
     case ExprType.LambdaReturnVoid:
       return (
         "(" +
-        typeExpr
-          .parameterToOneParameterList(expr.parameter)
-          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+        expr.parameter
+          .map(
+            o =>
+              o.name +
+              ": " +
+              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
+          )
           .join(",") +
         "): void=>" +
-        exprToString(expr.body)
+        exprToString(expr.body, importedModuleNameMap)
       );
 
     case ExprType.GlobalVariable:
       return expr.name;
 
-    case ExprType.ImportedVariable:
-      return (expr.importId as string) + "." + expr.name;
+    case ExprType.ImportedVariable: {
+      const importedModuleName = importedModuleNameMap.get(expr.path);
+      if (importedModuleName === undefined) {
+        throw new Error("収集されなかったモジュールがある! path=" + expr.path);
+      }
+      return importedModuleName + "." + expr.name;
+    }
   }
 };
 
-export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string =>
-  nodeJsCode.importList
-    .map(
-      importNodeModule =>
-        "import * as " +
-        (importNodeModule.id as string) +
-        ' from "' +
-        importNodeModule.path +
-        '"'
-    )
-    .join(";\n") +
-  ";\n" +
-  nodeJsCode.exportTypeAliasList
-    .map(
-      exportTypeAlias =>
-        "/** " +
-        exportTypeAlias.document +
-        " */export type " +
-        exportTypeAlias.name +
-        " = " +
-        typeExpr.typeExprToString(exportTypeAlias.typeExpr)
-    )
-    .join(";\n") +
-  "\n" +
-  nodeJsCode.exportVariableList
-    .map(
-      exportVariable =>
-        "/** " +
-        exportVariable.document +
-        " */\nexport const " +
-        exportVariable.name +
-        ": " +
-        typeExpr.typeExprToString(exportVariable.typeExpr) +
-        " = " +
-        exprToString(exportVariable.expr)
-    )
-    .join(";\n");
+/**
+ * 名前をつけたり、するために式を走査する
+ * @param expr 式
+ * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
+ */
+const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
+  switch (expr.type) {
+    case ExprType.NumberLiteral:
+    case ExprType.NumberOperator:
+    case ExprType.StringLiteral:
+    case ExprType.BooleanLiteral:
+    case ExprType.UndefinedLiteral:
+    case ExprType.NullLiteral:
+      return;
+
+    case ExprType.ObjectLiteral:
+      for (const [, member] of expr.memberList) {
+        scanExpr(member, scanData);
+      }
+      return;
+
+    case ExprType.LambdaWithReturn:
+      for (const oneParameter of expr.parameter) {
+        typeExpr.scan(oneParameter.typeExpr, scanData);
+      }
+      typeExpr.scan(expr.returnType, scanData);
+      scanExpr(expr.body, scanData);
+      return;
+
+    case ExprType.LambdaReturnVoid:
+      for (const oneParameter of expr.parameter) {
+        typeExpr.scan(oneParameter.typeExpr, scanData);
+      }
+      scanExpr(expr.body, scanData);
+      return;
+
+    case ExprType.GlobalVariable:
+      scanData.globalName.add(expr.name);
+      return;
+
+    case ExprType.ImportedVariable:
+      scanData.importedModulePath.add(expr.path);
+      return;
+  }
+};
+
+const scanNodeJsCode = (
+  nodeJsCode: NodeJsCode
+): scanType.NodeJsCodeScanData => {
+  const scanData: scanType.NodeJsCodeScanData = {
+    globalName: new Set(),
+    importedModulePath: new Set()
+  };
+  for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
+    scanData.globalName.add(exportTypeAlias.name);
+    typeExpr.scan(exportTypeAlias.typeExpr, scanData);
+  }
+  for (const exportVariable of nodeJsCode.exportVariableList) {
+    scanData.globalName.add(exportVariable.name);
+    typeExpr.scan(exportVariable.typeExpr, scanData);
+    scanExpr(exportVariable.expr, scanData);
+  }
+  return scanData;
+};
+
+const createImportedModuleName = (
+  importedModulePathSet: Set<string>,
+  identiferIndex: number,
+  reserved: Set<string>
+): {
+  importedModuleNameMap: Map<string, string>;
+  nextIdentiferIndex: number;
+} => {
+  const importedModuleNameMap = new Map<string, string>();
+  for (const importedModulePath of importedModulePathSet) {
+    const identiferAndNextIdentiferIndex = createIdentifer(
+      identiferIndex,
+      reserved
+    );
+    importedModuleNameMap.set(
+      importedModulePath,
+      identiferAndNextIdentiferIndex.identifer
+    );
+    identiferIndex = identiferAndNextIdentiferIndex.nextIdentiferIndex;
+  }
+  return {
+    importedModuleNameMap,
+    nextIdentiferIndex: identiferIndex
+  };
+};
+
+export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
+  // グローバル空間にある名前やimportしたモジュールのパスを集める
+  const scanData = scanNodeJsCode(nodeJsCode);
+  const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
+    scanData.importedModulePath,
+    0,
+    scanData.globalName
+  );
+
+  return (
+    [
+      ...importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap.entries()
+    ]
+      .map(
+        ([path, identifer]) =>
+          "import * as " + identifer + ' from "' + path + '"'
+      )
+      .join(";\n") +
+    ";\n" +
+    nodeJsCode.exportTypeAliasList
+      .map(
+        exportTypeAlias =>
+          "/** " +
+          exportTypeAlias.document +
+          " */export type " +
+          exportTypeAlias.name +
+          " = " +
+          typeExpr.typeExprToString(
+            exportTypeAlias.typeExpr,
+            importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          )
+      )
+      .join(";\n") +
+    "\n" +
+    nodeJsCode.exportVariableList
+      .map(
+        exportVariable =>
+          "/** " +
+          exportVariable.document +
+          " */\nexport const " +
+          exportVariable.name +
+          ": " +
+          typeExpr.typeExprToString(
+            exportVariable.typeExpr,
+            importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          ) +
+          " = " +
+          exprToString(
+            exportVariable.expr,
+            importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          )
+      )
+      .join(";\n")
+  );
+};

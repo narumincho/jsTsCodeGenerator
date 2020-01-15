@@ -21,32 +21,45 @@ describe("test", () => {
    * }
    *
    */
-  const importPath = "./api";
-  const sampleCode: main.NodeJsCode = main.importNodeModule(
-    importPath,
-    {
-      typeList: {},
-      variableList: {}
-    },
-    0,
+  const importPath = "./express";
+  const expressImportedModule = main.createImportNodeModule<
+    ["Request", "Response"],
+    []
+  >(importPath, ["Request", "Response"], []);
+  const globalNamespace = main.createGlobalNamespace<
+    ["Uint8Array"],
+    ["console"]
+  >(["Uint8Array"], ["console"]);
+
+  const sampleCode: main.NodeJsCode = main.addExportVariable(
+    "middleware",
+    typeExpr.functionReturnVoid([
+      {
+        name: "request",
+        document: "expressのリクエスト",
+        typeExpr: expressImportedModule.typeList.Request
+      },
+      {
+        name: "response",
+        document: "expressのレスポンス",
+        typeExpr: expressImportedModule.typeList.Response
+      }
+    ]),
+    main.stringLiteral("文字列のリテラル"),
+    "サンプルの文字列の変数",
     () =>
       main.addExportVariable(
-        "middleware",
-        typeExpr.typeString,
-        main.stringLiteral("文字列のリテラル"),
-        "サンプルの文字列の変数",
-        () =>
-          main.addExportVariable(
-            "sorena",
-            typeExpr.object({
-              name: { document: "", typeExpr: typeExpr.typeString }
-            }),
-            main.createObjectLiteral({ name: main.stringLiteral("sorena") }),
-            "ドキュメント",
-            () => main.emptyNodeJsCode
-          )
+        "sorena",
+        typeExpr.object(
+          new Map([["name", { document: "", typeExpr: typeExpr.typeString }]])
+        ),
+        main.createObjectLiteral(
+          new Map([["name", main.stringLiteral("sorena")]])
+        ),
+        "ドキュメント",
+        () => main.emptyNodeJsCode
       )
-  ).code;
+  );
 
   const start = performance.now();
   const nodeJsTypeScriptCode = main.toNodeJsCodeAsTypeScript(sampleCode);
