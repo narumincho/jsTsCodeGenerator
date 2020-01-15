@@ -45,7 +45,7 @@ describe("test", () => {
         ),
         main.createObjectLiteral(
           new Map([
-            ["name", main.stringLiteral("sorena") as main.Expr],
+            ["name", main.stringLiteral("sorena")],
             ["consoleFromGlobal", globalNamespace.variableList.console]
           ])
         ),
