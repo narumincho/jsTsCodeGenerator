@@ -346,16 +346,16 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * 識別子を生成する
  */
 const createIdentifer = (
-  index: number,
-  reserved: ReadonlyArray<string>
-): { string: string; nextIndex: number } => {
+  identiferIndex: number,
+  reserved: Set<string>
+): { identifer: string; nextIdentiferIndex: number } => {
   while (true) {
-    const result = createIdentiferByIndex(index);
-    if (reserved.includes(result)) {
-      index += 1;
+    const result = createIdentiferByIndex(identiferIndex);
+    if (reserved.has(result)) {
+      identiferIndex += 1;
       continue;
     }
-    return { string: result, nextIndex: index + 1 };
+    return { identifer: result, nextIdentiferIndex: identiferIndex + 1 };
   }
 };
 
@@ -522,19 +522,48 @@ const scanNodeJsCode = (
   return scanData;
 };
 
+const createImportedModuleName = (
+  importedModulePathSet: Set<string>,
+  identiferIndex: number,
+  reserved: Set<string>
+): {
+  importedModuleNameMap: Map<string, string>;
+  nextIdentiferIndex: number;
+} => {
+  const importedModuleNameMap = new Map<string, string>();
+  for (const importedModulePath of importedModulePathSet) {
+    const identiferAndNextIdentiferIndex = createIdentifer(
+      identiferIndex,
+      reserved
+    );
+    importedModuleNameMap.set(
+      importedModulePath,
+      identiferAndNextIdentiferIndex.identifer
+    );
+    identiferIndex = identiferAndNextIdentiferIndex.nextIdentiferIndex;
+  }
+  return {
+    importedModuleNameMap,
+    nextIdentiferIndex: identiferIndex
+  };
+};
+
 export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
-  // グローバル空間にある名前を集める
+  // グローバル空間にある名前やimportしたモジュールのパスを集める
   const scanData = scanNodeJsCode(nodeJsCode);
+  const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
+    scanData.importedModulePath,
+    0,
+    scanData.globalName
+  );
 
   return (
-    nodeJsCode.importList
+    [
+      ...importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap.entries()
+    ]
       .map(
-        importNodeModule =>
-          "import * as " +
-          (importNodeModule.id as string) +
-          ' from "' +
-          importNodeModule.path +
-          '"'
+        ([path, identifer]) =>
+          "import * as " + identifer + ' from "' + path + '"'
       )
       .join(";\n") +
     ";\n" +
