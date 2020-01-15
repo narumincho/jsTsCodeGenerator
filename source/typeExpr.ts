@@ -193,6 +193,57 @@ const parameterAndReturnToString = (
   ")=>" +
   (returnType === null ? "void" : typeExprToString(returnType));
 
+/**
+ * グローバル空間に出ている型の名前を集める
+ * @param typeExpr 型の式
+ * @param globalNameSet グローバルで使われている名前の集合。上書きする
+ */
+export const collectGlobalName = (
+  typeExpr: TypeExpr,
+  globalNameSet: Set<string>
+): void => {
+  switch (typeExpr.type) {
+    case TypeExprType.Number:
+    case TypeExprType.String:
+    case TypeExprType.Boolean:
+    case TypeExprType.Null:
+    case TypeExprType.Undefined:
+      return;
+
+    case TypeExprType.Object:
+      for (const [, value] of typeExpr.memberList) {
+        collectGlobalName(value.typeExpr, globalNameSet);
+      }
+      return;
+
+    case TypeExprType.FunctionWithReturn:
+      for (const oneParameter of typeExpr.parameter) {
+        collectGlobalName(oneParameter.typeExpr, globalNameSet);
+      }
+      collectGlobalName(typeExpr.return, globalNameSet);
+      return;
+
+    case TypeExprType.FunctionReturnVoid:
+      for (const oneParameter of typeExpr.parameter) {
+        collectGlobalName(oneParameter.typeExpr, globalNameSet);
+      }
+      return;
+
+    case TypeExprType.Union:
+      for (const oneType of typeExpr.types) {
+        collectGlobalName(oneType, globalNameSet);
+      }
+      return;
+
+    case TypeExprType.ImportedType:
+      return;
+
+    case TypeExprType.GlobalType:
+      globalNameSet.add(typeExpr.name);
+      return;
+  }
+};
+
 /** 型の式をコードに表す */
 export const typeExprToString = (typeExpr: TypeExpr): string => {
   switch (typeExpr.type) {
@@ -214,7 +265,7 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
     case TypeExprType.Object:
       return (
         "{" +
-        Object.entries(typeExpr.memberList)
+        [...typeExpr.memberList.entries()]
           .map(
             ([name, typeAndDocument]) =>
               name + ":" + typeExprToString(typeAndDocument.typeExpr)
