@@ -125,22 +125,44 @@ export const object = (
  */
 export type FunctionWithReturn = {
   type: TypeExprType.FunctionWithReturn;
-  parameter: ReadonlyArray<Parameter>;
+  parameter: ReadonlyArray<OneParameter>;
   return: TypeExpr;
 };
+
+/**
+ * 戻り値がある関数
+ */
+export const functionWithReturn = (
+  parameter: ReadonlyArray<OneParameter>,
+  returnType: TypeExpr
+): FunctionWithReturn => ({
+  type: TypeExprType.FunctionWithReturn,
+  parameter: parameter,
+  return: returnType
+});
 
 /**
  * 戻り値がない関数
  */
 export type FunctionReturnVoid = {
   type: TypeExprType.FunctionReturnVoid;
-  parameter: ReadonlyArray<Parameter>;
+  parameter: ReadonlyArray<OneParameter>;
 };
+
+/**
+ * 戻り値がない関数
+ */
+export const functionReturnVoid = (
+  parameter: ReadonlyArray<OneParameter>
+): FunctionReturnVoid => ({
+  type: TypeExprType.FunctionReturnVoid,
+  parameter: parameter
+});
 
 /**
  * 関数のパラメーター
  */
-export type Parameter = {
+export type OneParameter = {
   name: string;
   document: string;
   typeExpr: TypeExpr;
@@ -153,8 +175,7 @@ export type Union = {
 
 export type Imported = {
   type: TypeExprType.ImportedType;
-  id: string;
-  typeExpr: TypeExpr;
+  path: string;
   name: string;
 };
 
@@ -162,7 +183,7 @@ export type Global = { type: TypeExprType.GlobalType; name: string };
 
 /** 関数の引数と戻り値の型を文字列にする */
 const parameterAndReturnToString = (
-  parameterList: ReadonlyArray<Parameter>,
+  parameterList: ReadonlyArray<OneParameter>,
   returnType: TypeExpr | null
 ): string =>
   "(" +
@@ -212,7 +233,8 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
       return typeExpr.types.map(typeExprToString).join("|");
 
     case TypeExprType.ImportedType:
-      return typeExpr.id + "." + typeExpr.name;
+      // TODO
+      return typeExpr.path + "の識別子が欲しい" + "." + typeExpr.name;
 
     case TypeExprType.GlobalType:
       return typeExpr.name;

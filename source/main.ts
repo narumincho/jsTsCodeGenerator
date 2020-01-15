@@ -1,7 +1,12 @@
 import * as typeExpr from "./typeExpr";
 
 /**
- * 内部で使う変数の型を識別するためのID
+ * 型を識別するためのID
+ */
+type TypeId = string & { _variableId: never };
+
+/**
+ * 変数を識別するためのID
  */
 type VariableId = string & { _variableId: never };
 
@@ -32,50 +37,11 @@ type ExportVariable = {
   readonly expr: Expr;
 };
 
-type ModuleOrGlobalDefinition = {
-  typeList: { [key in string]: typeExpr.TypeExpr };
-  variableList: { [key in string]: typeExpr.TypeExpr };
-};
-
-type Global<definition extends ModuleOrGlobalDefinition> = {
-  typeList: {
-    [key in keyof definition["typeList"]]: {
-      type: typeExpr.TypeExprType.GlobalType;
-      name: key;
-    };
-  };
-  variableList: {
-    [key in keyof definition["variableList"]]: {
-      type: ExprType.GlobalVariable;
-      name: key;
-      _type: definition["variableList"][key];
-    };
-  };
-};
-
-type Module<definition extends ModuleOrGlobalDefinition> = {
-  typeList: {
-    [key in keyof definition["typeList"]]: {
-      type: typeExpr.TypeExprType.ImportedType;
-      id: string;
-      name: key;
-    };
-  };
-  variableList: {
-    [key in keyof definition["variableList"]]: {
-      type: ExprType.ImportedVariable;
-      importId: string;
-      name: key;
-      _type: definition["variableList"][key];
-    };
-  };
-};
-
 /* ======================================================================================
  *                                        Expr
  * ====================================================================================== */
 
-type Expr =
+export type Expr =
   | NumberLiteral
   | NumberOperator
   | StringLiteral
@@ -149,14 +115,14 @@ type ObjectLiteral = {
 
 type LambdaWithReturn = {
   type: ExprType.LambdaWithReturn;
-  parameter: ReadonlyArray<typeExpr.Parameter>;
+  parameter: ReadonlyArray<typeExpr.OneParameter>;
   returnType: typeExpr.TypeExpr;
   body: Expr;
 };
 
 type LambdaReturnVoid = {
   type: ExprType.LambdaReturnVoid;
-  parameter: ReadonlyArray<typeExpr.Parameter>;
+  parameter: ReadonlyArray<typeExpr.OneParameter>;
   body: Expr;
 };
 
@@ -167,105 +133,99 @@ type GlobalVariable = {
 
 type ImportedVariable = {
   type: ExprType.ImportedVariable;
-  importId: string;
+  path: string;
   name: string;
 };
 
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
+type ImportedModule = {
+  path: string;
+  typeList: { [name in string]: TypeId };
+  variableList: { [name in string]: VariableId };
+};
 
-const objectMap = <objectKeys extends string, input, output>(
-  input: { [key in objectKeys]: input },
-  func: (key: objectKeys, input: input) => output
-): { [key in objectKeys]: output } =>
-  Object.entries<input>(input).reduce(
-    (previous, [key, value]) => ({
-      ...previous,
-      [key]: func(key as objectKeys, value)
-    }),
-    {} as { [key in objectKeys]: output }
-  );
+type ValueOf<T> = T[keyof T];
 
-const globalDefinitionToGlobal = <
-  moduleDefinition extends ModuleOrGlobalDefinition
+/**
+ * Node.js向けの外部のライブラリをimportして使えるようにする
+ */
+export const createImportNodeModule = <
+  typeList extends Array<string>,
+  variableList extends Array<string>
 >(
-  moduleDefinition: moduleDefinition
-): Global<moduleDefinition> => ({
-  typeList: objectMap(moduleDefinition.typeList, (name, _typeExpr) => ({
-    type: typeExpr.TypeExprType.GlobalType,
-    name: name
-  })) as Global<moduleDefinition>["typeList"],
-  variableList: objectMap(moduleDefinition.variableList, (name, typeExpr) => ({
-    type: ExprType.GlobalVariable,
-    name: name,
-    _type: typeExpr
-  })) as Global<moduleDefinition>["variableList"]
-});
+  path: string,
+  typeList: typeList,
+  variableList: variableList
+): {
+  typeList: { [name in ValueOf<typeList> & string]: typeExpr.Imported };
+  variableList: { [name in ValueOf<variableList> & string]: ImportedVariable };
+} => {
+  const typeListObject = {} as {
+    [name in ValueOf<typeList> & string]: typeExpr.Imported;
+  };
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: ImportedVariable;
+  };
+  for (const typeName of typeList) {
+    typeListObject[typeName as ValueOf<typeList> & string] = {
+      type: typeExpr.TypeExprType.ImportedType,
+      path: path,
+      name: typeName
+    };
+  }
+  for (const variableName of variableList) {
+    variableListObject[variableName as ValueOf<variableList> & string] = {
+      type: ExprType.ImportedVariable,
+      path: path,
+      name: variableName
+    };
+  }
+  return {
+    typeList: typeListObject,
+    variableList: variableListObject
+  };
+};
 
 /**
  * グローバル空間の型と変数の型情報を渡して使えるようにする
  * @param global グローバル空間の型と変数の型情報
  * @param body コード本体
  */
-export const addGlobal = <
-  globalModuleDefinition extends ModuleOrGlobalDefinition
+export const createGlobalNamespace = <
+  typeList extends Array<string>,
+  variableList extends Array<string>
 >(
-  global: globalModuleDefinition,
-  body: (global: Global<globalModuleDefinition>) => NodeJsCode
-): NodeJsCode => body(globalDefinitionToGlobal(global));
-
-const moduleDefinitionToModule = <
-  moduleDefinition extends ModuleOrGlobalDefinition
->(
-  moduleDefinition: moduleDefinition,
-  importId: string
-): Module<moduleDefinition> => ({
-  typeList: objectMap(moduleDefinition.typeList, (name, _typeExpr) => ({
-    type: typeExpr.TypeExprType.ImportedType,
-    id: importId,
-    name: name
-  })) as Module<moduleDefinition>["typeList"],
-  variableList: objectMap(moduleDefinition.variableList, (name, typeExpr) => ({
-    type: ExprType.ImportedVariable,
-    importId: importId,
-    name: name,
-    _type: typeExpr
-  })) as Module<moduleDefinition>["variableList"]
-});
-
-/**
- * Node.js向けの外部のライブラリをimportして使えるようにする
- * @param path パス
- * @param moduleDefinition モジュールの公開している型と変数の型情報
- * @param rootIdentiferIndex 識別子を生成するためのインデックス
- * @param body コード本体
- */
-export const importNodeModule = <
-  moduleDefinition extends ModuleOrGlobalDefinition
->(
-  path: string,
-  moduleDefinition: moduleDefinition,
-  rootIdentiferIndex: number,
-  body: (module: Module<moduleDefinition>) => NodeJsCode
-): { code: NodeJsCode; identiferIndex: number } => {
-  const importIdentiferData = createIdentifer(rootIdentiferIndex, []);
-  const importId = importIdentiferData.string;
-  const code = body(moduleDefinitionToModule(moduleDefinition, importId));
+  typeList: typeList,
+  variableList: variableList
+): {
+  typeList: { [name in ValueOf<typeList> & string]: typeExpr.Global };
+  variableList: { [name in ValueOf<variableList> & string]: GlobalVariable };
+} => {
+  const typeListObject = {} as {
+    [name in ValueOf<typeList> & string]: typeExpr.Global;
+  };
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: GlobalVariable;
+  };
+  for (const typeName of typeList) {
+    typeListObject[typeName as ValueOf<typeList> & string] = {
+      type: typeExpr.TypeExprType.GlobalType,
+      name: typeName
+    };
+  }
+  for (const variableName of variableList) {
+    variableListObject[variableName as ValueOf<variableList> & string] = {
+      type: ExprType.GlobalVariable,
+      name: variableName
+    };
+  }
   return {
-    code: {
-      ...code,
-      importList: code.importList.concat([
-        {
-          id: importId,
-          path: path
-        }
-      ])
-    },
-    identiferIndex: importIdentiferData.nextIndex
+    typeList: typeListObject,
+    variableList: variableListObject
   };
 };
-
 /**
  * 外部に公開する変数を定義する
  * @param name 変数名
@@ -495,7 +455,8 @@ const exprToString = (expr: Expr): string => {
       return expr.name;
 
     case ExprType.ImportedVariable:
-      return (expr.importId as string) + "." + expr.name;
+      // TODO 識別子生成
+      return expr.path + "の間に挟む識別子がほしいところ" + "." + expr.name;
   }
 };
 
