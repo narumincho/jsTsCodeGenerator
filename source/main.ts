@@ -583,7 +583,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     0,
-    scanData.globalName
+    new Set([...scanData.globalName, ...reservedWord])
   );
 
   return (
@@ -632,3 +632,68 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
       .join(";\n")
   );
 };
+
+const reservedWord = new Set([
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "new",
+  "return",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+  "let",
+  "static",
+  "enum",
+  "implements",
+  "package",
+  "protected",
+  "interface",
+  "private",
+  "public",
+  "null",
+  "true",
+  "false",
+  "any",
+  "boolean",
+  "constructor",
+  "declare",
+  "get",
+  "module",
+  "require",
+  "number",
+  "set",
+  "string",
+  "symbol",
+  "type",
+  "from",
+  "of",
+  "as",
+  "unknown"
+]);
