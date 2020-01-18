@@ -583,7 +583,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     0,
-    new Set([...scanData.globalName, ...reservedWord])
+    new Set([...scanData.globalName, ...reservedWordSet])
   );
 
   return (
@@ -633,7 +633,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   );
 };
 
-const reservedWord = new Set([
+const reservedWordSet = new Set([
   "await",
   "break",
   "case",
