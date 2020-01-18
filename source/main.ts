@@ -1,5 +1,6 @@
 import * as typeExpr from "./typeExpr";
 import * as scanType from "./scanType";
+import * as reservedWord from "./reservedWord";
 
 /**
  * 型を識別するためのID
@@ -502,13 +503,23 @@ const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
       return;
 
     case ExprType.ObjectLiteral:
-      for (const [, member] of expr.memberList) {
+      for (const [propertyName, member] of expr.memberList) {
+        reservedWord.checkUsingReservedWord(
+          "object literal property name",
+          "オブジェクトリテラルのプロパティ名",
+          propertyName
+        );
         scanExpr(member, scanData);
       }
       return;
 
     case ExprType.LambdaWithReturn:
       for (const oneParameter of expr.parameter) {
+        reservedWord.checkUsingReservedWord(
+          "function parameter name",
+          "関数のパラメーター名",
+          oneParameter.name
+        );
         typeExpr.scan(oneParameter.typeExpr, scanData);
       }
       typeExpr.scan(expr.returnType, scanData);
@@ -517,16 +528,31 @@ const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
 
     case ExprType.LambdaReturnVoid:
       for (const oneParameter of expr.parameter) {
+        reservedWord.checkUsingReservedWord(
+          "function parameter name",
+          "関数のパラメーター名",
+          oneParameter.name
+        );
         typeExpr.scan(oneParameter.typeExpr, scanData);
       }
       scanExpr(expr.body, scanData);
       return;
 
     case ExprType.GlobalVariable:
+      reservedWord.checkUsingReservedWord(
+        "global variable name",
+        "グローバル空間の変数名",
+        expr.name
+      );
       scanData.globalName.add(expr.name);
       return;
 
     case ExprType.ImportedVariable:
+      reservedWord.checkUsingReservedWord(
+        "imported variable name",
+        "インポートした変数名",
+        expr.name
+      );
       scanData.importedModulePath.add(expr.path);
       return;
   }
@@ -540,10 +566,20 @@ const scanNodeJsCode = (
     importedModulePath: new Set()
   };
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
+    reservedWord.checkUsingReservedWord(
+      "export type name",
+      "型の名前",
+      exportTypeAlias.name
+    );
     scanData.globalName.add(exportTypeAlias.name);
     typeExpr.scan(exportTypeAlias.typeExpr, scanData);
   }
   for (const exportVariable of nodeJsCode.exportVariableList) {
+    reservedWord.checkUsingReservedWord(
+      "export variable name",
+      "変数名",
+      exportVariable.name
+    );
     scanData.globalName.add(exportVariable.name);
     typeExpr.scan(exportVariable.typeExpr, scanData);
     scanExpr(exportVariable.expr, scanData);
@@ -583,7 +619,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     0,
-    new Set([...scanData.globalName, ...reservedWordSet])
+    new Set([...scanData.globalName, ...reservedWord.reservedWordSet])
   );
 
   return (
@@ -632,68 +668,3 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
       .join(";\n")
   );
 };
-
-const reservedWordSet = new Set([
-  "await",
-  "break",
-  "case",
-  "catch",
-  "class",
-  "const",
-  "continue",
-  "debugger",
-  "default",
-  "delete",
-  "do",
-  "else",
-  "export",
-  "extends",
-  "finally",
-  "for",
-  "function",
-  "if",
-  "import",
-  "in",
-  "instanceof",
-  "new",
-  "return",
-  "super",
-  "switch",
-  "this",
-  "throw",
-  "try",
-  "typeof",
-  "var",
-  "void",
-  "while",
-  "with",
-  "yield",
-  "let",
-  "static",
-  "enum",
-  "implements",
-  "package",
-  "protected",
-  "interface",
-  "private",
-  "public",
-  "null",
-  "true",
-  "false",
-  "any",
-  "boolean",
-  "constructor",
-  "declare",
-  "get",
-  "module",
-  "require",
-  "number",
-  "set",
-  "string",
-  "symbol",
-  "type",
-  "from",
-  "of",
-  "as",
-  "unknown"
-]);
