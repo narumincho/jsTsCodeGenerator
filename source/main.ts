@@ -58,7 +58,8 @@ export type Expr =
   | GlobalVariable
   | ImportedVariable
   | ArgumentVariable
-  | GetProperty;
+  | GetProperty
+  | Call;
 
 const enum ExprType {
   NumberLiteral,
@@ -74,7 +75,8 @@ const enum ExprType {
   GlobalVariable,
   ImportedVariable,
   Argument,
-  GetProperty
+  GetProperty,
+  Call
 }
 
 type NumberLiteral = {
@@ -153,6 +155,12 @@ type GetProperty = {
   type: ExprType.GetProperty;
   expr: Expr;
   propertyName: string;
+};
+
+type Call = {
+  type: ExprType.Call;
+  expr: Expr;
+  parameterList: ReadonlyArray<Expr>;
 };
 /* ======================================================================================
  *                                      Module
@@ -418,6 +426,18 @@ export const getProperty = (expr: Expr, propertyName: string): Expr => ({
   expr,
   propertyName
 });
+
+/**
+ * 関数を呼ぶ
+ * @param expr 式
+ * @param parameterList パラメーターのリスト
+ */
+export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
+  type: ExprType.Call,
+  expr,
+  parameterList
+});
+
 /**
  * 識別子を生成する
  */
@@ -568,6 +588,16 @@ const exprToString = (
         exprToString(expr.expr, importedModuleNameMap) +
         ")." +
         expr.propertyName
+      );
+
+    case ExprType.Call:
+      return (
+        exprToString(expr.expr, importedModuleNameMap) +
+        "(" +
+        expr.parameterList
+          .map(e => exprToString(e, importedModuleNameMap))
+          .join(", ") +
+        ")"
       );
   }
 };

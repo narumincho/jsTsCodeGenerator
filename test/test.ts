@@ -136,11 +136,16 @@ describe("test", () => {
             ],
             args =>
               generator.add(
-                generator.stringLiteral("途中"),
-                generator.getProperty(
-                  generator.getProperty(args[0], "headers"),
-                  "accept"
-                )
+                generator.add(
+                  generator.stringLiteral("途中"),
+                  generator.getProperty(
+                    generator.getProperty(args[0], "headers"),
+                    "accept"
+                  )
+                ),
+                generator.call(generator.getProperty(args[0], "send"), [
+                  generator.stringLiteral("レスポンス")
+                ])
               )
           )
         }
