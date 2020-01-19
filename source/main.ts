@@ -650,8 +650,10 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
     nodeJsCode.exportVariableList
       .map(
         exportVariable =>
-          "/** " +
-          exportVariable.document +
+          "/** \n * " +
+          exportVariable.document.split("\n").join("\n * ") +
+          "\n" +
+          exportVariableGetParameterDocument(exportVariable) +
           " */\nexport const " +
           exportVariable.name +
           ": " +
@@ -667,4 +669,23 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
       )
       .join(";\n")
   );
+};
+
+/**
+ *
+ * @param exportVariable
+ */
+const exportVariableGetParameterDocument = (
+  exportVariable: ExportVariable
+): string => {
+  switch (exportVariable.typeExpr.type) {
+    case typeExpr.TypeExprType.FunctionWithReturn:
+    case typeExpr.TypeExprType.FunctionReturnVoid:
+      return (
+        exportVariable.typeExpr.parameter
+          .map(p => " * @param " + p.name + " " + p.document)
+          .join("\n") + "\n"
+      );
+  }
+  return "";
 };
