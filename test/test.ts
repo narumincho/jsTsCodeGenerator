@@ -134,7 +134,14 @@ describe("test", () => {
                 typeExpr: expressModule.typeList.Response
               }
             ],
-            args => generator.add(generator.stringLiteral("途中"), args[0])
+            args =>
+              generator.add(
+                generator.stringLiteral("途中"),
+                generator.getProperty(
+                  generator.getProperty(args[0], "headers"),
+                  "accept"
+                )
+              )
           )
         }
       ]

@@ -57,7 +57,8 @@ export type Expr =
   | LambdaReturnVoid
   | GlobalVariable
   | ImportedVariable
-  | ArgumentVariable;
+  | ArgumentVariable
+  | GetProperty;
 
 const enum ExprType {
   NumberLiteral,
@@ -72,7 +73,8 @@ const enum ExprType {
   LambdaReturnVoid,
   GlobalVariable,
   ImportedVariable,
-  Argument
+  Argument,
+  GetProperty
 }
 
 type NumberLiteral = {
@@ -145,6 +147,12 @@ type ImportedVariable = {
 type ArgumentVariable = {
   type: ExprType.Argument;
   name: string;
+};
+
+type GetProperty = {
+  type: ExprType.GetProperty;
+  expr: Expr;
+  propertyName: string;
 };
 /* ======================================================================================
  *                                      Module
@@ -401,6 +409,16 @@ export const createLambdaReturnVoid = <
 });
 
 /**
+ * プロパティの値を取得する
+ * @param expr 式
+ * @param propertyName プロパティ
+ */
+export const getProperty = (expr: Expr, propertyName: string): Expr => ({
+  type: ExprType.GetProperty,
+  expr,
+  propertyName
+});
+/**
  * 識別子を生成する
  */
 const createIdentifer = (
@@ -543,6 +561,14 @@ const exprToString = (
     }
     case ExprType.Argument:
       return expr.name;
+
+    case ExprType.GetProperty:
+      return (
+        "(" +
+        exprToString(expr.expr, importedModuleNameMap) +
+        ")." +
+        expr.propertyName
+      );
   }
 };
 
