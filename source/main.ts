@@ -2,6 +2,8 @@ import * as typeExpr from "./typeExpr";
 import * as scanType from "./scanType";
 import * as reservedWord from "./reservedWord";
 
+export { typeExpr };
+
 /**
  * 型を識別するためのID
  */
