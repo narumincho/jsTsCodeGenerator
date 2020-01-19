@@ -98,6 +98,28 @@ describe("test", () => {
       generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     }).toThrow();
   });
+  it("escape string literal", () => {
+    const nodeJsCode: generator.NodeJsCode = {
+      exportTypeAliasList: [],
+      exportVariableList: [
+        {
+          name: "stringValue",
+          document: "文字列リテラルでエスケープしているか調べる",
+          expr: generator.stringLiteral(`
+
+        改行
+        "ダブルクオーテーション"
+`),
+          typeExpr: generator.typeExpr.typeString
+        }
+      ]
+    };
+    const codeAsString = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/\\"/);
+    expect(codeAsString).toMatch(/\\n/);
+  });
+
   it("include function parameter name", () => {
     const expressModule = generator.createImportNodeModule<
       ["Request", "Response"],
