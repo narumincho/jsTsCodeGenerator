@@ -313,6 +313,37 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
 };
 
 /**
+ * 戻り値のあるラムダ式
+ * @param parameter パラメーター
+ * @param returnType 戻り値
+ * @param body 本体
+ */
+export const createLambdaWithReturn = (
+  parameter: ReadonlyArray<typeExpr.OneParameter>,
+  returnType: typeExpr.TypeExpr,
+  body: Expr
+): Expr => ({
+  type: ExprType.LambdaWithReturn,
+  parameter,
+  returnType,
+  body
+});
+
+/**
+ * 戻り値のないラムダ式
+ * @param parameter パラメーター
+ * @param body 本体
+ */
+export const createLambdaReturnVoid = (
+  parameter: ReadonlyArray<typeExpr.OneParameter>,
+  body: Expr
+): Expr => ({
+  type: ExprType.LambdaReturnVoid,
+  parameter,
+  body
+});
+
+/**
  * 識別子を生成する
  */
 const createIdentifer = (
