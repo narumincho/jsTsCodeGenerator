@@ -78,4 +78,20 @@ describe("test", () => {
   it("include import path", () => {
     expect(nodeJsTypeScriptCode).toMatch(importPath);
   });
+  it("not include revered word", () => {
+    const nodeJsCode = {
+      exportTypeAliasList: [],
+      exportVariableList: [
+        {
+          name: "new",
+          document: "newという名前の変数",
+          typeExpr: typeExpr.typeString,
+          expr: main.stringLiteral("newData")
+        }
+      ]
+    };
+    expect(() => {
+      main.toNodeJsCodeAsTypeScript(nodeJsCode);
+    }).toThrow();
+  });
 });
