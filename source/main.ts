@@ -230,43 +230,6 @@ export const createGlobalNamespace = <
   };
 };
 /**
- * 外部に公開する変数を定義する
- * @param name 変数名
- * @param typeExpr 型
- * @param expr 式
- * @param document ドキュメント
- * @param body コード本体
- */
-export const addExportVariable = <
-  name extends string,
-  typeExpr extends typeExpr.TypeExpr
->(
-  name: name,
-  typeExpr: typeExpr,
-  expr: Expr,
-  document: string,
-  body: (variable: {
-    type: ExprType.GlobalVariable;
-    name: string;
-    _type: typeExpr;
-  }) => NodeJsCode
-): NodeJsCode => {
-  const code = body({
-    type: ExprType.GlobalVariable,
-    name: name,
-    _type: typeExpr
-  });
-  return {
-    ...code,
-    exportVariableList: code.exportVariableList.concat({
-      name: name,
-      typeExpr: typeExpr,
-      expr: expr,
-      document: document
-    })
-  };
-};
-/**
  * 空のNode.js用コード
  */
 export const emptyNodeJsCode: NodeJsCode = {
