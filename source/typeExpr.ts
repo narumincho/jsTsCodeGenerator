@@ -190,8 +190,11 @@ const parameterAndReturnToString = (
 ): string =>
   "(" +
   parameterList
-    .map(parameter =>
-      typeExprToString(parameter.typeExpr, importedModuleNameMap)
+    .map(
+      parameter =>
+        parameter.name +
+        ": " +
+        typeExprToString(parameter.typeExpr, importedModuleNameMap)
     )
     .join(", ") +
   ")=>" +

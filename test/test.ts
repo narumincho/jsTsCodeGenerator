@@ -95,4 +95,35 @@ describe("test", () => {
       generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     }).toThrow();
   });
+  it("include function parameter name", () => {
+    const expressModule = generator.createImportNodeModule<
+      ["Request", "Response"],
+      []
+    >("express", ["Request", "Response"], []);
+    const nodeJsCode: generator.NodeJsCode = {
+      exportTypeAliasList: [],
+      exportVariableList: [
+        {
+          name: "middleware",
+          typeExpr: generator.typeExpr.functionReturnVoid([
+            {
+              name: "request",
+              document: "リクエスト",
+              typeExpr: expressModule.typeList.Request
+            },
+            {
+              name: "response",
+              document: "レスポンス",
+              typeExpr: expressModule.typeList.Response
+            }
+          ]),
+          document: "ミドルウェア",
+          expr: generator.stringLiteral("まだ途中")
+        }
+      ]
+    };
+    const code = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
+    console.log(code);
+    expect(code).toMatch("request");
+  });
 });
