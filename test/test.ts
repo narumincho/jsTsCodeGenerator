@@ -20,6 +20,7 @@ describe("test", () => {
    * }
    *
    */
+
   const importPath = "./express";
   const expressImportedModule = generator.createImportNodeModule<
     ["Request", "Response"],
@@ -120,7 +121,21 @@ describe("test", () => {
             }
           ]),
           document: "ミドルウェア",
-          expr: generator.stringLiteral("まだ途中")
+          expr: generator.createLambdaReturnVoid<["request", "response"]>(
+            [
+              {
+                name: "request",
+                document: "リクエスト",
+                typeExpr: expressModule.typeList.Request
+              },
+              {
+                name: "response",
+                document: "レスポンス",
+                typeExpr: expressModule.typeList.Response
+              }
+            ],
+            args => generator.add(generator.stringLiteral("途中"), args[0])
+          )
         }
       ]
     };
@@ -128,27 +143,4 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("request");
   });
-
-  // 普通の引数の作り方じゃうまくいかない? いやimportModuleを参考にしよう
-  generator.createLambdaWithReturn<
-    [
-      {
-        name: "arg0";
-        document: "引数0";
-        typeExpr: generator.typeExpr.typeString;
-      }
-    ]
-  >(
-    [
-      {
-        name: "arg0",
-        document: "引数0",
-        typeExpr: generator.typeExpr.typeString
-      }
-    ],
-    generator.typeExpr.typeString,
-    arg => {
-      arg;
-    }
-  );
 });

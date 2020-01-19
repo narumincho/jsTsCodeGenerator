@@ -260,6 +260,7 @@ export const stringLiteral = (string: string): Expr => ({
   type: ExprType.StringLiteral,
   value: string
 });
+
 /**
  * 数値の足し算 ??? + ???
  * @param left 左辺
@@ -325,14 +326,23 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * @param body 本体
  */
 export const createLambdaWithReturn = <
-  parameterList extends ReadonlyArray<typeExpr.OneParameter>
+  parameterNameList extends ReadonlyArray<string>
 >(
-  parameter: parameterList,
+  parameter: Array<
+    ValueOf<
+      {
+        [nameIndex in keyof parameterNameList &
+          number]: typeExpr.OneParameter & {
+          name: parameterNameList[nameIndex];
+        };
+      }
+    >
+  >,
   returnType: typeExpr.TypeExpr,
   body: (
     parameterList: {
-      [key in keyof parameterList & number]: ArgumentVariable & {
-        name: parameterList[key]["name"];
+      [nameIndex in keyof parameterNameList & number]: ArgumentVariable & {
+        name: parameterNameList[nameIndex];
       };
     }
   ) => Expr
@@ -341,10 +351,13 @@ export const createLambdaWithReturn = <
   parameter,
   returnType,
   body: body(
-    parameter.map(o => ({
-      type: ExprType.Argument,
-      name: o.name
-    }))
+    parameter.map(
+      (o: { name: ValueOf<parameterNameList> }) =>
+        ({
+          type: ExprType.Argument,
+          name: o.name
+        } as ArgumentVariable)
+    )
   )
 });
 
@@ -353,13 +366,38 @@ export const createLambdaWithReturn = <
  * @param parameter パラメーター
  * @param body 本体
  */
-export const createLambdaReturnVoid = (
-  parameter: ReadonlyArray<typeExpr.OneParameter>,
-  body: Expr
+export const createLambdaReturnVoid = <
+  parameterNameList extends ReadonlyArray<string>
+>(
+  parameter: Array<
+    ValueOf<
+      {
+        [nameIndex in keyof parameterNameList &
+          number]: typeExpr.OneParameter & {
+          name: parameterNameList[nameIndex];
+        };
+      }
+    >
+  >,
+  body: (
+    parameterList: {
+      [nameIndex in keyof parameterNameList & number]: ArgumentVariable & {
+        name: parameterNameList[nameIndex];
+      };
+    }
+  ) => Expr
 ): Expr => ({
   type: ExprType.LambdaReturnVoid,
   parameter,
-  body
+  body: body(
+    parameter.map(
+      (o: { name: ValueOf<parameterNameList> }) =>
+        ({
+          type: ExprType.Argument,
+          name: o.name
+        } as ArgumentVariable)
+    )
+  )
 });
 
 /**
