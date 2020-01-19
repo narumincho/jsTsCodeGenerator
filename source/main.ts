@@ -531,7 +531,7 @@ const exprToString = (
       );
 
     case ExprType.StringLiteral:
-      return '"' + expr.value + '"';
+      return stringLiteralValueToString(expr.value);
 
     case ExprType.StringConcatenate:
       return (
@@ -638,6 +638,10 @@ const exprToString = (
         "}"
       );
   }
+};
+
+const stringLiteralValueToString = (value: string): string => {
+  return '"' + value.replace(/"/gu, '\\"').replace(/\n/gu, "\\n") + '"';
 };
 
 /**
