@@ -56,7 +56,11 @@ export type Expr =
   | LambdaWithReturn
   | LambdaReturnVoid
   | GlobalVariable
-  | ImportedVariable;
+  | ImportedVariable
+  | ArgumentVariable
+  | GetProperty
+  | Call
+  | IfWithVoidReturn;
 
 const enum ExprType {
   NumberLiteral,
@@ -70,7 +74,11 @@ const enum ExprType {
   LambdaWithReturn,
   LambdaReturnVoid,
   GlobalVariable,
-  ImportedVariable
+  ImportedVariable,
+  Argument,
+  GetProperty,
+  Call,
+  IfWithVoidReturn
 }
 
 type NumberLiteral = {
@@ -140,6 +148,29 @@ type ImportedVariable = {
   name: string;
 };
 
+type ArgumentVariable = {
+  type: ExprType.Argument;
+  name: string;
+};
+
+type GetProperty = {
+  type: ExprType.GetProperty;
+  expr: Expr;
+  propertyName: string;
+};
+
+type Call = {
+  type: ExprType.Call;
+  expr: Expr;
+  parameterList: ReadonlyArray<Expr>;
+};
+
+type IfWithVoidReturn = {
+  type: ExprType.IfWithVoidReturn;
+  condition: Expr;
+  then: Expr;
+  else_: Expr;
+};
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
@@ -254,6 +285,7 @@ export const stringLiteral = (string: string): Expr => ({
   type: ExprType.StringLiteral,
   value: string
 });
+
 /**
  * 数値の足し算 ??? + ???
  * @param left 左辺
@@ -318,15 +350,40 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * @param returnType 戻り値
  * @param body 本体
  */
-export const createLambdaWithReturn = (
-  parameter: ReadonlyArray<typeExpr.OneParameter>,
+export const createLambdaWithReturn = <
+  parameterNameList extends ReadonlyArray<string>
+>(
+  parameter: Array<
+    ValueOf<
+      {
+        [nameIndex in keyof parameterNameList &
+          number]: typeExpr.OneParameter & {
+          name: parameterNameList[nameIndex];
+        };
+      }
+    >
+  >,
   returnType: typeExpr.TypeExpr,
-  body: Expr
+  body: (
+    parameterList: {
+      [nameIndex in keyof parameterNameList & number]: ArgumentVariable & {
+        name: parameterNameList[nameIndex];
+      };
+    }
+  ) => Expr
 ): Expr => ({
   type: ExprType.LambdaWithReturn,
   parameter,
   returnType,
-  body
+  body: body(
+    parameter.map(
+      (o: { name: ValueOf<parameterNameList> }) =>
+        ({
+          type: ExprType.Argument,
+          name: o.name
+        } as ArgumentVariable)
+    )
+  )
 });
 
 /**
@@ -334,13 +391,76 @@ export const createLambdaWithReturn = (
  * @param parameter パラメーター
  * @param body 本体
  */
-export const createLambdaReturnVoid = (
-  parameter: ReadonlyArray<typeExpr.OneParameter>,
-  body: Expr
+export const createLambdaReturnVoid = <
+  parameterNameList extends ReadonlyArray<string>
+>(
+  parameter: Array<
+    ValueOf<
+      {
+        [nameIndex in keyof parameterNameList &
+          number]: typeExpr.OneParameter & {
+          name: parameterNameList[nameIndex];
+        };
+      }
+    >
+  >,
+  body: (
+    parameterList: {
+      [nameIndex in keyof parameterNameList & number]: ArgumentVariable & {
+        name: parameterNameList[nameIndex];
+      };
+    }
+  ) => Expr
 ): Expr => ({
   type: ExprType.LambdaReturnVoid,
   parameter,
-  body
+  body: body(
+    parameter.map(
+      (o: { name: ValueOf<parameterNameList> }) =>
+        ({
+          type: ExprType.Argument,
+          name: o.name
+        } as ArgumentVariable)
+    )
+  )
+});
+
+/**
+ * プロパティの値を取得する
+ * @param expr 式
+ * @param propertyName プロパティ
+ */
+export const getProperty = (expr: Expr, propertyName: string): Expr => ({
+  type: ExprType.GetProperty,
+  expr,
+  propertyName
+});
+
+/**
+ * 関数を呼ぶ
+ * @param expr 式
+ * @param parameterList パラメーターのリスト
+ */
+export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
+  type: ExprType.Call,
+  expr,
+  parameterList
+});
+
+/**
+ * 条件で分岐して、条件を満たしていた場合、早くreturnする
+ * @param identiferIndex
+ * @param reserved
+ */
+export const ifWithVoidReturn = (
+  condition: Expr,
+  then: Expr,
+  else_: Expr
+): Expr => ({
+  type: ExprType.IfWithVoidReturn,
+  condition,
+  then,
+  else_
 });
 
 /**
@@ -484,6 +604,39 @@ const exprToString = (
       }
       return importedModuleName + "." + expr.name;
     }
+
+    case ExprType.Argument:
+      return expr.name;
+
+    case ExprType.GetProperty:
+      return (
+        "(" +
+        exprToString(expr.expr, importedModuleNameMap) +
+        ")." +
+        expr.propertyName
+      );
+
+    case ExprType.Call:
+      return (
+        exprToString(expr.expr, importedModuleNameMap) +
+        "(" +
+        expr.parameterList
+          .map(e => exprToString(e, importedModuleNameMap))
+          .join(", ") +
+        ")"
+      );
+
+    case ExprType.IfWithVoidReturn:
+      return (
+        "{\nif(" +
+        exprToString(expr.condition, importedModuleNameMap) +
+        "){" +
+        exprToString(expr.then, importedModuleNameMap) +
+        ";\n  return;" +
+        "}\n" +
+        exprToString(expr.else_, importedModuleNameMap) +
+        "}"
+      );
   }
 };
 
@@ -554,6 +707,21 @@ const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
         expr.name
       );
       scanData.importedModulePath.add(expr.path);
+      return;
+
+    case ExprType.Argument:
+      reservedWord.checkUsingReservedWord(
+        "argument name",
+        "ラムダ式の引数の変数名",
+        expr.name
+      );
+      scanData.globalName.add(expr.name);
+      return;
+
+    case ExprType.IfWithVoidReturn:
+      scanExpr(expr.condition, scanData);
+      scanExpr(expr.then, scanData);
+      scanExpr(expr.else_, scanData);
       return;
   }
 };

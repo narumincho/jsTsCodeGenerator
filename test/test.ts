@@ -20,6 +20,7 @@ describe("test", () => {
    * }
    *
    */
+
   const importPath = "./express";
   const expressImportedModule = generator.createImportNodeModule<
     ["Request", "Response"],
@@ -120,7 +121,35 @@ describe("test", () => {
             }
           ]),
           document: "ミドルウェア",
-          expr: generator.stringLiteral("まだ途中")
+          expr: generator.createLambdaReturnVoid<["request", "response"]>(
+            [
+              {
+                name: "request",
+                document: "リクエスト",
+                typeExpr: expressModule.typeList.Request
+              },
+              {
+                name: "response",
+                document: "レスポンス",
+                typeExpr: expressModule.typeList.Response
+              }
+            ],
+            args =>
+              generator.ifWithVoidReturn(
+                generator.getProperty(
+                  generator.getProperty(args[0], "headers"),
+                  "accept"
+                ),
+                generator.call(generator.getProperty(args[0], "send"), [
+                  generator.stringLiteral(
+                    "HTMLをリクエストした。ドキュメントとクライアント用のコードを返したい"
+                  )
+                ]),
+                generator.call(generator.getProperty(args[0], "send"), [
+                  generator.stringLiteral("APIとして動作したい")
+                ])
+              )
+          )
         }
       ]
     };
