@@ -237,9 +237,13 @@ export const emptyNodeJsCode: NodeJsCode = {
   exportVariableList: []
 };
 
-export const numberLiteral = (value: string): Expr => ({
+/**
+ * 数値リテラル
+ * @param value 値
+ */
+export const numberLiteral = (value: number): Expr => ({
   type: ExprType.NumberLiteral,
-  value: value
+  value: value.toString()
 });
 
 /**
