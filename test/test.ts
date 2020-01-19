@@ -135,16 +135,18 @@ describe("test", () => {
               }
             ],
             args =>
-              generator.add(
-                generator.add(
-                  generator.stringLiteral("途中"),
-                  generator.getProperty(
-                    generator.getProperty(args[0], "headers"),
-                    "accept"
-                  )
+              generator.ifWithVoidReturn(
+                generator.getProperty(
+                  generator.getProperty(args[0], "headers"),
+                  "accept"
                 ),
                 generator.call(generator.getProperty(args[0], "send"), [
-                  generator.stringLiteral("レスポンス")
+                  generator.stringLiteral(
+                    "HTMLをリクエストした。ドキュメントとクライアント用のコードを返したい"
+                  )
+                ]),
+                generator.call(generator.getProperty(args[0], "send"), [
+                  generator.stringLiteral("APIとして動作したい")
                 ])
               )
           )

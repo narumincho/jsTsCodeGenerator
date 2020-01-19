@@ -59,7 +59,8 @@ export type Expr =
   | ImportedVariable
   | ArgumentVariable
   | GetProperty
-  | Call;
+  | Call
+  | IfWithVoidReturn;
 
 const enum ExprType {
   NumberLiteral,
@@ -76,7 +77,8 @@ const enum ExprType {
   ImportedVariable,
   Argument,
   GetProperty,
-  Call
+  Call,
+  IfWithVoidReturn
 }
 
 type NumberLiteral = {
@@ -161,6 +163,13 @@ type Call = {
   type: ExprType.Call;
   expr: Expr;
   parameterList: ReadonlyArray<Expr>;
+};
+
+type IfWithVoidReturn = {
+  type: ExprType.IfWithVoidReturn;
+  condition: Expr;
+  then: Expr;
+  else_: Expr;
 };
 /* ======================================================================================
  *                                      Module
@@ -439,6 +448,22 @@ export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
 });
 
 /**
+ * 条件で分岐して、条件を満たしていた場合、早くreturnする
+ * @param identiferIndex
+ * @param reserved
+ */
+export const ifWithVoidReturn = (
+  condition: Expr,
+  then: Expr,
+  else_: Expr
+): Expr => ({
+  type: ExprType.IfWithVoidReturn,
+  condition,
+  then,
+  else_
+});
+
+/**
  * 識別子を生成する
  */
 const createIdentifer = (
@@ -579,6 +604,7 @@ const exprToString = (
       }
       return importedModuleName + "." + expr.name;
     }
+
     case ExprType.Argument:
       return expr.name;
 
@@ -598,6 +624,18 @@ const exprToString = (
           .map(e => exprToString(e, importedModuleNameMap))
           .join(", ") +
         ")"
+      );
+
+    case ExprType.IfWithVoidReturn:
+      return (
+        "{\nif(" +
+        exprToString(expr.condition, importedModuleNameMap) +
+        "){" +
+        exprToString(expr.then, importedModuleNameMap) +
+        ";\n  return;" +
+        "}\n" +
+        exprToString(expr.else_, importedModuleNameMap) +
+        "}"
       );
   }
 };
@@ -678,6 +716,12 @@ const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
         expr.name
       );
       scanData.globalName.add(expr.name);
+      return;
+
+    case ExprType.IfWithVoidReturn:
+      scanExpr(expr.condition, scanData);
+      scanExpr(expr.then, scanData);
+      scanExpr(expr.else_, scanData);
       return;
   }
 };
