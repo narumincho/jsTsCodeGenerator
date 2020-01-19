@@ -230,43 +230,6 @@ export const createGlobalNamespace = <
   };
 };
 /**
- * 外部に公開する変数を定義する
- * @param name 変数名
- * @param typeExpr 型
- * @param expr 式
- * @param document ドキュメント
- * @param body コード本体
- */
-export const addExportVariable = <
-  name extends string,
-  typeExpr extends typeExpr.TypeExpr
->(
-  name: name,
-  typeExpr: typeExpr,
-  expr: Expr,
-  document: string,
-  body: (variable: {
-    type: ExprType.GlobalVariable;
-    name: string;
-    _type: typeExpr;
-  }) => NodeJsCode
-): NodeJsCode => {
-  const code = body({
-    type: ExprType.GlobalVariable,
-    name: name,
-    _type: typeExpr
-  });
-  return {
-    ...code,
-    exportVariableList: code.exportVariableList.concat({
-      name: name,
-      typeExpr: typeExpr,
-      expr: expr,
-      document: document
-    })
-  };
-};
-/**
  * 空のNode.js用コード
  */
 export const emptyNodeJsCode: NodeJsCode = {
@@ -274,9 +237,13 @@ export const emptyNodeJsCode: NodeJsCode = {
   exportVariableList: []
 };
 
-export const numberLiteral = (value: string): Expr => ({
+/**
+ * 数値リテラル
+ * @param value 値
+ */
+export const numberLiteral = (value: number): Expr => ({
   type: ExprType.NumberLiteral,
-  value: value
+  value: value.toString()
 });
 
 /**
@@ -344,6 +311,37 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
     memberList: memberList
   };
 };
+
+/**
+ * 戻り値のあるラムダ式
+ * @param parameter パラメーター
+ * @param returnType 戻り値
+ * @param body 本体
+ */
+export const createLambdaWithReturn = (
+  parameter: ReadonlyArray<typeExpr.OneParameter>,
+  returnType: typeExpr.TypeExpr,
+  body: Expr
+): Expr => ({
+  type: ExprType.LambdaWithReturn,
+  parameter,
+  returnType,
+  body
+});
+
+/**
+ * 戻り値のないラムダ式
+ * @param parameter パラメーター
+ * @param body 本体
+ */
+export const createLambdaReturnVoid = (
+  parameter: ReadonlyArray<typeExpr.OneParameter>,
+  body: Expr
+): Expr => ({
+  type: ExprType.LambdaReturnVoid,
+  parameter,
+  body
+});
 
 /**
  * 識別子を生成する
@@ -652,8 +650,10 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
     nodeJsCode.exportVariableList
       .map(
         exportVariable =>
-          "/** " +
-          exportVariable.document +
+          "/** \n * " +
+          exportVariable.document.split("\n").join("\n * ") +
+          "\n" +
+          exportVariableGetParameterDocument(exportVariable) +
           " */\nexport const " +
           exportVariable.name +
           ": " +
@@ -669,4 +669,23 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
       )
       .join(";\n")
   );
+};
+
+/**
+ *
+ * @param exportVariable
+ */
+const exportVariableGetParameterDocument = (
+  exportVariable: ExportVariable
+): string => {
+  switch (exportVariable.typeExpr.type) {
+    case typeExpr.TypeExprType.FunctionWithReturn:
+    case typeExpr.TypeExprType.FunctionReturnVoid:
+      return (
+        exportVariable.typeExpr.parameter
+          .map(p => " * @param " + p.name + " " + p.document)
+          .join("\n") + "\n"
+      );
+  }
+  return "";
 };

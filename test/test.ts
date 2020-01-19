@@ -30,38 +30,40 @@ describe("test", () => {
     ["console"]
   >(["Uint8Array"], ["console"]);
 
-  const sampleCode: generator.NodeJsCode = generator.addExportVariable(
-    "middleware",
-    generator.typeExpr.functionReturnVoid([
+  const sampleCode: generator.NodeJsCode = {
+    exportTypeAliasList: [],
+    exportVariableList: [
       {
-        name: "request",
-        document: "expressのリクエスト",
-        typeExpr: expressImportedModule.typeList.Request
+        name: "middleware",
+        document: "ミドルウェア",
+        expr: generator.stringLiteral("文字列のリテラル"),
+        typeExpr: generator.typeExpr.functionReturnVoid([
+          {
+            name: "request",
+            document: "expressのリクエスト",
+            typeExpr: expressImportedModule.typeList.Request
+          },
+          {
+            name: "response",
+            document: "expressのレスポンス",
+            typeExpr: expressImportedModule.typeList.Response
+          }
+        ])
       },
       {
-        name: "response",
-        document: "expressのレスポンス",
-        typeExpr: expressImportedModule.typeList.Response
-      }
-    ]),
-    generator.stringLiteral("文字列のリテラル"),
-    "サンプルの文字列の変数",
-    () =>
-      generator.addExportVariable(
-        "sorena",
-        generator.typeExpr.object(
+        name: "sorena",
+        document: "ドキュメント",
+        typeExpr: generator.typeExpr.object(
           new Map([
             ["name", { document: "", typeExpr: generator.typeExpr.typeString }]
           ])
         ),
-        generator.createObjectLiteral(
+        expr: generator.createObjectLiteral(
           new Map([["name", generator.stringLiteral("sorena")]])
-        ),
-        "ドキュメント",
-        () => generator.emptyNodeJsCode
-      )
-  );
-
+        )
+      }
+    ]
+  };
   const start = performance.now();
   const nodeJsTypeScriptCode = generator.toNodeJsCodeAsTypeScript(sampleCode);
   const time = performance.now() - start;
@@ -94,5 +96,36 @@ describe("test", () => {
     expect(() => {
       generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     }).toThrow();
+  });
+  it("include function parameter name", () => {
+    const expressModule = generator.createImportNodeModule<
+      ["Request", "Response"],
+      []
+    >("express", ["Request", "Response"], []);
+    const nodeJsCode: generator.NodeJsCode = {
+      exportTypeAliasList: [],
+      exportVariableList: [
+        {
+          name: "middleware",
+          typeExpr: generator.typeExpr.functionReturnVoid([
+            {
+              name: "request",
+              document: "リクエスト",
+              typeExpr: expressModule.typeList.Request
+            },
+            {
+              name: "response",
+              document: "レスポンス",
+              typeExpr: expressModule.typeList.Response
+            }
+          ]),
+          document: "ミドルウェア",
+          expr: generator.stringLiteral("まだ途中")
+        }
+      ]
+    };
+    const code = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
+    console.log(code);
+    expect(code).toMatch("request");
   });
 });
