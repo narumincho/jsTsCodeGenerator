@@ -1,5 +1,4 @@
-import * as main from "../source/main";
-import * as typeExpr from "../source/typeExpr";
+import * as generator from "../source/main";
 import { performance } from "perf_hooks";
 
 describe("test", () => {
@@ -22,18 +21,18 @@ describe("test", () => {
    *
    */
   const importPath = "./express";
-  const expressImportedModule = main.createImportNodeModule<
+  const expressImportedModule = generator.createImportNodeModule<
     ["Request", "Response"],
     []
   >(importPath, ["Request", "Response"], []);
-  const globalNamespace = main.createGlobalNamespace<
+  const globalNamespace = generator.createGlobalNamespace<
     ["Uint8Array"],
     ["console"]
   >(["Uint8Array"], ["console"]);
 
-  const sampleCode: main.NodeJsCode = main.addExportVariable(
+  const sampleCode: generator.NodeJsCode = generator.addExportVariable(
     "middleware",
-    typeExpr.functionReturnVoid([
+    generator.typeExpr.functionReturnVoid([
       {
         name: "request",
         document: "expressのリクエスト",
@@ -45,24 +44,26 @@ describe("test", () => {
         typeExpr: expressImportedModule.typeList.Response
       }
     ]),
-    main.stringLiteral("文字列のリテラル"),
+    generator.stringLiteral("文字列のリテラル"),
     "サンプルの文字列の変数",
     () =>
-      main.addExportVariable(
+      generator.addExportVariable(
         "sorena",
-        typeExpr.object(
-          new Map([["name", { document: "", typeExpr: typeExpr.typeString }]])
+        generator.typeExpr.object(
+          new Map([
+            ["name", { document: "", typeExpr: generator.typeExpr.typeString }]
+          ])
         ),
-        main.createObjectLiteral(
-          new Map([["name", main.stringLiteral("sorena")]])
+        generator.createObjectLiteral(
+          new Map([["name", generator.stringLiteral("sorena")]])
         ),
         "ドキュメント",
-        () => main.emptyNodeJsCode
+        () => generator.emptyNodeJsCode
       )
   );
 
   const start = performance.now();
-  const nodeJsTypeScriptCode = main.toNodeJsCodeAsTypeScript(sampleCode);
+  const nodeJsTypeScriptCode = generator.toNodeJsCodeAsTypeScript(sampleCode);
   const time = performance.now() - start;
   console.log(time.toString() + "ms");
   console.log(nodeJsTypeScriptCode);
@@ -85,13 +86,13 @@ describe("test", () => {
         {
           name: "new",
           document: "newという名前の変数",
-          typeExpr: typeExpr.typeString,
-          expr: main.stringLiteral("newData")
+          typeExpr: generator.typeExpr.typeString,
+          expr: generator.stringLiteral("newData")
         }
       ]
     };
     expect(() => {
-      main.toNodeJsCodeAsTypeScript(nodeJsCode);
+      generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     }).toThrow();
   });
 });
