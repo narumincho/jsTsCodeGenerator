@@ -128,4 +128,27 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("request");
   });
+
+  // 普通の引数の作り方じゃうまくいかない? いやimportModuleを参考にしよう
+  generator.createLambdaWithReturn<
+    [
+      {
+        name: "arg0";
+        document: "引数0";
+        typeExpr: generator.typeExpr.typeString;
+      }
+    ]
+  >(
+    [
+      {
+        name: "arg0",
+        document: "引数0",
+        typeExpr: generator.typeExpr.typeString
+      }
+    ],
+    generator.typeExpr.typeString,
+    arg => {
+      arg;
+    }
+  );
 });

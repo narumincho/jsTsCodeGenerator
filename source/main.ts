@@ -56,7 +56,8 @@ export type Expr =
   | LambdaWithReturn
   | LambdaReturnVoid
   | GlobalVariable
-  | ImportedVariable;
+  | ImportedVariable
+  | ArgumentVariable;
 
 const enum ExprType {
   NumberLiteral,
@@ -70,7 +71,8 @@ const enum ExprType {
   LambdaWithReturn,
   LambdaReturnVoid,
   GlobalVariable,
-  ImportedVariable
+  ImportedVariable,
+  Argument
 }
 
 type NumberLiteral = {
@@ -140,6 +142,10 @@ type ImportedVariable = {
   name: string;
 };
 
+type ArgumentVariable = {
+  type: ExprType.Argument;
+  name: string;
+};
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
@@ -318,15 +324,28 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * @param returnType 戻り値
  * @param body 本体
  */
-export const createLambdaWithReturn = (
-  parameter: ReadonlyArray<typeExpr.OneParameter>,
+export const createLambdaWithReturn = <
+  parameterList extends ReadonlyArray<typeExpr.OneParameter>
+>(
+  parameter: parameterList,
   returnType: typeExpr.TypeExpr,
-  body: Expr
+  body: (
+    parameterList: {
+      [key in keyof parameterList & number]: ArgumentVariable & {
+        name: parameterList[key]["name"];
+      };
+    }
+  ) => Expr
 ): Expr => ({
   type: ExprType.LambdaWithReturn,
   parameter,
   returnType,
-  body
+  body: body(
+    parameter.map(o => ({
+      type: ExprType.Argument,
+      name: o.name
+    }))
+  )
 });
 
 /**
@@ -484,6 +503,8 @@ const exprToString = (
       }
       return importedModuleName + "." + expr.name;
     }
+    case ExprType.Argument:
+      return expr.name;
   }
 };
 
@@ -554,6 +575,15 @@ const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
         expr.name
       );
       scanData.importedModulePath.add(expr.path);
+      return;
+
+    case ExprType.Argument:
+      reservedWord.checkUsingReservedWord(
+        "argument name",
+        "ラムダ式の引数の変数名",
+        expr.name
+      );
+      scanData.globalName.add(expr.name);
       return;
   }
 };
