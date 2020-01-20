@@ -294,8 +294,8 @@ const exportVariableGetParameterDocument = (
   exportVariable: ExportVariable
 ): string => {
   switch (exportVariable.typeExpr._) {
-    case typeExpr.TypeExprType.FunctionWithReturn:
-    case typeExpr.TypeExprType.FunctionReturnVoid:
+    case typeExpr.TypeExpr_.FunctionWithReturn:
+    case typeExpr.TypeExpr_.FunctionReturnVoid:
       return (
         exportVariable.typeExpr.parameter
           .map(p => " * @param " + p.name + " " + p.document)

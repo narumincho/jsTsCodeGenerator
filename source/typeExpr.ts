@@ -7,36 +7,36 @@ import * as scanType from "./scanType";
  * 型を表現する式
  */
 export type TypeExpr =
-  | { _: TypeExprType.Number }
-  | { _: TypeExprType.String }
-  | { _: TypeExprType.Boolean }
-  | { _: TypeExprType.Undefined }
-  | { _: TypeExprType.Null }
+  | { _: TypeExpr_.Number }
+  | { _: TypeExpr_.String }
+  | { _: TypeExpr_.Boolean }
+  | { _: TypeExpr_.Undefined }
+  | { _: TypeExpr_.Null }
   | {
-      _: TypeExprType.Object;
+      _: TypeExpr_.Object;
       memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
     }
   | {
-      _: TypeExprType.FunctionWithReturn;
+      _: TypeExpr_.FunctionWithReturn;
       parameter: ReadonlyArray<OneParameter>;
       return: TypeExpr;
     }
   | {
-      _: TypeExprType.FunctionReturnVoid;
+      _: TypeExpr_.FunctionReturnVoid;
       parameter: ReadonlyArray<OneParameter>;
     }
   | {
-      _: TypeExprType.Union;
+      _: TypeExpr_.Union;
       types: ReadonlyArray<TypeExpr>;
     }
   | {
-      _: TypeExprType.ImportedType;
+      _: TypeExpr_.ImportedType;
       path: string;
       name: string;
     }
-  | { _: TypeExprType.GlobalType; name: string };
+  | { _: TypeExpr_.GlobalType; name: string };
 
-export const enum TypeExprType {
+export const enum TypeExpr_ {
   Number,
   String,
   Boolean,
@@ -54,35 +54,35 @@ export const enum TypeExprType {
  * プリミティブの型のnumber
  */
 export const typeNumber: TypeExpr = {
-  _: TypeExprType.Number
+  _: TypeExpr_.Number
 };
 
 /**
  * プリミティブの型のstring
  */
 export const typeString: TypeExpr = {
-  _: TypeExprType.String
+  _: TypeExpr_.String
 };
 
 /**
  * プリミティブの型のboolean
  */
 export const typeBoolean: TypeExpr = {
-  _: TypeExprType.Boolean
+  _: TypeExpr_.Boolean
 };
 
 /**
  * プリミティブの型のundefined
  */
 export const typeUndefined: TypeExpr = {
-  _: TypeExprType.Undefined
+  _: TypeExpr_.Undefined
 };
 
 /**
  * プリミティブの型のnull
  */
 export const typeNull: TypeExpr = {
-  _: TypeExprType.Null
+  _: TypeExpr_.Null
 };
 
 /**
@@ -91,7 +91,7 @@ export const typeNull: TypeExpr = {
 export const object = (
   memberList: Map<string, { typeExpr: TypeExpr; document: string }>
 ): TypeExpr => ({
-  _: TypeExprType.Object,
+  _: TypeExpr_.Object,
   memberList: memberList
 });
 
@@ -102,7 +102,7 @@ export const functionWithReturn = (
   parameter: ReadonlyArray<OneParameter>,
   returnType: TypeExpr
 ): TypeExpr => ({
-  _: TypeExprType.FunctionWithReturn,
+  _: TypeExpr_.FunctionWithReturn,
   parameter: parameter,
   return: returnType
 });
@@ -113,7 +113,7 @@ export const functionWithReturn = (
 export const functionReturnVoid = (
   parameter: ReadonlyArray<OneParameter>
 ): TypeExpr => ({
-  _: TypeExprType.FunctionReturnVoid,
+  _: TypeExpr_.FunctionReturnVoid,
   parameter: parameter
 });
 
@@ -132,7 +132,7 @@ export type OneParameter = {
  * @param name 型名
  */
 export const importedType = (path: string, name: string): TypeExpr => ({
-  _: TypeExprType.ImportedType,
+  _: TypeExpr_.ImportedType,
   path,
   name
 });
@@ -142,7 +142,7 @@ export const importedType = (path: string, name: string): TypeExpr => ({
  * @param name 型名
  */
 export const globalType = (name: string): TypeExpr => ({
-  _: TypeExprType.GlobalType,
+  _: TypeExpr_.GlobalType,
   name
 });
 
@@ -176,43 +176,43 @@ export const scan = (
   scanData: scanType.NodeJsCodeScanData
 ): void => {
   switch (typeExpr._) {
-    case TypeExprType.Number:
-    case TypeExprType.String:
-    case TypeExprType.Boolean:
-    case TypeExprType.Null:
-    case TypeExprType.Undefined:
+    case TypeExpr_.Number:
+    case TypeExpr_.String:
+    case TypeExpr_.Boolean:
+    case TypeExpr_.Null:
+    case TypeExpr_.Undefined:
       return;
 
-    case TypeExprType.Object:
+    case TypeExpr_.Object:
       for (const [, value] of typeExpr.memberList) {
         scan(value.typeExpr, scanData);
       }
       return;
 
-    case TypeExprType.FunctionWithReturn:
+    case TypeExpr_.FunctionWithReturn:
       for (const oneParameter of typeExpr.parameter) {
         scan(oneParameter.typeExpr, scanData);
       }
       scan(typeExpr.return, scanData);
       return;
 
-    case TypeExprType.FunctionReturnVoid:
+    case TypeExpr_.FunctionReturnVoid:
       for (const oneParameter of typeExpr.parameter) {
         scan(oneParameter.typeExpr, scanData);
       }
       return;
 
-    case TypeExprType.Union:
+    case TypeExpr_.Union:
       for (const oneType of typeExpr.types) {
         scan(oneType, scanData);
       }
       return;
 
-    case TypeExprType.ImportedType:
+    case TypeExpr_.ImportedType:
       scanData.importedModulePath.add(typeExpr.path);
       return;
 
-    case TypeExprType.GlobalType:
+    case TypeExpr_.GlobalType:
       scanData.globalName.add(typeExpr.name);
       return;
   }
@@ -228,22 +228,22 @@ export const typeExprToString = (
   importedModuleNameMap: Map<string, string>
 ): string => {
   switch (typeExpr._) {
-    case TypeExprType.Number:
+    case TypeExpr_.Number:
       return "number";
 
-    case TypeExprType.String:
+    case TypeExpr_.String:
       return "string";
 
-    case TypeExprType.Boolean:
+    case TypeExpr_.Boolean:
       return "boolean";
 
-    case TypeExprType.Null:
+    case TypeExpr_.Null:
       return "null";
 
-    case TypeExprType.Undefined:
+    case TypeExpr_.Undefined:
       return "undefined";
 
-    case TypeExprType.Object:
+    case TypeExpr_.Object:
       return (
         "{" +
         [...typeExpr.memberList.entries()]
@@ -257,29 +257,29 @@ export const typeExprToString = (
         "}"
       );
 
-    case TypeExprType.FunctionWithReturn:
+    case TypeExpr_.FunctionWithReturn:
       return parameterAndReturnToString(
         typeExpr.parameter,
         typeExpr.return,
         importedModuleNameMap
       );
 
-    case TypeExprType.FunctionReturnVoid:
+    case TypeExpr_.FunctionReturnVoid:
       return parameterAndReturnToString(
         typeExpr.parameter,
         null,
         importedModuleNameMap
       );
 
-    case TypeExprType.Union:
+    case TypeExpr_.Union:
       return typeExpr.types
         .map(typeExpr => typeExprToString(typeExpr, importedModuleNameMap))
         .join("|");
 
-    case TypeExprType.GlobalType:
+    case TypeExpr_.GlobalType:
       return typeExpr.name;
 
-    case TypeExprType.ImportedType: {
+    case TypeExpr_.ImportedType: {
       const importedModuleName = importedModuleNameMap.get(typeExpr.path);
       if (importedModuleName === undefined) {
         throw new Error(
