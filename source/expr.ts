@@ -5,19 +5,8 @@ import * as typeExpr from "./typeExpr";
 export type Expr =
   | { _: Expr_.NumberLiteral; value: string }
   | {
-      _: Expr_.NumberOperator;
-      operator: NumberOperatorOperator;
-      left: Expr;
-      right: Expr;
-    }
-  | {
       _: Expr_.StringLiteral;
       value: string;
-    }
-  | {
-      _: Expr_.StringConcatenate;
-      left: Expr;
-      right: Expr;
     }
   | {
       _: Expr_.BooleanLiteral;
@@ -28,6 +17,17 @@ export type Expr =
     }
   | {
       _: Expr_.UndefinedLiteral;
+    }
+  | {
+      _: Expr_.UnaryOperator;
+      operator: UnaryOperator;
+      expr: Expr;
+    }
+  | {
+      _: Expr_.BinaryOperator;
+      operator: BinaryOperator;
+      left: Expr;
+      right: Expr;
     }
   | {
       _: Expr_.ObjectLiteral;
@@ -81,13 +81,14 @@ export type Expr =
 
 const enum Expr_ {
   NumberLiteral,
-  NumberOperator,
   StringLiteral,
   StringConcatenate,
   BooleanLiteral,
   UndefinedLiteral,
   NullLiteral,
   ObjectLiteral,
+  UnaryOperator,
+  BinaryOperator,
   LambdaWithReturn,
   LambdaReturnVoid,
   GlobalVariable,
@@ -99,12 +100,32 @@ const enum Expr_ {
   New
 }
 
-type NumberOperatorOperator = "+" | "-" | "*" | "/";
+type UnaryOperator = "-" | "~" | "!";
+
+type BinaryOperator =
+  | "**"
+  | "*"
+  | "/"
+  | "%"
+  | "+"
+  | "-"
+  | "<<"
+  | ">>"
+  | ">>>"
+  | "<"
+  | "<="
+  | "==="
+  | "!=="
+  | "&"
+  | "^"
+  | "|"
+  | "&&"
+  | "||";
 
 type ValueOf<T> = T[keyof T];
 
 /**
- * 数値リテラル
+ * 数値リテラル `123`
  * @param value 値
  */
 export const numberLiteral = (value: number): Expr => ({
@@ -113,7 +134,7 @@ export const numberLiteral = (value: number): Expr => ({
 });
 
 /**
- * 文字列リテラル
+ * 文字列リテラル `"text"`
  * @param string 文字列。エスケープする必要はない
  */
 export const stringLiteral = (string: string): Expr => ({
@@ -122,51 +143,244 @@ export const stringLiteral = (string: string): Expr => ({
 });
 
 /**
- * 数値の足し算 ??? + ???
- * @param left 左辺
- * @param right 右辺
+ * 単項マイナス演算子 `-a`
+ * @param expr 式
  */
-export const add = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.NumberOperator,
-  operator: "+",
-  left: left,
-  right: right
-});
-
-/**
- * 数値の引き算
- * @param left 左辺
- * @param right 右辺
- */
-export const sub = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.NumberOperator,
+export const minus = (expr: Expr): Expr => ({
+  _: Expr_.UnaryOperator,
   operator: "-",
-  left: left,
-  right: right
+  expr
 });
 
 /**
- * 数値の掛け算
+ * ビット否定 `~a`
+ * @param expr 式
+ */
+export const bitwiseNot = (expr: Expr): Expr => ({
+  _: Expr_.UnaryOperator,
+  operator: "~",
+  expr
+});
+
+/**
+ * 論理否定 `!a`
  * @param left 左辺
  * @param right 右辺
  */
-export const mul = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.NumberOperator,
+export const logicalNot = (expr: Expr): Expr => ({
+  _: Expr_.UnaryOperator,
+  operator: "!",
+  expr
+});
+
+/**
+ * べき乗 `a ** b`
+ * @param left
+ * @param right
+ */
+export const exponentiation = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "**",
+  left,
+  right
+});
+
+/**
+ * 数値の掛け算 `a * b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const multiplication = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
   operator: "*",
   left: left,
   right: right
 });
 
 /**
- * 数値の割り算
+ * 数値の割り算 `a / b`
  * @param left 左辺
  * @param right 右辺
  */
 export const division = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.NumberOperator,
+  _: Expr_.BinaryOperator,
   operator: "/",
   left: left,
   right: right
+});
+
+/**
+ * 剰余演算 `a % b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const modulo = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "%",
+  left,
+  right
+});
+
+/**
+ * 数値の足し算、文字列の結合 `a + b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const addition = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "+",
+  left: left,
+  right: right
+});
+
+/**
+ * 数値の引き算 `a - b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const subtraction = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "-",
+  left: left,
+  right: right
+});
+
+/**
+ * 左シフト `a << b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const leftShift = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "<<",
+  left,
+  right
+});
+
+/**
+ * 符号を維持する右シフト `a >> b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const signedRightShift = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: ">>",
+  left,
+  right
+});
+
+/**
+ * 符号を維持しない(0埋め)右シフト `a >>> b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const unsignedRightShift = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: ">>>",
+  left,
+  right
+});
+
+/**
+ * 未満 `a < b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const lessThan = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "<",
+  left,
+  right
+});
+
+/**
+ * 以下 `a <= b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const lessThanOrEqual = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "<=",
+  left,
+  right
+});
+/**
+ * 等号 `a === b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const equal = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "===",
+  left,
+  right
+});
+
+/**
+ * 不等号 `a !== b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const notEqual = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "!==",
+  left,
+  right
+});
+
+/**
+ * ビットAND `a & b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const bitwiseAnd = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "&",
+  left,
+  right
+});
+
+export const bitwiseXOr = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "^",
+  left,
+  right
+});
+
+/**
+ * ビットOR `a | b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const bitwiseOr = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "|",
+  left,
+  right
+});
+
+/**
+ * 論理AND `a && b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const logicalAnd = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "&&",
+  left,
+  right
+});
+
+/**
+ * 論理OR `a || b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const logicalOr = (left: Expr, right: Expr): Expr => ({
+  _: Expr_.BinaryOperator,
+  operator: "||",
+  left,
+  right
 });
 
 /**
@@ -327,7 +541,14 @@ export const exprToString = (
     case Expr_.NumberLiteral:
       return expr.value;
 
-    case Expr_.NumberOperator:
+    case Expr_.UnaryOperator:
+      return (
+        expr.operator +
+        "(" +
+        exprToString(expr.expr, importedModuleNameMap) +
+        ")"
+      );
+    case Expr_.BinaryOperator:
       return (
         "(" +
         exprToString(expr.left, importedModuleNameMap) +
@@ -338,15 +559,6 @@ export const exprToString = (
 
     case Expr_.StringLiteral:
       return stringLiteralValueToString(expr.value);
-
-    case Expr_.StringConcatenate:
-      return (
-        "(" +
-        exprToString(expr.left, importedModuleNameMap) +
-        "+" +
-        exprToString(expr.right, importedModuleNameMap) +
-        ")"
-      );
 
     case Expr_.BooleanLiteral:
       return expr.value ? "true" : "false";
@@ -472,7 +684,7 @@ export const scanExpr = (
 ): void => {
   switch (expr._) {
     case Expr_.NumberLiteral:
-    case Expr_.NumberOperator:
+    case Expr_.UnaryOperator:
     case Expr_.StringLiteral:
     case Expr_.BooleanLiteral:
     case Expr_.UndefinedLiteral:
