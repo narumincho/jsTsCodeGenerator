@@ -37,7 +37,7 @@ describe("test", () => {
       {
         name: "middleware",
         document: "ミドルウェア",
-        expr: generator.stringLiteral("文字列のリテラル"),
+        expr: generator.expr.stringLiteral("文字列のリテラル"),
         typeExpr: generator.typeExpr.functionReturnVoid([
           {
             name: "request",
@@ -59,8 +59,8 @@ describe("test", () => {
             ["name", { document: "", typeExpr: generator.typeExpr.typeString }]
           ])
         ),
-        expr: generator.createObjectLiteral(
-          new Map([["name", generator.stringLiteral("sorena")]])
+        expr: generator.expr.createObjectLiteral(
+          new Map([["name", generator.expr.stringLiteral("sorena")]])
         )
       }
     ]
@@ -90,7 +90,7 @@ describe("test", () => {
           name: "new",
           document: "newという名前の変数",
           typeExpr: generator.typeExpr.typeString,
-          expr: generator.stringLiteral("newData")
+          expr: generator.expr.stringLiteral("newData")
         }
       ]
     };
@@ -105,7 +105,7 @@ describe("test", () => {
         {
           name: "stringValue",
           document: "文字列リテラルでエスケープしているか調べる",
-          expr: generator.stringLiteral(`
+          expr: generator.expr.stringLiteral(`
 
         改行
         "ダブルクオーテーション"
@@ -143,7 +143,7 @@ describe("test", () => {
             }
           ]),
           document: "ミドルウェア",
-          expr: generator.createLambdaReturnVoid<["request", "response"]>(
+          expr: generator.expr.createLambdaReturnVoid<["request", "response"]>(
             [
               {
                 name: "request",
@@ -157,19 +157,23 @@ describe("test", () => {
               }
             ],
             args =>
-              generator.ifWithVoidReturn(
-                generator.getProperty(
-                  generator.getProperty(args[0], "headers"),
+              generator.expr.ifWithVoidReturn(
+                generator.expr.getProperty(
+                  generator.expr.getProperty(args[0], "headers"),
                   "accept"
                 ),
-                generator.call(generator.getProperty(args[0], "send"), [
-                  generator.stringLiteral(
-                    "HTMLをリクエストした。ドキュメントとクライアント用のコードを返したい"
-                  )
-                ]),
-                generator.call(generator.getProperty(args[0], "send"), [
-                  generator.stringLiteral("APIとして動作したい")
-                ])
+                generator.expr.call(
+                  generator.expr.getProperty(args[0], "send"),
+                  [
+                    generator.expr.stringLiteral(
+                      "HTMLをリクエストした。ドキュメントとクライアント用のコードを返したい"
+                    )
+                  ]
+                ),
+                generator.expr.call(
+                  generator.expr.getProperty(args[0], "send"),
+                  [generator.expr.stringLiteral("APIとして動作したい")]
+                )
               )
           )
         }
