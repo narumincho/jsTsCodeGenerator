@@ -18,7 +18,8 @@ export type Expr =
   | ArgumentVariable
   | GetProperty
   | Call
-  | IfWithVoidReturn;
+  | IfWithVoidReturn
+  | New;
 
 const enum Expr_ {
   NumberLiteral,
@@ -36,7 +37,8 @@ const enum Expr_ {
   Argument,
   GetProperty,
   Call,
-  IfWithVoidReturn
+  IfWithVoidReturn,
+  New
 }
 
 type NumberLiteral = {
@@ -128,6 +130,12 @@ type IfWithVoidReturn = {
   condition: Expr;
   then: Expr;
   else_: Expr;
+};
+
+type New = {
+  _: Expr_.New;
+  expr: Expr;
+  parameterList: ReadonlyArray<Expr>;
 };
 
 type ValueOf<T> = T[keyof T];
@@ -476,6 +484,17 @@ export const exprToString = (
         exprToString(expr.else_, importedModuleNameMap) +
         "}"
       );
+
+    case Expr_.New:
+      return (
+        "new (" +
+        exprToString(expr.expr, importedModuleNameMap) +
+        ")(" +
+        expr.parameterList
+          .map(e => exprToString(e, importedModuleNameMap))
+          .join(", ") +
+        ")"
+      );
   }
 };
 
@@ -563,11 +582,24 @@ export const scanExpr = (
       );
       scanData.globalName.add(expr.name);
       return;
+    case Expr_.Call:
+      scanExpr(expr.expr, scanData);
+      for (const parameter of expr.parameterList) {
+        scanExpr(parameter, scanData);
+      }
+      return;
 
     case Expr_.IfWithVoidReturn:
       scanExpr(expr.condition, scanData);
       scanExpr(expr.then, scanData);
       scanExpr(expr.else_, scanData);
+      return;
+
+    case Expr_.New:
+      scanExpr(expr.expr, scanData);
+      for (const parameter of expr.parameterList) {
+        scanExpr(parameter, scanData);
+      }
       return;
   }
 };
