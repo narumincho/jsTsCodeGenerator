@@ -1,25 +1,83 @@
-import * as typeExpr from "./typeExpr";
 import * as reservedWord from "./reservedWord";
 import * as scanType from "./scanType";
+import * as typeExpr from "./typeExpr";
 
 export type Expr =
-  | NumberLiteral
-  | NumberOperator
-  | StringLiteral
-  | StringConcatenate
-  | BooleanLiteral
-  | NullLiteral
-  | UndefinedLiteral
-  | ObjectLiteral
-  | LambdaWithReturn
-  | LambdaReturnVoid
-  | GlobalVariable
-  | ImportedVariable
-  | ArgumentVariable
-  | GetProperty
-  | Call
-  | IfWithVoidReturn
-  | New;
+  | { _: Expr_.NumberLiteral; value: string }
+  | {
+      _: Expr_.NumberOperator;
+      operator: NumberOperatorOperator;
+      left: Expr;
+      right: Expr;
+    }
+  | {
+      _: Expr_.StringLiteral;
+      value: string;
+    }
+  | {
+      _: Expr_.StringConcatenate;
+      left: Expr;
+      right: Expr;
+    }
+  | {
+      _: Expr_.BooleanLiteral;
+      value: boolean;
+    }
+  | {
+      _: Expr_.NullLiteral;
+    }
+  | {
+      _: Expr_.UndefinedLiteral;
+    }
+  | {
+      _: Expr_.ObjectLiteral;
+      memberList: Map<string, Expr>;
+    }
+  | {
+      _: Expr_.LambdaWithReturn;
+      parameter: ReadonlyArray<typeExpr.OneParameter>;
+      returnType: typeExpr.TypeExpr;
+      body: Expr;
+    }
+  | {
+      _: Expr_.LambdaReturnVoid;
+      parameter: ReadonlyArray<typeExpr.OneParameter>;
+      body: Expr;
+    }
+  | {
+      _: Expr_.GlobalVariable;
+      name: string;
+    }
+  | {
+      _: Expr_.ImportedVariable;
+      path: string;
+      name: string;
+    }
+  | {
+      _: Expr_.Argument;
+      name: string;
+    }
+  | {
+      _: Expr_.GetProperty;
+      expr: Expr;
+      propertyName: string;
+    }
+  | {
+      _: Expr_.Call;
+      expr: Expr;
+      parameterList: ReadonlyArray<Expr>;
+    }
+  | {
+      _: Expr_.IfWithVoidReturn;
+      condition: Expr;
+      then: Expr;
+      else_: Expr;
+    }
+  | {
+      _: Expr_.New;
+      expr: Expr;
+      parameterList: ReadonlyArray<Expr>;
+    };
 
 const enum Expr_ {
   NumberLiteral,
@@ -41,102 +99,7 @@ const enum Expr_ {
   New
 }
 
-type NumberLiteral = {
-  _: Expr_.NumberLiteral;
-  value: string;
-};
-
-type NumberOperator = {
-  _: Expr_.NumberOperator;
-  operator: NumberOperatorOperator;
-  left: Expr;
-  right: Expr;
-};
-
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
-
-type StringLiteral = {
-  _: Expr_.StringLiteral;
-  value: string;
-};
-
-type StringConcatenate = {
-  _: Expr_.StringConcatenate;
-  left: Expr;
-  right: Expr;
-};
-
-type BooleanLiteral = {
-  _: Expr_.BooleanLiteral;
-  value: boolean;
-};
-
-type NullLiteral = {
-  _: Expr_.NullLiteral;
-};
-
-type UndefinedLiteral = {
-  _: Expr_.UndefinedLiteral;
-};
-
-type ObjectLiteral = {
-  _: Expr_.ObjectLiteral;
-  memberList: Map<string, Expr>;
-};
-
-type LambdaWithReturn = {
-  _: Expr_.LambdaWithReturn;
-  parameter: ReadonlyArray<typeExpr.OneParameter>;
-  returnType: typeExpr.TypeExpr;
-  body: Expr;
-};
-
-type LambdaReturnVoid = {
-  _: Expr_.LambdaReturnVoid;
-  parameter: ReadonlyArray<typeExpr.OneParameter>;
-  body: Expr;
-};
-
-type GlobalVariable = {
-  _: Expr_.GlobalVariable;
-  name: string;
-};
-
-type ImportedVariable = {
-  _: Expr_.ImportedVariable;
-  path: string;
-  name: string;
-};
-
-type ArgumentVariable = {
-  _: Expr_.Argument;
-  name: string;
-};
-
-type GetProperty = {
-  _: Expr_.GetProperty;
-  expr: Expr;
-  propertyName: string;
-};
-
-type Call = {
-  _: Expr_.Call;
-  expr: Expr;
-  parameterList: ReadonlyArray<Expr>;
-};
-
-type IfWithVoidReturn = {
-  _: Expr_.IfWithVoidReturn;
-  condition: Expr;
-  then: Expr;
-  else_: Expr;
-};
-
-type New = {
-  _: Expr_.New;
-  expr: Expr;
-  parameterList: ReadonlyArray<Expr>;
-};
 
 type ValueOf<T> = T[keyof T];
 
@@ -238,9 +201,7 @@ export const createLambdaWithReturn = <
   returnType: typeExpr.TypeExpr,
   body: (
     parameterList: {
-      [nameIndex in keyof parameterNameList & number]: ArgumentVariable & {
-        name: parameterNameList[nameIndex];
-      };
+      [nameIndex in keyof parameterNameList & number]: Expr;
     }
   ) => Expr
 ): Expr => ({
@@ -253,7 +214,7 @@ export const createLambdaWithReturn = <
         ({
           _: Expr_.Argument,
           name: o.name
-        } as ArgumentVariable)
+        } as Expr)
     )
   )
 });
@@ -278,9 +239,7 @@ export const createLambdaReturnVoid = <
   >,
   body: (
     parameterList: {
-      [nameIndex in keyof parameterNameList & number]: ArgumentVariable & {
-        name: parameterNameList[nameIndex];
-      };
+      [nameIndex in keyof parameterNameList & number]: Expr;
     }
   ) => Expr
 ): Expr => ({
@@ -292,7 +251,7 @@ export const createLambdaReturnVoid = <
         ({
           _: Expr_.Argument,
           name: o.name
-        } as ArgumentVariable)
+        } as Expr)
     )
   )
 });
