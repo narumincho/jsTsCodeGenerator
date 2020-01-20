@@ -193,21 +193,19 @@ export const createImportNodeModule = <
   typeList: typeList,
   variableList: variableList
 ): {
-  typeList: { [name in ValueOf<typeList> & string]: typeExpr.Imported };
+  typeList: { [name in ValueOf<typeList> & string]: typeExpr.TypeExpr };
   variableList: { [name in ValueOf<variableList> & string]: ImportedVariable };
 } => {
   const typeListObject = {} as {
-    [name in ValueOf<typeList> & string]: typeExpr.Imported;
+    [name in ValueOf<typeList> & string]: typeExpr.TypeExpr;
   };
   const variableListObject = {} as {
     [name in ValueOf<variableList> & string]: ImportedVariable;
   };
   for (const typeName of typeList) {
-    typeListObject[typeName as ValueOf<typeList> & string] = {
-      _: typeExpr.TypeExprType.ImportedType,
-      path: path,
-      name: typeName
-    };
+    typeListObject[
+      typeName as ValueOf<typeList> & string
+    ] = typeExpr.importedType(path, typeName);
   }
   for (const variableName of variableList) {
     variableListObject[variableName as ValueOf<variableList> & string] = {
@@ -234,20 +232,19 @@ export const createGlobalNamespace = <
   typeList: typeList,
   variableList: variableList
 ): {
-  typeList: { [name in ValueOf<typeList> & string]: typeExpr.Global };
+  typeList: { [name in ValueOf<typeList> & string]: typeExpr.TypeExpr };
   variableList: { [name in ValueOf<variableList> & string]: GlobalVariable };
 } => {
   const typeListObject = {} as {
-    [name in ValueOf<typeList> & string]: typeExpr.Global;
+    [name in ValueOf<typeList> & string]: typeExpr.TypeExpr;
   };
   const variableListObject = {} as {
     [name in ValueOf<variableList> & string]: GlobalVariable;
   };
   for (const typeName of typeList) {
-    typeListObject[typeName as ValueOf<typeList> & string] = {
-      _: typeExpr.TypeExprType.GlobalType,
-      name: typeName
-    };
+    typeListObject[
+      typeName as ValueOf<typeList> & string
+    ] = typeExpr.globalType(typeName);
   }
   for (const variableName of variableList) {
     variableListObject[variableName as ValueOf<variableList> & string] = {

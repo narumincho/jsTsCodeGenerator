@@ -7,17 +7,34 @@ import * as scanType from "./scanType";
  * 型を表現する式
  */
 export type TypeExpr =
-  | Number_
-  | String_
-  | Boolean_
-  | Undefined
-  | Null
-  | Object_
-  | FunctionWithReturn
-  | FunctionReturnVoid
-  | Union
-  | Imported
-  | Global;
+  | { _: TypeExprType.Number }
+  | { _: TypeExprType.String }
+  | { _: TypeExprType.Boolean }
+  | { _: TypeExprType.Undefined }
+  | { _: TypeExprType.Null }
+  | {
+      _: TypeExprType.Object;
+      memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
+    }
+  | {
+      _: TypeExprType.FunctionWithReturn;
+      parameter: ReadonlyArray<OneParameter>;
+      return: TypeExpr;
+    }
+  | {
+      _: TypeExprType.FunctionReturnVoid;
+      parameter: ReadonlyArray<OneParameter>;
+    }
+  | {
+      _: TypeExprType.Union;
+      types: ReadonlyArray<TypeExpr>;
+    }
+  | {
+      _: TypeExprType.ImportedType;
+      path: string;
+      name: string;
+    }
+  | { _: TypeExprType.GlobalType; name: string };
 
 export const enum TypeExprType {
   Number,
@@ -36,79 +53,36 @@ export const enum TypeExprType {
 /**
  * プリミティブの型のnumber
  */
-export type Number_ = {
-  _: TypeExprType.Number;
-};
-
-/**
- * プリミティブの型のnumber
- */
-export const typeNumber: Number_ = {
+export const typeNumber: TypeExpr = {
   _: TypeExprType.Number
 };
 
 /**
  * プリミティブの型のstring
  */
-export type String_ = {
-  _: TypeExprType.String;
-};
-
-/**
- * プリミティブの型のstring
- */
-export const typeString: String_ = {
+export const typeString: TypeExpr = {
   _: TypeExprType.String
 };
 
 /**
  * プリミティブの型のboolean
  */
-export type Boolean_ = {
-  _: TypeExprType.Boolean;
-};
-
-/**
- * プリミティブの型のboolean
- */
-export const typeBoolean: Boolean_ = {
+export const typeBoolean: TypeExpr = {
   _: TypeExprType.Boolean
 };
 
 /**
  * プリミティブの型のundefined
  */
-export type Undefined = {
-  _: TypeExprType.Undefined;
-};
-
-/**
- * プリミティブの型のundefined
- */
-export const typeUndefined: Undefined = {
+export const typeUndefined: TypeExpr = {
   _: TypeExprType.Undefined
 };
 
 /**
  * プリミティブの型のnull
  */
-export type Null = {
-  _: TypeExprType.Null;
-};
-
-/**
- * プリミティブの型のnull
- */
-export const typeNull: Null = {
+export const typeNull: TypeExpr = {
   _: TypeExprType.Null
-};
-
-/**
- * オブジェクト
- */
-export type Object_ = {
-  _: TypeExprType.Object;
-  memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
 };
 
 /**
@@ -116,7 +90,7 @@ export type Object_ = {
  */
 export const object = (
   memberList: Map<string, { typeExpr: TypeExpr; document: string }>
-): Object_ => ({
+): TypeExpr => ({
   _: TypeExprType.Object,
   memberList: memberList
 });
@@ -124,19 +98,10 @@ export const object = (
 /**
  * 戻り値がある関数
  */
-export type FunctionWithReturn = {
-  _: TypeExprType.FunctionWithReturn;
-  parameter: ReadonlyArray<OneParameter>;
-  return: TypeExpr;
-};
-
-/**
- * 戻り値がある関数
- */
 export const functionWithReturn = (
   parameter: ReadonlyArray<OneParameter>,
   returnType: TypeExpr
-): FunctionWithReturn => ({
+): TypeExpr => ({
   _: TypeExprType.FunctionWithReturn,
   parameter: parameter,
   return: returnType
@@ -145,17 +110,9 @@ export const functionWithReturn = (
 /**
  * 戻り値がない関数
  */
-export type FunctionReturnVoid = {
-  _: TypeExprType.FunctionReturnVoid;
-  parameter: ReadonlyArray<OneParameter>;
-};
-
-/**
- * 戻り値がない関数
- */
 export const functionReturnVoid = (
   parameter: ReadonlyArray<OneParameter>
-): FunctionReturnVoid => ({
+): TypeExpr => ({
   _: TypeExprType.FunctionReturnVoid,
   parameter: parameter
 });
@@ -169,18 +126,25 @@ export type OneParameter = {
   typeExpr: TypeExpr;
 };
 
-export type Union = {
-  _: TypeExprType.Union;
-  types: ReadonlyArray<TypeExpr>;
-};
+/**
+ * インポートされた外部の型
+ * @param path インポートするモジュールのパス
+ * @param name 型名
+ */
+export const importedType = (path: string, name: string): TypeExpr => ({
+  _: TypeExprType.ImportedType,
+  path,
+  name
+});
 
-export type Imported = {
-  _: TypeExprType.ImportedType;
-  path: string;
-  name: string;
-};
-
-export type Global = { _: TypeExprType.GlobalType; name: string };
+/**
+ * グローバル空間の型
+ * @param name 型名
+ */
+export const globalType = (name: string): TypeExpr => ({
+  _: TypeExprType.GlobalType,
+  name
+});
 
 /** 関数の引数と戻り値の型を文字列にする */
 const parameterAndReturnToString = (
