@@ -82,12 +82,12 @@ const enum ExprType {
 }
 
 type NumberLiteral = {
-  type: ExprType.NumberLiteral;
+  _: ExprType.NumberLiteral;
   value: string;
 };
 
 type NumberOperator = {
-  type: ExprType.NumberOperator;
+  _: ExprType.NumberOperator;
   operator: NumberOperatorOperator;
   left: Expr;
   right: Expr;
@@ -96,77 +96,77 @@ type NumberOperator = {
 type NumberOperatorOperator = "+" | "-" | "*" | "/";
 
 type StringLiteral = {
-  type: ExprType.StringLiteral;
+  _: ExprType.StringLiteral;
   value: string;
 };
 
 type StringConcatenate = {
-  type: ExprType.StringConcatenate;
+  _: ExprType.StringConcatenate;
   left: Expr;
   right: Expr;
 };
 
 type BooleanLiteral = {
-  type: ExprType.BooleanLiteral;
+  _: ExprType.BooleanLiteral;
   value: boolean;
 };
 
 type NullLiteral = {
-  type: ExprType.NullLiteral;
+  _: ExprType.NullLiteral;
 };
 
 type UndefinedLiteral = {
-  type: ExprType.UndefinedLiteral;
+  _: ExprType.UndefinedLiteral;
 };
 
 type ObjectLiteral = {
-  type: ExprType.ObjectLiteral;
+  _: ExprType.ObjectLiteral;
   memberList: Map<string, Expr>;
 };
 
 type LambdaWithReturn = {
-  type: ExprType.LambdaWithReturn;
+  _: ExprType.LambdaWithReturn;
   parameter: ReadonlyArray<typeExpr.OneParameter>;
   returnType: typeExpr.TypeExpr;
   body: Expr;
 };
 
 type LambdaReturnVoid = {
-  type: ExprType.LambdaReturnVoid;
+  _: ExprType.LambdaReturnVoid;
   parameter: ReadonlyArray<typeExpr.OneParameter>;
   body: Expr;
 };
 
 type GlobalVariable = {
-  type: ExprType.GlobalVariable;
+  _: ExprType.GlobalVariable;
   name: string;
 };
 
 type ImportedVariable = {
-  type: ExprType.ImportedVariable;
+  _: ExprType.ImportedVariable;
   path: string;
   name: string;
 };
 
 type ArgumentVariable = {
-  type: ExprType.Argument;
+  _: ExprType.Argument;
   name: string;
 };
 
 type GetProperty = {
-  type: ExprType.GetProperty;
+  _: ExprType.GetProperty;
   expr: Expr;
   propertyName: string;
 };
 
 type Call = {
-  type: ExprType.Call;
+  _: ExprType.Call;
   expr: Expr;
   parameterList: ReadonlyArray<Expr>;
 };
 
 type IfWithVoidReturn = {
-  type: ExprType.IfWithVoidReturn;
+  _: ExprType.IfWithVoidReturn;
   condition: Expr;
   then: Expr;
   else_: Expr;
@@ -204,14 +204,14 @@ export const createImportNodeModule = <
   };
   for (const typeName of typeList) {
     typeListObject[typeName as ValueOf<typeList> & string] = {
-      type: typeExpr.TypeExprType.ImportedType,
+      _: typeExpr.TypeExprType.ImportedType,
       path: path,
       name: typeName
     };
   }
   for (const variableName of variableList) {
     variableListObject[variableName as ValueOf<variableList> & string] = {
-      type: ExprType.ImportedVariable,
+      _: ExprType.ImportedVariable,
       path: path,
       name: variableName
     };
@@ -245,13 +245,13 @@ export const createGlobalNamespace = <
   };
   for (const typeName of typeList) {
     typeListObject[typeName as ValueOf<typeList> & string] = {
-      type: typeExpr.TypeExprType.GlobalType,
+      _: typeExpr.TypeExprType.GlobalType,
       name: typeName
     };
   }
   for (const variableName of variableList) {
     variableListObject[variableName as ValueOf<variableList> & string] = {
-      type: ExprType.GlobalVariable,
+      _: ExprType.GlobalVariable,
       name: variableName
     };
   }
@@ -273,7 +273,7 @@ export const emptyNodeJsCode: NodeJsCode = {
  * @param value 値
  */
 export const numberLiteral = (value: number): Expr => ({
-  type: ExprType.NumberLiteral,
+  _: ExprType.NumberLiteral,
   value: value.toString()
 });
 
@@ -282,7 +282,7 @@ export const numberLiteral = (value: number): Expr => ({
  * @param string 文字列。エスケープする必要はない
  */
 export const stringLiteral = (string: string): Expr => ({
-  type: ExprType.StringLiteral,
+  _: ExprType.StringLiteral,
   value: string
 });
 
@@ -292,7 +292,7 @@ export const stringLiteral = (string: string): Expr => ({
  * @param right 右辺
  */
 export const add = (left: Expr, right: Expr): Expr => ({
-  type: ExprType.NumberOperator,
+  _: ExprType.NumberOperator,
   operator: "+",
   left: left,
   right: right
@@ -304,7 +304,7 @@ export const add = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const sub = (left: Expr, right: Expr): Expr => ({
-  type: ExprType.NumberOperator,
+  _: ExprType.NumberOperator,
   operator: "-",
   left: left,
   right: right
@@ -316,7 +316,7 @@ export const sub = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const mul = (left: Expr, right: Expr): Expr => ({
-  type: ExprType.NumberOperator,
+  _: ExprType.NumberOperator,
   operator: "*",
   left: left,
   right: right
@@ -328,7 +328,7 @@ export const mul = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const division = (left: Expr, right: Expr): Expr => ({
-  type: ExprType.NumberOperator,
+  _: ExprType.NumberOperator,
   operator: "/",
   left: left,
   right: right
@@ -339,7 +339,7 @@ export const division = (left: Expr, right: Expr): Expr => ({
  */
 export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
   return {
-    type: ExprType.ObjectLiteral,
+    _: ExprType.ObjectLiteral,
     memberList: memberList
   };
 };
@@ -372,14 +372,14 @@ export const createLambdaWithReturn = <
     }
   ) => Expr
 ): Expr => ({
-  type: ExprType.LambdaWithReturn,
+  _: ExprType.LambdaWithReturn,
   parameter,
   returnType,
   body: body(
     parameter.map(
       (o: { name: ValueOf<parameterNameList> }) =>
         ({
-          type: ExprType.Argument,
+          _: ExprType.Argument,
           name: o.name
         } as ArgumentVariable)
     )
@@ -412,13 +412,13 @@ export const createLambdaReturnVoid = <
     }
   ) => Expr
 ): Expr => ({
-  type: ExprType.LambdaReturnVoid,
+  _: ExprType.LambdaReturnVoid,
   parameter,
   body: body(
     parameter.map(
       (o: { name: ValueOf<parameterNameList> }) =>
         ({
-          type: ExprType.Argument,
+          _: ExprType.Argument,
           name: o.name
         } as ArgumentVariable)
     )
@@ -431,7 +431,7 @@ export const createLambdaReturnVoid = <
  * @param propertyName プロパティ
  */
 export const getProperty = (expr: Expr, propertyName: string): Expr => ({
-  type: ExprType.GetProperty,
+  _: ExprType.GetProperty,
   expr,
   propertyName
 });
@@ -442,7 +442,7 @@ export const getProperty = (expr: Expr, propertyName: string): Expr => ({
  * @param parameterList パラメーターのリスト
  */
 export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
-  type: ExprType.Call,
+  _: ExprType.Call,
   expr,
   parameterList
 });
@@ -457,7 +457,7 @@ export const ifWithVoidReturn = (
   then: Expr,
   else_: Expr
 ): Expr => ({
-  type: ExprType.IfWithVoidReturn,
+  _: ExprType.IfWithVoidReturn,
   condition,
   then,
   else_
@@ -517,7 +517,7 @@ const exprToString = (
   expr: Expr,
   importedModuleNameMap: Map<string, string>
 ): string => {
-  switch (expr.type) {
+  switch (expr._) {
     case ExprType.NumberLiteral:
       return expr.value;
 
@@ -650,7 +650,7 @@ const stringLiteralValueToString = (value: string): string => {
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const scanExpr = (expr: Expr, scanData: scanType.NodeJsCodeScanData): void => {
-  switch (expr.type) {
+  switch (expr._) {
     case ExprType.NumberLiteral:
     case ExprType.NumberOperator:
     case ExprType.StringLiteral:
@@ -850,7 +850,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
 const exportVariableGetParameterDocument = (
   exportVariable: ExportVariable
 ): string => {
-  switch (exportVariable.typeExpr.type) {
+  switch (exportVariable.typeExpr._) {
     case typeExpr.TypeExprType.FunctionWithReturn:
     case typeExpr.TypeExprType.FunctionReturnVoid:
       return (

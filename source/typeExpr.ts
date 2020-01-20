@@ -37,77 +37,77 @@ export const enum TypeExprType {
  * プリミティブの型のnumber
  */
 export type Number_ = {
-  type: TypeExprType.Number;
+  _: TypeExprType.Number;
 };
 
 /**
  * プリミティブの型のnumber
  */
 export const typeNumber: Number_ = {
-  type: TypeExprType.Number
+  _: TypeExprType.Number
 };
 
 /**
  * プリミティブの型のstring
  */
 export type String_ = {
-  type: TypeExprType.String;
+  _: TypeExprType.String;
 };
 
 /**
  * プリミティブの型のstring
  */
 export const typeString: String_ = {
-  type: TypeExprType.String
+  _: TypeExprType.String
 };
 
 /**
  * プリミティブの型のboolean
  */
 export type Boolean_ = {
-  type: TypeExprType.Boolean;
+  _: TypeExprType.Boolean;
 };
 
 /**
  * プリミティブの型のboolean
  */
 export const typeBoolean: Boolean_ = {
-  type: TypeExprType.Boolean
+  _: TypeExprType.Boolean
 };
 
 /**
  * プリミティブの型のundefined
  */
 export type Undefined = {
-  type: TypeExprType.Undefined;
+  _: TypeExprType.Undefined;
 };
 
 /**
  * プリミティブの型のundefined
  */
 export const typeUndefined: Undefined = {
-  type: TypeExprType.Undefined
+  _: TypeExprType.Undefined
 };
 
 /**
  * プリミティブの型のnull
  */
 export type Null = {
-  type: TypeExprType.Null;
+  _: TypeExprType.Null;
 };
 
 /**
  * プリミティブの型のnull
  */
 export const typeNull: Null = {
-  type: TypeExprType.Null
+  _: TypeExprType.Null
 };
 
 /**
  * オブジェクト
  */
 export type Object_ = {
-  type: TypeExprType.Object;
+  _: TypeExprType.Object;
   memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
 };
 
@@ -117,7 +117,7 @@ export type Object_ = {
 export const object = (
   memberList: Map<string, { typeExpr: TypeExpr; document: string }>
 ): Object_ => ({
-  type: TypeExprType.Object,
+  _: TypeExprType.Object,
   memberList: memberList
 });
 
@@ -125,7 +125,7 @@ export const object = (
  * 戻り値がある関数
  */
 export type FunctionWithReturn = {
-  type: TypeExprType.FunctionWithReturn;
+  _: TypeExprType.FunctionWithReturn;
   parameter: ReadonlyArray<OneParameter>;
   return: TypeExpr;
 };
@@ -137,7 +137,7 @@ export const functionWithReturn = (
   parameter: ReadonlyArray<OneParameter>,
   returnType: TypeExpr
 ): FunctionWithReturn => ({
-  type: TypeExprType.FunctionWithReturn,
+  _: TypeExprType.FunctionWithReturn,
   parameter: parameter,
   return: returnType
 });
@@ -146,7 +146,7 @@ export const functionWithReturn = (
  * 戻り値がない関数
  */
 export type FunctionReturnVoid = {
-  type: TypeExprType.FunctionReturnVoid;
+  _: TypeExprType.FunctionReturnVoid;
   parameter: ReadonlyArray<OneParameter>;
 };
 
@@ -156,7 +156,7 @@ export type FunctionReturnVoid = {
 export const functionReturnVoid = (
   parameter: ReadonlyArray<OneParameter>
 ): FunctionReturnVoid => ({
-  type: TypeExprType.FunctionReturnVoid,
+  _: TypeExprType.FunctionReturnVoid,
   parameter: parameter
 });
 
@@ -170,17 +170,17 @@ export type OneParameter = {
 };
 
 export type Union = {
-  type: TypeExprType.Union;
+  _: TypeExprType.Union;
   types: ReadonlyArray<TypeExpr>;
 };
 
 export type Imported = {
-  type: TypeExprType.ImportedType;
+  _: TypeExprType.ImportedType;
   path: string;
   name: string;
 };
 
-export type Global = { type: TypeExprType.GlobalType; name: string };
+export type Global = { _: TypeExprType.GlobalType; name: string };
 
 /** 関数の引数と戻り値の型を文字列にする */
 const parameterAndReturnToString = (
@@ -211,7 +211,7 @@ export const scan = (
   typeExpr: TypeExpr,
   scanData: scanType.NodeJsCodeScanData
 ): void => {
-  switch (typeExpr.type) {
+  switch (typeExpr._) {
     case TypeExprType.Number:
     case TypeExprType.String:
     case TypeExprType.Boolean:
@@ -263,7 +263,7 @@ export const typeExprToString = (
   typeExpr: TypeExpr,
   importedModuleNameMap: Map<string, string>
 ): string => {
-  switch (typeExpr.type) {
+  switch (typeExpr._) {
     case TypeExprType.Number:
       return "number";
 
