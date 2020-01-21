@@ -1,9 +1,10 @@
 import * as reservedWord from "../reservedWord";
 import * as scanType from "../scanType";
 import * as typeExpr from "./typeExpr";
+import * as namedExpr from "../namedTree/expr";
 
 export type Expr =
-  | { _: Expr_.NumberLiteral; value: string }
+  | { _: Expr_.NumberLiteral; value: number }
   | {
       _: Expr_.StringLiteral;
       value: string;
@@ -88,7 +89,6 @@ export type Expr =
 const enum Expr_ {
   NumberLiteral,
   StringLiteral,
-  StringConcatenate,
   BooleanLiteral,
   UndefinedLiteral,
   NullLiteral,
@@ -138,7 +138,7 @@ type ValueOf<T> = T[keyof T];
  */
 export const numberLiteral = (value: number): Expr => ({
   _: Expr_.NumberLiteral,
-  value: value.toString()
+  value: value
 });
 
 /**
@@ -540,147 +540,11 @@ const enum Statement_ {
 }
 
 /**
- * 式をコードに変換する
- * @param expr 式
- * @param importedModuleNameMap インポートされたモジュールのパスと名前空間識別子のマップ
- */
-export const exprToString = (
-  expr: Expr,
-  importedModuleNameMap: Map<string, string>
-): string => {
-  switch (expr._) {
-    case Expr_.NumberLiteral:
-      return expr.value;
-
-    case Expr_.UnaryOperator:
-      return (
-        expr.operator +
-        "(" +
-        exprToString(expr.expr, importedModuleNameMap) +
-        ")"
-      );
-    case Expr_.BinaryOperator:
-      return (
-        "(" +
-        exprToString(expr.left, importedModuleNameMap) +
-        expr.operator +
-        exprToString(expr.right, importedModuleNameMap) +
-        ")"
-      );
-
-    case Expr_.StringLiteral:
-      return stringLiteralValueToString(expr.value);
-
-    case Expr_.BooleanLiteral:
-      return expr.value ? "true" : "false";
-
-    case Expr_.UndefinedLiteral:
-      return "void 0";
-
-    case Expr_.NullLiteral:
-      return "null";
-
-    case Expr_.ObjectLiteral:
-      return (
-        "{" +
-        [...expr.memberList.entries()]
-          .map(
-            ([key, value]) =>
-              key + ":" + exprToString(value, importedModuleNameMap)
-          )
-          .join(", ") +
-        "}"
-      );
-    case Expr_.LambdaWithReturn:
-      return (
-        "(" +
-        expr.parameterList
-          .map(
-            o =>
-              o.name +
-              ": " +
-              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
-          )
-          .join(", ") +
-        "): " +
-        typeExpr.typeExprToString(expr.returnType, importedModuleNameMap) +
-        "=>" +
-        exprToString(expr.body, importedModuleNameMap)
-      );
-
-    case Expr_.LambdaReturnVoid:
-      return (
-        "(" +
-        expr.parameterList
-          .map(
-            o =>
-              o.name +
-              ": " +
-              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
-          )
-          .join(",") +
-        "): void=>" +
-        exprToString(expr.body, importedModuleNameMap)
-      );
-
-    case Expr_.GlobalVariable:
-      return expr.name;
-
-    case Expr_.ImportedVariable: {
-      const importedModuleName = importedModuleNameMap.get(expr.path);
-      if (importedModuleName === undefined) {
-        throw new Error("収集されなかったモジュールがある! path=" + expr.path);
-      }
-      return importedModuleName + "." + expr.name;
-    }
-
-    case Expr_.Argument:
-      return expr.name;
-
-    case Expr_.GetProperty:
-      return (
-        "(" +
-        exprToString(expr.expr, importedModuleNameMap) +
-        ")." +
-        expr.propertyName
-      );
-
-    case Expr_.Call:
-      return (
-        exprToString(expr.expr, importedModuleNameMap) +
-        "(" +
-        expr.parameterList
-          .map(e => exprToString(e, importedModuleNameMap))
-          .join(", ") +
-        ")"
-      );
-
-    case Expr_.New:
-      return (
-        "new (" +
-        exprToString(expr.expr, importedModuleNameMap) +
-        ")(" +
-        expr.parameterList
-          .map(e => exprToString(e, importedModuleNameMap))
-          .join(", ") +
-        ")"
-      );
-
-    case Expr_.LocalVariable:
-      return expr.name;
-  }
-};
-
-const stringLiteralValueToString = (value: string): string => {
-  return '"' + value.replace(/"/gu, '\\"').replace(/\n/gu, "\\n") + '"';
-};
-
-/**
  * 名前をつけたり、するために式を走査する
  * @param expr 式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-export const scanExpr = (
+export const scanGlobalVariableNameAndImportedPathInExpr = (
   expr: Expr,
   scanData: scanType.NodeJsCodeScanData
 ): void => {
@@ -700,7 +564,7 @@ export const scanExpr = (
           "オブジェクトリテラルのプロパティ名",
           propertyName
         );
-        scanExpr(member, scanData);
+        scanGlobalVariableNameAndImportedPathInExpr(member, scanData);
       }
       return;
 
@@ -711,10 +575,13 @@ export const scanExpr = (
           "関数のパラメーター名",
           oneParameter.name
         );
-        typeExpr.scan(oneParameter.typeExpr, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          oneParameter.typeExpr,
+          scanData
+        );
       }
-      typeExpr.scan(expr.returnType, scanData);
-      scanExpr(expr.body, scanData);
+      typeExpr.scanGlobalVariableNameAndImportedPath(expr.returnType, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.body, scanData);
       return;
 
     case Expr_.LambdaReturnVoid:
@@ -724,9 +591,12 @@ export const scanExpr = (
           "関数のパラメーター名",
           oneParameter.name
         );
-        typeExpr.scan(oneParameter.typeExpr, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          oneParameter.typeExpr,
+          scanData
+        );
       }
-      scanExpr(expr.body, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.body, scanData);
       return;
 
     case Expr_.GlobalVariable:
@@ -756,23 +626,29 @@ export const scanExpr = (
       scanData.globalName.add(expr.name);
       return;
     case Expr_.Call:
-      scanExpr(expr.expr, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
-        scanExpr(parameter, scanData);
+        scanGlobalVariableNameAndImportedPathInExpr(parameter, scanData);
       }
       return;
 
     case Expr_.IfWithVoidReturn:
-      scanExpr(expr.condition, scanData);
-      scanExpr(expr.then, scanData);
-      scanExpr(expr.else_, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.condition, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.then, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.else_, scanData);
       return;
 
     case Expr_.New:
-      scanExpr(expr.expr, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
-        scanExpr(parameter, scanData);
+        scanGlobalVariableNameAndImportedPathInExpr(parameter, scanData);
       }
       return;
   }
+};
+
+export const name = (expr: Expr): namedExpr.Expr => {
+  switch(expr._) {
+    case Expr_
+  } 
 };

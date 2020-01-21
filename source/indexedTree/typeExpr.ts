@@ -96,7 +96,7 @@ export const object = (
  * 戻り値がある関数
  */
 export const functionWithReturn = (
-  parameter: ReadonlyArray<OneParameter>,
+  parameter: ReadonlyArray<TypeExpr>,
   returnType: TypeExpr
 ): TypeExpr => ({
   _: TypeExpr_.FunctionWithReturn,
@@ -108,7 +108,7 @@ export const functionWithReturn = (
  * 戻り値がない関数
  */
 export const functionReturnVoid = (
-  parameter: ReadonlyArray<OneParameter>
+  parameter: ReadonlyArray<TypeExpr>
 ): TypeExpr => ({
   _: TypeExpr_.FunctionReturnVoid,
   parameter: parameter
@@ -148,7 +148,7 @@ export const globalType = (name: string): TypeExpr => ({
  * @param typeExpr 型の式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-export const scan = (
+export const scanGlobalVariableNameAndImportedPath = (
   typeExpr: TypeExpr,
   scanData: scanType.NodeJsCodeScanData
 ): void => {
@@ -162,26 +162,26 @@ export const scan = (
 
     case TypeExpr_.Object:
       for (const [, value] of typeExpr.memberList) {
-        scan(value.typeExpr, scanData);
+        scanGlobalVariableNameAndImportedPath(value.typeExpr, scanData);
       }
       return;
 
     case TypeExpr_.FunctionWithReturn:
       for (const oneParameter of typeExpr.parameter) {
-        scan(oneParameter.typeExpr, scanData);
+        scanGlobalVariableNameAndImportedPath(oneParameter.typeExpr, scanData);
       }
-      scan(typeExpr.return, scanData);
+      scanGlobalVariableNameAndImportedPath(typeExpr.return, scanData);
       return;
 
     case TypeExpr_.FunctionReturnVoid:
       for (const oneParameter of typeExpr.parameter) {
-        scan(oneParameter.typeExpr, scanData);
+        scanGlobalVariableNameAndImportedPath(oneParameter.typeExpr, scanData);
       }
       return;
 
     case TypeExpr_.Union:
       for (const oneType of typeExpr.types) {
-        scan(oneType, scanData);
+        scanGlobalVariableNameAndImportedPath(oneType, scanData);
       }
       return;
 

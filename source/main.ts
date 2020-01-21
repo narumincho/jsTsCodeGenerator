@@ -187,7 +187,10 @@ const scanNodeJsCode = (
       exportTypeAlias.name
     );
     scanData.globalName.add(exportTypeAlias.name);
-    typeExpr.scan(exportTypeAlias.typeExpr, scanData);
+    typeExpr.scanGlobalVariableNameAndImportedPath(
+      exportTypeAlias.typeExpr,
+      scanData
+    );
   }
   for (const exportVariable of nodeJsCode.exportVariableList) {
     reservedWord.checkUsingReservedWord(
@@ -196,8 +199,14 @@ const scanNodeJsCode = (
       exportVariable.name
     );
     scanData.globalName.add(exportVariable.name);
-    typeExpr.scan(exportVariable.typeExpr, scanData);
-    expr.scanExpr(exportVariable.expr, scanData);
+    typeExpr.scanGlobalVariableNameAndImportedPath(
+      exportVariable.typeExpr,
+      scanData
+    );
+    expr.scanGlobalVariableNameAndImportedPathInExpr(
+      exportVariable.expr,
+      scanData
+    );
   }
   return scanData;
 };
