@@ -1,7 +1,4 @@
-import * as scanType from "./scanType";
-/* ======================================================================================
- *                                      Type Expr
- * ====================================================================================== */
+import * as scanType from "../scanType";
 
 /**
  * 型を表現する式
@@ -18,12 +15,12 @@ export type TypeExpr =
     }
   | {
       _: TypeExpr_.FunctionWithReturn;
-      parameter: ReadonlyArray<OneParameter>;
+      parameter: ReadonlyArray<TypeExpr>;
       return: TypeExpr;
     }
   | {
       _: TypeExpr_.FunctionReturnVoid;
-      parameter: ReadonlyArray<OneParameter>;
+      parameter: ReadonlyArray<TypeExpr>;
     }
   | {
       _: TypeExpr_.Union;
@@ -118,7 +115,7 @@ export const functionReturnVoid = (
 });
 
 /**
- * 関数のパラメーター
+ * 公開する関数のパラメーター
  */
 export type OneParameter = {
   name: string;
@@ -145,26 +142,6 @@ export const globalType = (name: string): TypeExpr => ({
   _: TypeExpr_.GlobalType,
   name
 });
-
-/** 関数の引数と戻り値の型を文字列にする */
-const parameterAndReturnToString = (
-  parameterList: ReadonlyArray<OneParameter>,
-  returnType: TypeExpr | null,
-  importedModuleNameMap: Map<string, string>
-): string =>
-  "(" +
-  parameterList
-    .map(
-      parameter =>
-        parameter.name +
-        ": " +
-        typeExprToString(parameter.typeExpr, importedModuleNameMap)
-    )
-    .join(", ") +
-  ")=>" +
-  (returnType === null
-    ? "void"
-    : typeExprToString(returnType, importedModuleNameMap));
 
 /**
  * グローバル空間に出ている型の名前を集める
@@ -215,78 +192,5 @@ export const scan = (
     case TypeExpr_.GlobalType:
       scanData.globalName.add(typeExpr.name);
       return;
-  }
-};
-
-/**
- * 型の式をコードに変換する
- * @param typeExpr 型の式
- * @param importedModuleNameMap インポートされたモジュールのパスと名前空間識別子のマップ
- */
-export const typeExprToString = (
-  typeExpr: TypeExpr,
-  importedModuleNameMap: Map<string, string>
-): string => {
-  switch (typeExpr._) {
-    case TypeExpr_.Number:
-      return "number";
-
-    case TypeExpr_.String:
-      return "string";
-
-    case TypeExpr_.Boolean:
-      return "boolean";
-
-    case TypeExpr_.Null:
-      return "null";
-
-    case TypeExpr_.Undefined:
-      return "undefined";
-
-    case TypeExpr_.Object:
-      return (
-        "{" +
-        [...typeExpr.memberList.entries()]
-          .map(
-            ([name, typeAndDocument]) =>
-              name +
-              ": " +
-              typeExprToString(typeAndDocument.typeExpr, importedModuleNameMap)
-          )
-          .join(", ") +
-        "}"
-      );
-
-    case TypeExpr_.FunctionWithReturn:
-      return parameterAndReturnToString(
-        typeExpr.parameter,
-        typeExpr.return,
-        importedModuleNameMap
-      );
-
-    case TypeExpr_.FunctionReturnVoid:
-      return parameterAndReturnToString(
-        typeExpr.parameter,
-        null,
-        importedModuleNameMap
-      );
-
-    case TypeExpr_.Union:
-      return typeExpr.types
-        .map(typeExpr => typeExprToString(typeExpr, importedModuleNameMap))
-        .join("|");
-
-    case TypeExpr_.GlobalType:
-      return typeExpr.name;
-
-    case TypeExpr_.ImportedType: {
-      const importedModuleName = importedModuleNameMap.get(typeExpr.path);
-      if (importedModuleName === undefined) {
-        throw new Error(
-          "収集されなかったモジュールがある! path=" + typeExpr.path
-        );
-      }
-      return importedModuleName + "." + typeExpr.name;
-    }
   }
 };

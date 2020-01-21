@@ -1,5 +1,5 @@
-import * as reservedWord from "./reservedWord";
-import * as scanType from "./scanType";
+import * as reservedWord from "../reservedWord";
+import * as scanType from "../scanType";
 import * as typeExpr from "./typeExpr";
 
 export type Expr =
@@ -30,19 +30,25 @@ export type Expr =
       right: Expr;
     }
   | {
+      _: Expr_.ConditionalOperator;
+      condition: Expr;
+      thenExpr: Expr;
+      elseExpr: Expr;
+    }
+  | {
       _: Expr_.ObjectLiteral;
       memberList: Map<string, Expr>;
     }
   | {
       _: Expr_.LambdaWithReturn;
-      parameter: ReadonlyArray<typeExpr.OneParameter>;
+      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
       returnType: typeExpr.TypeExpr;
-      body: Expr;
+      statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Expr_.LambdaReturnVoid;
-      parameter: ReadonlyArray<typeExpr.OneParameter>;
-      body: Expr;
+      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Expr_.GlobalVariable;
@@ -55,7 +61,8 @@ export type Expr =
     }
   | {
       _: Expr_.Argument;
-      name: string;
+      index: number;
+      depth: number;
     }
   | {
       _: Expr_.GetProperty;
@@ -68,20 +75,14 @@ export type Expr =
       parameterList: ReadonlyArray<Expr>;
     }
   | {
-      _: Expr_.IfWithVoidReturn;
-      condition: Expr;
-      then: Expr;
-      else_: Expr;
-    }
-  | {
       _: Expr_.New;
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
     }
   | {
       _: Expr_.LocalVariable;
-      expr: Expr;
-      id: number;
+      index: number;
+      depth: number;
     };
 
 const enum Expr_ {
@@ -94,6 +95,7 @@ const enum Expr_ {
   ObjectLiteral,
   UnaryOperator,
   BinaryOperator,
+  ConditionalOperator,
   LambdaWithReturn,
   LambdaReturnVoid,
   GlobalVariable,
@@ -391,6 +393,7 @@ export const logicalOr = (left: Expr, right: Expr): Expr => ({
 
 /**
  * オブジェクトリテラル
+ * 順番は保証されないので、副作用の含んだ式を入れないこと
  */
 export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
   return {
@@ -403,77 +406,31 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * 戻り値のあるラムダ式
  * @param parameter パラメーター
  * @param returnType 戻り値
- * @param body 本体
+ * @param statementList 本体
  */
-export const createLambdaWithReturn = <
-  parameterNameList extends ReadonlyArray<string>
->(
-  parameter: Array<
-    ValueOf<
-      {
-        [nameIndex in keyof parameterNameList &
-          number]: typeExpr.OneParameter & {
-          name: parameterNameList[nameIndex];
-        };
-      }
-    >
-  >,
+export const createLambdaWithReturn = (
+  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
   returnType: typeExpr.TypeExpr,
-  body: (
-    parameterList: {
-      [nameIndex in keyof parameterNameList & number]: Expr;
-    }
-  ) => Expr
+  statementList: ReadonlyArray<Statement>
 ): Expr => ({
   _: Expr_.LambdaWithReturn,
-  parameter,
+  parameterList,
   returnType,
-  body: body(
-    parameter.map(
-      (o: { name: ValueOf<parameterNameList> }) =>
-        ({
-          _: Expr_.Argument,
-          name: o.name
-        } as Expr)
-    )
-  )
+  statementList
 });
 
 /**
  * 戻り値のないラムダ式
  * @param parameter パラメーター
- * @param body 本体
+ * @param statementList 本体
  */
-export const createLambdaReturnVoid = <
-  parameterNameList extends ReadonlyArray<string>
->(
-  parameter: Array<
-    ValueOf<
-      {
-        [nameIndex in keyof parameterNameList &
-          number]: typeExpr.OneParameter & {
-          name: parameterNameList[nameIndex];
-        };
-      }
-    >
-  >,
-  body: (
-    parameterList: {
-      [nameIndex in keyof parameterNameList & number]: Expr;
-    }
-  ) => Expr
+export const createLambdaReturnVoid = (
+  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  statementList: ReadonlyArray<Statement>
 ): Expr => ({
   _: Expr_.LambdaReturnVoid,
-  parameter,
-  body: body(
-    parameter.map(
-      (o: { name: ValueOf<parameterNameList> }) =>
-        ({
-          _: Expr_.Argument,
-          name: o.name
-        } as Expr)
-    )
-  )
+  parameterList,
+  statementList
 });
 
 /**
@@ -496,22 +453,6 @@ export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
   _: Expr_.Call,
   expr,
   parameterList
-});
-
-/**
- * 条件で分岐して、条件を満たしていた場合、早くreturnする
- * @param identiferIndex
- * @param reserved
- */
-export const ifWithVoidReturn = (
-  condition: Expr,
-  then: Expr,
-  else_: Expr
-): Expr => ({
-  _: Expr_.IfWithVoidReturn,
-  condition,
-  then,
-  else_
 });
 
 /**
@@ -539,11 +480,64 @@ export const globalVariable = (name: string): Expr => ({
  * @param expr 式
  * @param id 識別するためのID  (同じものがあった場合スコープの内側を優先)
  */
-export const localVariable = (expr: Expr, id: number): Expr => ({
+export const localVariable = (depth: number, index: number): Expr => ({
   _: Expr_.LocalVariable,
-  expr,
-  id
+  depth,
+  index
 });
+
+type Statement =
+  | {
+      _: Statement_.If;
+      condition: Expr;
+      thenStatementList: ReadonlyArray<Statement>;
+    }
+  | {
+      _: Statement_.Throw;
+      errorMessage: string;
+    }
+  | {
+      _: Statement_.Return;
+      expr: Expr;
+    }
+  | {
+      _: Statement_.VariableDefinition;
+      expr: Expr;
+      typeExpr: Expr;
+    }
+  | {
+      _: Statement_.FunctionWithReturnValueVariableDefinition;
+      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      returnType: typeExpr.TypeExpr;
+      statement: ReadonlyArray<Statement>;
+      returnExpr: Expr;
+    }
+  | {
+      _: Statement_.ReturnVoidFunctionVariableDefinition;
+      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      statement: ReadonlyArray<Statement>;
+    }
+  | {
+      _: Statement_.For;
+      untilExpr: Expr;
+      statementList: ReadonlyArray<Statement>;
+    }
+  | {
+      _: Statement_.While;
+      statementList: ReadonlyArray<Statement>;
+    };
+
+const enum Statement_ {
+  If,
+  Throw,
+  Return,
+  Continue,
+  VariableDefinition,
+  FunctionWithReturnValueVariableDefinition,
+  ReturnVoidFunctionVariableDefinition,
+  For,
+  While
+}
 
 /**
  * 式をコードに変換する
@@ -600,7 +594,7 @@ export const exprToString = (
     case Expr_.LambdaWithReturn:
       return (
         "(" +
-        expr.parameter
+        expr.parameterList
           .map(
             o =>
               o.name +
@@ -617,7 +611,7 @@ export const exprToString = (
     case Expr_.LambdaReturnVoid:
       return (
         "(" +
-        expr.parameter
+        expr.parameterList
           .map(
             o =>
               o.name +
@@ -661,18 +655,6 @@ export const exprToString = (
         ")"
       );
 
-    case Expr_.IfWithVoidReturn:
-      return (
-        "{\nif(" +
-        exprToString(expr.condition, importedModuleNameMap) +
-        "){" +
-        exprToString(expr.then, importedModuleNameMap) +
-        ";\n  return;" +
-        "}\n" +
-        exprToString(expr.else_, importedModuleNameMap) +
-        "}"
-      );
-
     case Expr_.New:
       return (
         "new (" +
@@ -685,11 +667,7 @@ export const exprToString = (
       );
 
     case Expr_.LocalVariable:
-      return (
-        "{\nconst ローカル変数 = " +
-        exprToString(expr.expr, importedModuleNameMap) +
-        "}"
-      );
+      return expr.name;
   }
 };
 
@@ -727,7 +705,7 @@ export const scanExpr = (
       return;
 
     case Expr_.LambdaWithReturn:
-      for (const oneParameter of expr.parameter) {
+      for (const oneParameter of expr.parameterList) {
         reservedWord.checkUsingReservedWord(
           "function parameter name",
           "関数のパラメーター名",
@@ -740,7 +718,7 @@ export const scanExpr = (
       return;
 
     case Expr_.LambdaReturnVoid:
-      for (const oneParameter of expr.parameter) {
+      for (const oneParameter of expr.parameterList) {
         reservedWord.checkUsingReservedWord(
           "function parameter name",
           "関数のパラメーター名",

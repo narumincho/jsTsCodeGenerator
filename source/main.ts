@@ -1,5 +1,5 @@
-import * as typeExpr from "./typeExpr";
-import * as expr from "./expr";
+import * as typeExpr from "./indexedTree/typeExpr";
+import * as expr from "./indexedTree/expr";
 import * as scanType from "./scanType";
 import * as reservedWord from "./reservedWord";
 
