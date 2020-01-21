@@ -2,25 +2,6 @@ import * as generator from "../source/main";
 import { performance } from "perf_hooks";
 
 describe("test", () => {
-  /*
-   * 作りたいコード
-   *
-   * import * as api from "./api";
-   *
-   * export const middleware = (request, response) => {
-   *   if(request.accept==="text/html") {
-   *      response.setHeader("", "");
-   *      response.send("")
-   *   }
-   *   const a = request.body;
-   *   if(a[0] === 0 ){
-   *      response.send(api.getUser(a[32]))
-   *   }
-   *   response.send()
-   * }
-   *
-   */
-
   const importPath = "./express";
   const expressImportedModule = generator.createImportNodeModule<
     ["Request", "Response"],

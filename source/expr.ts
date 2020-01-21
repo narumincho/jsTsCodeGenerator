@@ -77,6 +77,11 @@ export type Expr =
       _: Expr_.New;
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
+    }
+  | {
+      _: Expr_.LocalVariable;
+      expr: Expr;
+      id: number;
     };
 
 const enum Expr_ {
@@ -97,7 +102,8 @@ const enum Expr_ {
   GetProperty,
   Call,
   IfWithVoidReturn,
-  New
+  New,
+  LocalVariable
 }
 
 type UnaryOperator = "-" | "~" | "!";
@@ -529,6 +535,17 @@ export const globalVariable = (name: string): Expr => ({
 });
 
 /**
+ * ローカル変数
+ * @param expr 式
+ * @param id 識別するためのID  (同じものがあった場合スコープの内側を優先)
+ */
+export const localVariable = (expr: Expr, id: number): Expr => ({
+  _: Expr_.LocalVariable,
+  expr,
+  id
+});
+
+/**
  * 式をコードに変換する
  * @param expr 式
  * @param importedModuleNameMap インポートされたモジュールのパスと名前空間識別子のマップ
@@ -665,6 +682,13 @@ export const exprToString = (
           .map(e => exprToString(e, importedModuleNameMap))
           .join(", ") +
         ")"
+      );
+
+    case Expr_.LocalVariable:
+      return (
+        "{\nconst ローカル変数 = " +
+        exprToString(expr.expr, importedModuleNameMap) +
+        "}"
       );
   }
 };
