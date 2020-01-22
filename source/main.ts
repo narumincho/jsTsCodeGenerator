@@ -110,51 +110,6 @@ export const createGlobalNamespace = <
   };
 };
 
-/**
- * 識別子を生成する
- */
-const createIdentifer = (
-  identiferIndex: number,
-  reserved: Set<string>
-): { identifer: string; nextIdentiferIndex: number } => {
-  while (true) {
-    const result = createIdentiferByIndex(identiferIndex);
-    if (reserved.has(result)) {
-      identiferIndex += 1;
-      continue;
-    }
-    return { identifer: result, nextIdentiferIndex: identiferIndex + 1 };
-  }
-};
-
-/**
- * indexから識別子を生成する (予約語を考慮しない)
- * @param index
- */
-const createIdentiferByIndex = (index: number): string => {
-  const headIdentiferCharTable =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const noHeadIdentiferCharTable = headIdentiferCharTable + "0123456789";
-  if (index < headIdentiferCharTable.length) {
-    return headIdentiferCharTable[index];
-  }
-  let result = "";
-  index -= headIdentiferCharTable.length;
-  while (true) {
-    const quotient = Math.floor(index / noHeadIdentiferCharTable.length);
-    const remainder = index % noHeadIdentiferCharTable.length;
-    if (quotient < headIdentiferCharTable.length) {
-      return (
-        headIdentiferCharTable[quotient] +
-        noHeadIdentiferCharTable[remainder] +
-        result
-      );
-    }
-    result = noHeadIdentiferCharTable[remainder] + result;
-    index = quotient;
-  }
-};
-
 const scanNodeJsCode = (
   nodeJsCode: NodeJsCode
 ): scanType.NodeJsCodeScanData => {
@@ -203,7 +158,7 @@ const createImportedModuleName = (
 } => {
   const importedModuleNameMap = new Map<string, string>();
   for (const importedModulePath of importedModulePathSet) {
-    const identiferAndNextIdentiferIndex = createIdentifer(
+    const identiferAndNextIdentiferIndex = reservedWord.createIdentifer(
       identiferIndex,
       reserved
     );
