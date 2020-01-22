@@ -80,5 +80,11 @@ export const reservedWordSet = new Set([
   "from",
   "of",
   "as",
-  "unknown"
+  "unknown",
+  "Infinity",
+  "NaN",
+  "undefined",
+  "top",
+  "closed",
+  "window"
 ]);
