@@ -154,21 +154,27 @@ type Statement =
       _: Statement_.VariableDefinition;
       name: string;
       expr: Expr;
-      typeExpr: Expr;
+      typeExpr: typeExpr.TypeExpr;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
       name: string;
-      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      parameterList: ReadonlyArray<{
+        name: string;
+        typeExpr: typeExpr.TypeExpr;
+      }>;
       returnType: typeExpr.TypeExpr;
-      statement: ReadonlyArray<Statement>;
+      statementList: ReadonlyArray<Statement>;
       returnExpr: Expr;
     }
   | {
       _: Statement_.ReturnVoidFunctionVariableDefinition;
       name: string;
-      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
-      statement: ReadonlyArray<Statement>;
+      parameterList: ReadonlyArray<{
+        name: string;
+        typeExpr: typeExpr.TypeExpr;
+      }>;
+      statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.For;
@@ -192,6 +198,15 @@ const enum Statement_ {
   For,
   While
 }
+
+const lambdaBodyToString = (
+  statementList: ReadonlyArray<Statement>
+): string => {
+  if (statementList.length === 1 && statementList[0]._ === Statement_.Return) {
+    return "(" + exprToString(statementList[0].expr) + ")";
+  }
+  return "{\n" + statementList.map(statementToString).join(";\n") + "}";
+};
 
 /**
  * 式をコードに変換する
@@ -236,6 +251,16 @@ export const exprToString = (expr: Expr): string => {
         exprToString(expr.right) +
         ")"
       );
+    case Expr_.ConditionalOperator:
+      return (
+        "(" +
+        exprToString(expr.condition) +
+        ")?(" +
+        exprToString(expr.thenExpr) +
+        "):(" +
+        exprToString(expr.elseExpr) +
+        ")"
+      );
 
     case Expr_.LambdaWithReturn:
       return (
@@ -246,25 +271,17 @@ export const exprToString = (expr: Expr): string => {
         "): " +
         typeExpr.typeExprToString(expr.returnType) +
         "=>" +
-        (expr.statementList.length === 1 &&
-        expr.statementList[0]._ === Statement_.Return
-          ? "(" + exprToString(expr.statementList[0].expr) + ")"
-          : "{\n" + expr.statementList.map(statementToString).join(";\n") + "}")
+        lambdaBodyToString(expr.statementList)
       );
 
     case Expr_.LambdaReturnVoid:
       return (
         "(" +
         expr.parameterList
-          .map(
-            o =>
-              o.name +
-              ": " +
-              typeExpr.typeExprToString(o.typeExpr, importedModuleNameMap)
-          )
+          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
           .join(",") +
         "): void=>" +
-        exprToString(expr.body, importedModuleNameMap)
+        lambdaBodyToString(expr.statementList)
       );
 
     case Expr_.GlobalVariable:
@@ -277,31 +294,22 @@ export const exprToString = (expr: Expr): string => {
       return expr.name;
 
     case Expr_.GetProperty:
-      return (
-        "(" +
-        exprToString(expr.expr, importedModuleNameMap) +
-        ")." +
-        expr.propertyName
-      );
+      return "(" + exprToString(expr.expr) + ")." + expr.propertyName;
 
     case Expr_.Call:
       return (
-        exprToString(expr.expr, importedModuleNameMap) +
+        exprToString(expr.expr) +
         "(" +
-        expr.parameterList
-          .map(e => exprToString(e, importedModuleNameMap))
-          .join(", ") +
+        expr.parameterList.map(e => exprToString(e)).join(", ") +
         ")"
       );
 
     case Expr_.New:
       return (
         "new (" +
-        exprToString(expr.expr, importedModuleNameMap) +
+        exprToString(expr.expr) +
         ")(" +
-        expr.parameterList
-          .map(e => exprToString(e, importedModuleNameMap))
-          .join(", ") +
+        expr.parameterList.map(e => exprToString(e)).join(", ") +
         ")"
       );
 
@@ -317,13 +325,90 @@ const stringLiteralValueToString = (value: string): string => {
 const statementToString = (statement: Statement): string => {
   switch (statement._) {
     case Statement_.If:
+      return (
+        "if (" +
+        exprToString(statement.condition) +
+        "){\n" +
+        statement.thenStatementList
+          .map(s => "  " + statementToString(s))
+          .join("\n") +
+        "}"
+      );
     case Statement_.Throw:
+      return 'throw new Error("' + statement.errorMessage + '");';
     case Statement_.Return:
+      return "return" + exprToString(statement.expr) + ";";
     case Statement_.Continue:
+      return "continue;";
     case Statement_.VariableDefinition:
+      return (
+        "const " +
+        statement.name +
+        ":" +
+        typeExpr.typeExprToString(statement.typeExpr) +
+        " = " +
+        exprToString(statement.expr) +
+        ";"
+      );
     case Statement_.FunctionWithReturnValueVariableDefinition:
+      return (
+        "const " +
+        statement.name +
+        " = (" +
+        statement.parameterList
+          .map(
+            parameter =>
+              parameter.name +
+              ":" +
+              typeExpr.typeExprToString(parameter.typeExpr)
+          )
+          .join(",") +
+        "):" +
+        typeExpr.typeExprToString(statement.returnType) +
+        "=>" +
+        lambdaBodyToString(statement.statementList) +
+        ";"
+      );
     case Statement_.ReturnVoidFunctionVariableDefinition:
+      return (
+        "const " +
+        statement.name +
+        " = (" +
+        statement.parameterList
+          .map(
+            parameter =>
+              parameter.name +
+              ":" +
+              typeExpr.typeExprToString(parameter.typeExpr)
+          )
+          .join(",") +
+        "): void =>" +
+        lambdaBodyToString(statement.statementList) +
+        ";"
+      );
     case Statement_.For:
+      return (
+        "for (let " +
+        statement.counterVariableName +
+        " = 0; " +
+        statement.counterVariableName +
+        " < " +
+        exprToString(statement.untilExpr) +
+        ";" +
+        statement.counterVariableName +
+        "+= 1){\n" +
+        statement.statementList
+          .map(s => "  " + statementToString(s))
+          .join(";\n") +
+        "}"
+      );
     case Statement_.While:
+      return (
+        "while (true) {\n" +
+        statement.statementList
+          .map(s => "  " + statementToString(s))
+          .join(";\n") +
+        "}"
+      );
   }
 };

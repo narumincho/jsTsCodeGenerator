@@ -115,15 +115,6 @@ export const functionReturnVoid = (
 });
 
 /**
- * 公開する関数のパラメーター
- */
-export type OneParameter = {
-  name: string;
-  document: string;
-  typeExpr: TypeExpr;
-};
-
-/**
  * インポートされた外部の型
  * @param path インポートするモジュールのパス
  * @param name 型名
@@ -168,14 +159,14 @@ export const scanGlobalVariableNameAndImportedPath = (
 
     case TypeExpr_.FunctionWithReturn:
       for (const oneParameter of typeExpr.parameter) {
-        scanGlobalVariableNameAndImportedPath(oneParameter.typeExpr, scanData);
+        scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
       }
       scanGlobalVariableNameAndImportedPath(typeExpr.return, scanData);
       return;
 
     case TypeExpr_.FunctionReturnVoid:
       for (const oneParameter of typeExpr.parameter) {
-        scanGlobalVariableNameAndImportedPath(oneParameter.typeExpr, scanData);
+        scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
       }
       return;
 
