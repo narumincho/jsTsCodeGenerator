@@ -103,7 +103,6 @@ const enum Expr_ {
   Argument,
   GetProperty,
   Call,
-  IfWithVoidReturn,
   New,
   LocalVariable
 }
@@ -486,7 +485,10 @@ export const localVariable = (depth: number, index: number): Expr => ({
   index
 });
 
-type Statement =
+/**
+ * 文
+ */
+export type Statement =
   | {
       _: Statement_.If;
       condition: Expr;
@@ -632,12 +634,6 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       }
       return;
 
-    case Expr_.IfWithVoidReturn:
-      scanGlobalVariableNameAndImportedPathInExpr(expr.condition, scanData);
-      scanGlobalVariableNameAndImportedPathInExpr(expr.then, scanData);
-      scanGlobalVariableNameAndImportedPathInExpr(expr.else_, scanData);
-      return;
-
     case Expr_.New:
       scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
@@ -647,8 +643,76 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
   }
 };
 
-export const name = (expr: Expr): namedExpr.Expr => {
-  switch(expr._) {
-    case Expr_
-  } 
+export const nameExpr = (
+  expr: Expr,
+  reservedWord: Set<string>
+): namedExpr.Expr => {
+  switch (expr._) {
+    case Expr_.NumberLiteral:
+      return {
+        _: namedExpr.Expr_.NumberLiteral,
+        value: expr.value
+      };
+    case Expr_.StringLiteral:
+      return {
+        _: namedExpr.Expr_.StringLiteral,
+        value: expr.value
+      };
+    case Expr_.BooleanLiteral:
+      return {
+        _: namedExpr.Expr_.BooleanLiteral,
+        value: expr.value
+      };
+    case Expr_.UndefinedLiteral:
+      return {
+        _: namedExpr.Expr_.UndefinedLiteral
+      };
+    case Expr_.NullLiteral:
+      return {
+        _: namedExpr.Expr_.NullLiteral
+      };
+    case Expr_.ObjectLiteral:
+      return {
+        _: namedExpr.Expr_.ObjectLiteral,
+        memberList: new Map(
+          [...expr.memberList].map(([name, expr]) => [
+            name,
+            nameExpr(expr, reservedWord)
+          ])
+        )
+      };
+    case Expr_.UnaryOperator:
+      return {
+        _: namedExpr.Expr_.UnaryOperator,
+        expr: nameExpr(expr.expr, reservedWord),
+        operator: expr.operator
+      };
+    case Expr_.BinaryOperator:
+      return {
+        _: namedExpr.Expr_.BinaryOperator,
+        left: nameExpr(expr, reservedWord),
+        right: nameExpr(expr, reservedWord),
+        operator: expr.operator
+      };
+    case Expr_.ConditionalOperator:
+      return {
+        _: namedExpr.Expr_.ConditionalOperator,
+        condition: nameExpr(expr, reservedWord),
+        elseExpr: nameExpr(expr, reservedWord),
+        thenExpr: nameExpr(expr, reservedWord)
+      };
+    case Expr_.LambdaWithReturn:
+    case Expr_.LambdaReturnVoid:
+    case Expr_.GlobalVariable:
+    case Expr_.ImportedVariable:
+    case Expr_.Argument:
+    case Expr_.GetProperty:
+    case Expr_.Call:
+    case Expr_.New:
+    case Expr_.LocalVariable:
+  }
 };
+
+export const nameStatementList = (
+  statementList: ReadonlyArray<Statement>
+): namedExpr.Statement => {};

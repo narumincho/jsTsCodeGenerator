@@ -18,8 +18,8 @@ describe("test", () => {
       {
         name: "middleware",
         document: "ミドルウェア",
-        expr: generator.expr.stringLiteral("文字列のリテラル"),
-        typeExpr: generator.typeExpr.functionReturnVoid([
+        expr: generator.indexedExpr.stringLiteral("文字列のリテラル"),
+        typeExpr: generator.indexedTypeExpr.functionReturnVoid([
           {
             name: "request",
             document: "expressのリクエスト",

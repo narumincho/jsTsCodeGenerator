@@ -1,51 +1,40 @@
-import * as typeExpr from "./indexedTree/typeExpr";
-import * as expr from "./indexedTree/expr";
+import * as indexedTypeExpr from "./indexedTree/typeExpr";
+import * as indexedExpr from "./indexedTree/expr";
 import * as scanType from "./scanType";
 import * as reservedWord from "./reservedWord";
 
-export { typeExpr };
-export { expr };
-
-/**
- * 型を識別するためのID
- */
-type TypeId = string & { _variableId: never };
-
-/**
- * 変数を識別するためのID
- */
-type VariableId = string & { _variableId: never };
+export { indexedTypeExpr };
+export { indexedExpr };
 
 /**
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
  */
 export type NodeJsCode = {
   exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
-  exportVariableList: ReadonlyArray<ExportVariable>;
+  exportVariableList: ReadonlyArray<ExportFunctionVariable>;
 };
 
 type ExportTypeAlias = {
   readonly name: string;
   readonly document: string;
-  readonly typeExpr: typeExpr.TypeExpr;
+  readonly typeExpr: indexedTypeExpr.TypeExpr;
 };
 
-type ExportVariable = {
+type ExportFunctionVariable = {
   readonly name: string;
-  readonly typeExpr: typeExpr.TypeExpr;
   readonly document: string;
-  readonly expr: expr.Expr;
+  readonly parameterList: ReadonlyArray<{
+    name: string;
+    document: string;
+    typeExpr: indexedTypeExpr.TypeExpr;
+  }>;
+  readonly returnType: indexedTypeExpr.TypeExpr;
+  readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
-type ImportedModule = {
-  path: string;
-  typeList: { [name in string]: TypeId };
-  variableList: { [name in string]: VariableId };
-};
-
 type ValueOf<T> = T[keyof T];
 
 /**
@@ -59,24 +48,24 @@ export const createImportNodeModule = <
   typeList: typeList,
   variableList: variableList
 ): {
-  typeList: { [name in ValueOf<typeList> & string]: typeExpr.TypeExpr };
-  variableList: { [name in ValueOf<variableList> & string]: expr.Expr };
+  typeList: { [name in ValueOf<typeList> & string]: indexedTypeExpr.TypeExpr };
+  variableList: { [name in ValueOf<variableList> & string]: indexedExpr.Expr };
 } => {
   const typeListObject = {} as {
-    [name in ValueOf<typeList> & string]: typeExpr.TypeExpr;
+    [name in ValueOf<typeList> & string]: indexedTypeExpr.TypeExpr;
   };
   const variableListObject = {} as {
-    [name in ValueOf<variableList> & string]: expr.Expr;
+    [name in ValueOf<variableList> & string]: indexedExpr.Expr;
   };
   for (const typeName of typeList) {
     typeListObject[
       typeName as ValueOf<typeList> & string
-    ] = typeExpr.importedType(path, typeName);
+    ] = indexedTypeExpr.importedType(path, typeName);
   }
   for (const variableName of variableList) {
     variableListObject[
       variableName as ValueOf<variableList> & string
-    ] = expr.importedVariable(path, variableName);
+    ] = indexedExpr.importedVariable(path, variableName);
   }
   return {
     typeList: typeListObject,
@@ -96,36 +85,29 @@ export const createGlobalNamespace = <
   typeList: typeList,
   variableList: variableList
 ): {
-  typeList: { [name in ValueOf<typeList> & string]: typeExpr.TypeExpr };
-  variableList: { [name in ValueOf<variableList> & string]: expr.Expr };
+  typeList: { [name in ValueOf<typeList> & string]: indexedTypeExpr.TypeExpr };
+  variableList: { [name in ValueOf<variableList> & string]: indexedExpr.Expr };
 } => {
   const typeListObject = {} as {
-    [name in ValueOf<typeList> & string]: typeExpr.TypeExpr;
+    [name in ValueOf<typeList> & string]: indexedTypeExpr.TypeExpr;
   };
   const variableListObject = {} as {
-    [name in ValueOf<variableList> & string]: expr.Expr;
+    [name in ValueOf<variableList> & string]: indexedExpr.Expr;
   };
   for (const typeName of typeList) {
     typeListObject[
       typeName as ValueOf<typeList> & string
-    ] = typeExpr.globalType(typeName);
+    ] = indexedTypeExpr.globalType(typeName);
   }
   for (const variableName of variableList) {
     variableListObject[
       variableName as ValueOf<variableList> & string
-    ] = expr.globalVariable(variableName);
+    ] = indexedExpr.globalVariable(variableName);
   }
   return {
     typeList: typeListObject,
     variableList: variableListObject
   };
-};
-/**
- * 空のNode.js用コード
- */
-export const emptyNodeJsCode: NodeJsCode = {
-  exportTypeAliasList: [],
-  exportVariableList: []
 };
 
 /**
@@ -183,11 +165,11 @@ const scanNodeJsCode = (
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
     reservedWord.checkUsingReservedWord(
       "export type name",
-      "型の名前",
+      "外部に公開する型の名前",
       exportTypeAlias.name
     );
     scanData.globalName.add(exportTypeAlias.name);
-    typeExpr.scanGlobalVariableNameAndImportedPath(
+    indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
       exportTypeAlias.typeExpr,
       scanData
     );
@@ -195,15 +177,15 @@ const scanNodeJsCode = (
   for (const exportVariable of nodeJsCode.exportVariableList) {
     reservedWord.checkUsingReservedWord(
       "export variable name",
-      "変数名",
+      "外部に公開する変数名",
       exportVariable.name
     );
     scanData.globalName.add(exportVariable.name);
-    typeExpr.scanGlobalVariableNameAndImportedPath(
-      exportVariable.typeExpr,
+    indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
+      exportVariable.returnType,
       scanData
     );
-    expr.scanGlobalVariableNameAndImportedPathInExpr(
+    indexedExpr.scanGlobalVariableNameAndImportedPathInExpr(
       exportVariable.expr,
       scanData
     );
@@ -238,13 +220,16 @@ const createImportedModuleName = (
 };
 
 export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
-  // グローバル空間にある名前やimportしたモジュールのパスを集める
+  // グローバル空間にある名前とimportしたモジュールのパスを集める
   const scanData = scanNodeJsCode(nodeJsCode);
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     0,
     new Set([...scanData.globalName, ...reservedWord.reservedWordSet])
   );
+  for (const exportVariable of nodeJsCode.exportVariableList) {
+    const namedExpr = indexedExpr.nameExpr(exportVariable.statementList);
+  }
 
   return (
     [
@@ -264,7 +249,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
           " */export type " +
           exportTypeAlias.name +
           " = " +
-          typeExpr.typeExprToString(
+          indexedTypeExpr.typeExprToString(
             exportTypeAlias.typeExpr,
             importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
           )
@@ -281,12 +266,12 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
           " */\nexport const " +
           exportVariable.name +
           ": " +
-          typeExpr.typeExprToString(
+          indexedTypeExpr.typeExprToString(
             exportVariable.typeExpr,
             importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
           ) +
           " = " +
-          expr.exprToString(
+          indexedExpr.exprToString(
             exportVariable.expr,
             importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
           )
@@ -300,11 +285,11 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
  * @param exportVariable
  */
 const exportVariableGetParameterDocument = (
-  exportVariable: ExportVariable
+  exportVariable: ExportFunctionVariable
 ): string => {
   switch (exportVariable.typeExpr._) {
-    case typeExpr.TypeExpr_.FunctionWithReturn:
-    case typeExpr.TypeExpr_.FunctionReturnVoid:
+    case indexedTypeExpr.TypeExpr_.FunctionWithReturn:
+    case indexedTypeExpr.TypeExpr_.FunctionReturnVoid:
       return (
         exportVariable.typeExpr.parameter
           .map(p => " * @param " + p.name + " " + p.document)

@@ -133,7 +133,7 @@ type BinaryOperator =
   | "&&"
   | "||";
 
-type Statement =
+export type Statement =
   | {
       _: Statement_.If;
       condition: Expr;
