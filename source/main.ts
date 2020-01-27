@@ -136,10 +136,12 @@ const scanNodeJsCode = (
       exportVariable.name
     );
     scanData.globalName.add(exportVariable.name);
-    indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
-      exportVariable.returnType,
-      scanData
-    );
+    if (exportVariable.returnType !== null) {
+      indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
+        exportVariable.returnType,
+        scanData
+      );
+    }
     indexedExpr.scanGlobalVariableNameAndImportedPathInStatementList(
       exportVariable.statementList,
       scanData
