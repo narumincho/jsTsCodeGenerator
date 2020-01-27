@@ -152,11 +152,11 @@ const scanNodeJsCode = (
 
 const createImportedModuleName = (
   importedModulePathSet: Set<string>,
-  identiferIndex: number,
+  identiferIndex: identifer.IdentiferIndex,
   reserved: Set<string>
 ): {
   importedModuleNameMap: Map<string, string>;
-  nextIdentiferIndex: number;
+  nextIdentiferIndex: identifer.IdentiferIndex;
 } => {
   const importedModuleNameMap = new Map<string, string>();
   for (const importedModulePath of importedModulePathSet) {
@@ -181,7 +181,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const scanData = scanNodeJsCode(nodeJsCode);
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
-    0,
+    identifer.initialIdentiferIndex,
     new Set([...scanData.globalName, ...identifer.reservedWordSet])
   );
   for (const exportVariable of nodeJsCode.exportVariableList) {
