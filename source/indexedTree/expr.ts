@@ -505,6 +505,9 @@ export type Statement =
       expr: Expr;
     }
   | {
+      _: Statement_.ReturnVoid;
+    }
+  | {
       _: Statement_.Continue;
     }
   | {
@@ -538,6 +541,7 @@ const enum Statement_ {
   If,
   Throw,
   Return,
+  ReturnVoid,
   Continue,
   VariableDefinition,
   FunctionWithReturnValueVariableDefinition,
@@ -649,6 +653,7 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
     case Statement_.If:
     case Statement_.Throw:
     case Statement_.Return:
+    case Statement_.ReturnVoid:
     case Statement_.Continue:
     case Statement_.VariableDefinition:
     case Statement_.FunctionWithReturnValueVariableDefinition:

@@ -148,6 +148,9 @@ export type Statement =
       expr: Expr;
     }
   | {
+      _: Statement_.ReturnVoid;
+    }
+  | {
       _: Statement_.Continue;
     }
   | {
@@ -191,6 +194,7 @@ const enum Statement_ {
   If,
   Throw,
   Return,
+  ReturnVoid,
   Continue,
   VariableDefinition,
   FunctionWithReturnValueVariableDefinition,
@@ -334,12 +338,19 @@ const statementToString = (statement: Statement): string => {
           .join("\n") +
         "}"
       );
+
     case Statement_.Throw:
       return 'throw new Error("' + statement.errorMessage + '");';
+
     case Statement_.Return:
       return "return" + exprToString(statement.expr) + ";";
+
+    case Statement_.ReturnVoid:
+      return "return;";
+
     case Statement_.Continue:
       return "continue;";
+
     case Statement_.VariableDefinition:
       return (
         "const " +
@@ -350,6 +361,7 @@ const statementToString = (statement: Statement): string => {
         exprToString(statement.expr) +
         ";"
       );
+
     case Statement_.FunctionWithReturnValueVariableDefinition:
       return (
         "const " +
@@ -369,6 +381,7 @@ const statementToString = (statement: Statement): string => {
         lambdaBodyToString(statement.statementList) +
         ";"
       );
+
     case Statement_.ReturnVoidFunctionVariableDefinition:
       return (
         "const " +
@@ -386,6 +399,7 @@ const statementToString = (statement: Statement): string => {
         lambdaBodyToString(statement.statementList) +
         ";"
       );
+
     case Statement_.For:
       return (
         "for (let " +
@@ -402,6 +416,7 @@ const statementToString = (statement: Statement): string => {
           .join(";\n") +
         "}"
       );
+
     case Statement_.While:
       return (
         "while (true) {\n" +
