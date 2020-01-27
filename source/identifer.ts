@@ -1,16 +1,16 @@
 /**
- * 予約語が使われているか調べる
+ * 言語で決められた予約語かできるだけ使いたくないものかどうか調べる
  * @param nameInEnglish 調べている場所 エラーメッセージのためのヒント 英語
  * @param nameInJapanese 調べている場所 エラーメッセージのためのヒント 日本語
  * @param reservedWord 予約語かどうか調べるワード
- * @throws Error
+ * @throws 予約語だった場合
  */
 export const checkUsingReservedWord = (
   nameInEnglish: string,
   nameInJapanese: string,
   word: string
 ): void => {
-  if (reservedWordSet.has(word)) {
+  if (reservedByLanguageWordSet.has(word)) {
     throw new Error(
       `${nameInEnglish} is revered or names that cannot be used in context. word = ${word}
   ${nameInJapanese}が予約語か文脈によって使えない名前になっています ワード = ${word}`
@@ -18,7 +18,10 @@ export const checkUsingReservedWord = (
   }
 };
 
-export const reservedWordSet = new Set([
+/**
+ * JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
+ */
+const reservedByLanguageWordSet = new Set([
   "await",
   "break",
   "case",
@@ -94,10 +97,13 @@ export const reservedWordSet = new Set([
  */
 export type IdentiferIndex = number & { _identiferIndex: never };
 
+/** 初期インデックス */
 export const initialIdentiferIndex = 0 as IdentiferIndex;
 
 /**
  * 識別子を生成する
+ * @param identiferIndex 識別子を生成するインデックス
+ * @param reserved 言語の予約語と別に
  */
 export const createIdentifer = (
   identiferIndex: IdentiferIndex,
@@ -105,7 +111,7 @@ export const createIdentifer = (
 ): { identifer: string; nextIdentiferIndex: IdentiferIndex } => {
   while (true) {
     const result = createIdentiferByIndex(identiferIndex);
-    if (reserved.has(result)) {
+    if (reserved.has(result) || reservedByLanguageWordSet.has(result)) {
       (identiferIndex as number) += 1;
       continue;
     }

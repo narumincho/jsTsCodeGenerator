@@ -182,7 +182,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     identifer.initialIdentiferIndex,
-    new Set([...scanData.globalName, ...identifer.reservedWordSet])
+    scanData.globalName
   );
   for (const exportVariable of nodeJsCode.exportVariableList) {
     const namedExpr = indexedExpr.toNamedExpr(exportVariable.statementList);
