@@ -513,19 +513,18 @@ export type Statement =
   | {
       _: Statement_.VariableDefinition;
       expr: Expr;
-      typeExpr: Expr;
+      typeExpr: typeExpr.TypeExpr;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
       parameterList: ReadonlyArray<typeExpr.TypeExpr>;
       returnType: typeExpr.TypeExpr;
-      statement: ReadonlyArray<Statement>;
-      returnExpr: Expr;
+      statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.ReturnVoidFunctionVariableDefinition;
       parameterList: ReadonlyArray<typeExpr.TypeExpr>;
-      statement: ReadonlyArray<Statement>;
+      statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.For;
@@ -533,7 +532,7 @@ export type Statement =
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.While;
+      _: Statement_.WhileTrue;
       statementList: ReadonlyArray<Statement>;
     };
 
@@ -547,7 +546,7 @@ const enum Statement_ {
   FunctionWithReturnValueVariableDefinition,
   ReturnVoidFunctionVariableDefinition,
   For,
-  While
+  WhileTrue
 }
 
 /**
@@ -651,15 +650,77 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 ): void => {
   switch (statement._) {
     case Statement_.If:
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.condition,
+        scanData
+      );
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        statement.thenStatementList,
+        scanData
+      );
+      return;
+
     case Statement_.Throw:
+      return;
+
     case Statement_.Return:
+      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      return;
+
     case Statement_.ReturnVoid:
+      return;
+
     case Statement_.Continue:
+      return;
+
     case Statement_.VariableDefinition:
+      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      typeExpr.scanGlobalVariableNameAndImportedPath(
+        statement.typeExpr,
+        scanData
+      );
+      return;
+
     case Statement_.FunctionWithReturnValueVariableDefinition:
+      for (const parameter of statement.parameterList) {
+        typeExpr.scanGlobalVariableNameAndImportedPath(parameter, scanData);
+      }
+      typeExpr.scanGlobalVariableNameAndImportedPath(
+        statement.returnType,
+        scanData
+      );
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        statement.statementList,
+        scanData
+      );
+      return;
+
     case Statement_.ReturnVoidFunctionVariableDefinition:
+      for (const parameter of statement.parameterList) {
+        typeExpr.scanGlobalVariableNameAndImportedPath(parameter, scanData);
+      }
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        statement.statementList,
+        scanData
+      );
+      return;
+
     case Statement_.For:
-    case Statement_.While:
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.untilExpr,
+        scanData
+      );
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        statement.statementList,
+        scanData
+      );
+      return;
+
+    case Statement_.WhileTrue:
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        statement.statementList,
+        scanData
+      );
   }
 };
 
