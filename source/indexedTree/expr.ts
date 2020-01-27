@@ -599,7 +599,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
         "グローバル空間の変数名",
         expr.name
       );
-      scanData.globalName.add(expr.name);
+      scanData.globalNameSet.add(expr.name);
       return;
 
     case Expr_.ImportedVariable:
@@ -617,7 +617,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
         "ラムダ式の引数の変数名",
         expr.name
       );
-      scanData.globalName.add(expr.name);
+      scanData.globalNameSet.add(expr.name);
       return;
     case Expr_.Call:
       scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);

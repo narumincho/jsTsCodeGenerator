@@ -183,7 +183,7 @@ export const scanGlobalVariableNameAndImportedPath = (
       return;
 
     case TypeExpr_.GlobalType:
-      scanData.globalName.add(typeExpr.name);
+      scanData.globalNameSet.add(typeExpr.name);
       return;
   }
 };

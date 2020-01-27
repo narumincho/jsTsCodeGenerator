@@ -119,7 +119,7 @@ const scanNodeJsCode = (
   nodeJsCode: NodeJsCode
 ): scanType.NodeJsCodeScanData => {
   const scanData: scanType.NodeJsCodeScanData = {
-    globalName: new Set(),
+    globalNameSet: new Set(),
     importedModulePath: new Set()
   };
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
@@ -128,7 +128,7 @@ const scanNodeJsCode = (
       "外部に公開する型の名前",
       exportTypeAlias.name
     );
-    scanData.globalName.add(exportTypeAlias.name);
+    scanData.globalNameSet.add(exportTypeAlias.name);
     indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
       exportTypeAlias.typeExpr,
       scanData
@@ -140,14 +140,14 @@ const scanNodeJsCode = (
       "外部に公開する変数名",
       exportVariable.name
     );
-    scanData.globalName.add(exportVariable.name);
+    scanData.globalNameSet.add(exportVariable.name);
     for (const parameter of exportVariable.parameterList) {
       identifer.checkUsingReservedWord(
         "export function parameter name",
         "外部に公開する関数の引数名",
         parameter.name
       );
-      scanData.globalName.add(parameter.name);
+      scanData.globalNameSet.add(parameter.name);
     }
 
     if (exportVariable.returnType !== null) {
@@ -210,13 +210,13 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     identifer.initialIdentiferIndex,
-    scanData.globalName
+    scanData.globalNameSet
   );
   const importedModuleNameMap =
     importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap;
 
   const globalNameSet = new Set([
-    ...scanData.globalName,
+    ...scanData.globalNameSet,
     ...importedModuleNameMap.values()
   ]);
 
