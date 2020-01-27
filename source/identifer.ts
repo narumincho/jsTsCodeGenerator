@@ -92,9 +92,9 @@ export const reservedWordSet = new Set([
 /**
  * 識別子のID
  */
-type IdentiferIndex = number & { _identiferIndex: never };
+export type IdentiferIndex = number & { _identiferIndex: never };
 
-export const initialIdentiferIndex = 0;
+export const initialIdentiferIndex = 0 as IdentiferIndex;
 
 /**
  * 識別子を生成する

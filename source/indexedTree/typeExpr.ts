@@ -1,4 +1,6 @@
 import * as scanType from "../scanType";
+import * as named from "../namedTree/typeExpr";
+import * as identifer from "../identifer";
 
 /**
  * 型を表現する式
@@ -33,7 +35,7 @@ export type TypeExpr =
     }
   | { _: TypeExpr_.GlobalType; name: string };
 
-export const enum TypeExpr_ {
+const enum TypeExpr_ {
   Number,
   String,
   Boolean,
@@ -135,7 +137,7 @@ export const globalType = (name: string): TypeExpr => ({
 });
 
 /**
- * グローバル空間に出ている型の名前を集める
+ * グローバル空間(グローバル変数、直下の関数の引数名)に出ている型の名前を集める
  * @param typeExpr 型の式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
@@ -177,6 +179,114 @@ export const scanGlobalVariableNameAndImportedPath = (
       return;
 
     case TypeExpr_.ImportedType:
+      scanData.importedModulePath.add(typeExpr.path);
+      return;
+
+    case TypeExpr_.GlobalType:
+      scanData.globalName.add(typeExpr.name);
+      return;
+  }
+};
+
+export const toNamed = (
+  typeExpr: TypeExpr,
+  reservedWord: Set<string>
+): named.TypeExpr => {
+  switch (typeExpr._) {
+    case TypeExpr_.Number:
+      return {
+        _: named.TypeExpr_.Number
+      };
+    case TypeExpr_.String:
+      return {
+        _: named.TypeExpr_.String
+      };
+    case TypeExpr_.Boolean:
+      return {
+        _: named.TypeExpr_.Boolean
+      };
+    case TypeExpr_.Null:
+      return {
+        _: named.TypeExpr_.Number
+      };
+    case TypeExpr_.Undefined:
+      return {
+        _: named.TypeExpr_.Undefined
+      };
+
+    case TypeExpr_.Object:
+      return {
+        _: named.TypeExpr_.Object,
+        memberList: new Map(
+          [...typeExpr.memberList].map(([memberName, member]) => [
+            memberName,
+            {
+              typeExpr: toNamed(member.typeExpr, reservedWord),
+              document: member.document
+            }
+          ])
+        )
+      };
+
+    case TypeExpr_.FunctionWithReturn: {
+      const parameterList: Array<{
+        name: string;
+        typeExpr: named.TypeExpr;
+      }> = [];
+      let identiferIndex = identifer.initialIdentiferIndex;
+      for (const parameterType of typeExpr.parameter) {
+        const identiferAndNextIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
+        parameterList.push({
+          name: identiferAndNextIndex.identifer,
+          typeExpr: toNamed(parameterType, reservedWord)
+        });
+      }
+      return {
+        _: named.TypeExpr_.FunctionWithReturn,
+        parameter: parameterList,
+        return: toNamed(typeExpr.return, reservedWord)
+      };
+    }
+
+    case TypeExpr_.FunctionReturnVoid: {
+      const parameterList: Array<{
+        name: string;
+        typeExpr: named.TypeExpr;
+      }> = [];
+      let identiferIndex = identifer.initialIdentiferIndex;
+      for (const parameterType of typeExpr.parameter) {
+        const identiferAndNextIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
+        parameterList.push({
+          name: identiferAndNextIndex.identifer,
+          typeExpr: toNamed(parameterType, reservedWord)
+        });
+      }
+      return {
+        _: named.TypeExpr_.FunctionReturnVoid,
+        parameter: parameterList
+      };
+    }
+
+    case TypeExpr_.Union:
+      return {
+        _: named.TypeExpr_.Union,
+        types: typeExpr.types.map(t => toNamed(t, reservedWord))
+      };
+
+    case TypeExpr_.ImportedType:
+      return {
+        _:  named.TypeExpr_.ImportedType,
+        name: typeExpr.name,
+        nameSpaceIdentifer: 
+      }
       scanData.importedModulePath.add(typeExpr.path);
       return;
 

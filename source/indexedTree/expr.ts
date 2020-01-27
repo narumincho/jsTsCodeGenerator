@@ -1,7 +1,9 @@
-import * as reservedWord from "../reservedWord";
+import * as identifer from "../identifer";
 import * as scanType from "../scanType";
 import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
+import * as namedTypeExpr from "../namedTree/typeExpr";
+import { type } from "os";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -561,7 +563,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.ObjectLiteral:
       for (const [propertyName, member] of expr.memberList) {
-        reservedWord.checkUsingReservedWord(
+        identifer.checkUsingReservedWord(
           "object literal property name",
           "オブジェクトリテラルのプロパティ名",
           propertyName
@@ -572,15 +574,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.LambdaWithReturn:
       for (const oneParameter of expr.parameterList) {
-        reservedWord.checkUsingReservedWord(
-          "function parameter name",
-          "関数のパラメーター名",
-          oneParameter.name
-        );
-        typeExpr.scanGlobalVariableNameAndImportedPath(
-          oneParameter.typeExpr,
-          scanData
-        );
+        typeExpr.scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
       }
       typeExpr.scanGlobalVariableNameAndImportedPath(expr.returnType, scanData);
       scanGlobalVariableNameAndImportedPathInExpr(expr.body, scanData);
@@ -588,21 +582,13 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.LambdaReturnVoid:
       for (const oneParameter of expr.parameterList) {
-        reservedWord.checkUsingReservedWord(
-          "function parameter name",
-          "関数のパラメーター名",
-          oneParameter.name
-        );
-        typeExpr.scanGlobalVariableNameAndImportedPath(
-          oneParameter.typeExpr,
-          scanData
-        );
+        typeExpr.scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
       }
       scanGlobalVariableNameAndImportedPathInExpr(expr.body, scanData);
       return;
 
     case Expr_.GlobalVariable:
-      reservedWord.checkUsingReservedWord(
+      identifer.checkUsingReservedWord(
         "global variable name",
         "グローバル空間の変数名",
         expr.name
@@ -611,7 +597,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.ImportedVariable:
-      reservedWord.checkUsingReservedWord(
+      identifer.checkUsingReservedWord(
         "imported variable name",
         "インポートした変数名",
         expr.name
@@ -620,7 +606,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.Argument:
-      reservedWord.checkUsingReservedWord(
+      identifer.checkUsingReservedWord(
         "argument name",
         "ラムダ式の引数の変数名",
         expr.name
@@ -643,9 +629,36 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
   }
 };
 
-export const nameExpr = (
+export const scanGlobalVariableNameAndImportedPathInStatementList = (
+  statementList: ReadonlyArray<Statement>,
+  scanData: scanType.NodeJsCodeScanData
+): void => {
+  for (const statement of statementList) {
+    scanGlobalVariableNameAndImportedPathInStatement(statement, scanData);
+  }
+};
+
+export const scanGlobalVariableNameAndImportedPathInStatement = (
+  statement: Statement,
+  scanData: scanType.NodeJsCodeScanData
+): void => {
+  switch (statement._) {
+    case Statement_.If:
+    case Statement_.Throw:
+    case Statement_.Return:
+    case Statement_.Continue:
+    case Statement_.VariableDefinition:
+    case Statement_.FunctionWithReturnValueVariableDefinition:
+    case Statement_.ReturnVoidFunctionVariableDefinition:
+    case Statement_.For:
+    case Statement_.While:
+  }
+};
+
+export const toNamedExpr = (
   expr: Expr,
-  reservedWord: Set<string>
+  reservedWord: Set<string>,
+  identiferIndex: identifer.IdentiferIndex
 ): namedExpr.Expr => {
   switch (expr._) {
     case Expr_.NumberLiteral:
@@ -677,42 +690,75 @@ export const nameExpr = (
         memberList: new Map(
           [...expr.memberList].map(([name, expr]) => [
             name,
-            nameExpr(expr, reservedWord)
+            toNamedExpr(expr, reservedWord, identiferIndex)
           ])
         )
       };
     case Expr_.UnaryOperator:
       return {
         _: namedExpr.Expr_.UnaryOperator,
-        expr: nameExpr(expr.expr, reservedWord),
+        expr: toNamedExpr(expr.expr, reservedWord, identiferIndex),
         operator: expr.operator
       };
     case Expr_.BinaryOperator:
       return {
         _: namedExpr.Expr_.BinaryOperator,
-        left: nameExpr(expr, reservedWord),
-        right: nameExpr(expr, reservedWord),
+        left: toNamedExpr(expr, reservedWord, identiferIndex),
+        right: toNamedExpr(expr, reservedWord, identiferIndex),
         operator: expr.operator
       };
     case Expr_.ConditionalOperator:
       return {
         _: namedExpr.Expr_.ConditionalOperator,
-        condition: nameExpr(expr, reservedWord),
-        elseExpr: nameExpr(expr, reservedWord),
-        thenExpr: nameExpr(expr, reservedWord)
+        condition: toNamedExpr(expr, reservedWord, identiferIndex),
+        elseExpr: toNamedExpr(expr, reservedWord, identiferIndex),
+        thenExpr: toNamedExpr(expr, reservedWord, identiferIndex)
       };
-    case Expr_.LambdaWithReturn:
+    case Expr_.LambdaWithReturn: {
+      const parameterList: Array<{
+        name: string;
+        typeExpr: namedTypeExpr.TypeExpr;
+      }> = [];
+      let identiferIndex = identifer.initialIdentiferIndex;
+      for (const parameterType of expr.parameterList) {
+        const identiferAndNextIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
+        parameterList.push({
+          name: identiferAndNextIndex.identifer,
+          typeExpr: typeExpr.toNamed(parameterType, reservedWord)
+        });
+      }
+      return {
+        _: namedExpr.Expr_.LambdaWithReturn,
+        parameterList,
+        returnType: typeExpr.toNamed(expr.returnType, reservedWord),
+        statementList: toNamedStatementList(expr.statementList)
+      };
+    }
     case Expr_.LambdaReturnVoid:
+      return {};
     case Expr_.GlobalVariable:
+      return {};
     case Expr_.ImportedVariable:
+      return {};
     case Expr_.Argument:
+      return {};
     case Expr_.GetProperty:
+      return {};
     case Expr_.Call:
+      return {};
     case Expr_.New:
+      return {};
     case Expr_.LocalVariable:
+      return {};
   }
 };
 
-export const nameStatementList = (
+export const toNamedStatementList = (
   statementList: ReadonlyArray<Statement>
-): namedExpr.Statement => {};
+): ReadonlyArray<namedExpr.Statement> => {
+  return [];
+};

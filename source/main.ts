@@ -1,7 +1,7 @@
 import * as indexedTypeExpr from "./indexedTree/typeExpr";
 import * as indexedExpr from "./indexedTree/expr";
 import * as scanType from "./scanType";
-import * as reservedWord from "./reservedWord";
+import * as identifer from "./identifer";
 
 export { indexedTypeExpr };
 export { indexedExpr };
@@ -118,7 +118,7 @@ const scanNodeJsCode = (
     importedModulePath: new Set()
   };
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
-    reservedWord.checkUsingReservedWord(
+    identifer.checkUsingReservedWord(
       "export type name",
       "外部に公開する型の名前",
       exportTypeAlias.name
@@ -130,7 +130,7 @@ const scanNodeJsCode = (
     );
   }
   for (const exportVariable of nodeJsCode.exportVariableList) {
-    reservedWord.checkUsingReservedWord(
+    identifer.checkUsingReservedWord(
       "export variable name",
       "外部に公開する変数名",
       exportVariable.name
@@ -140,8 +140,8 @@ const scanNodeJsCode = (
       exportVariable.returnType,
       scanData
     );
-    indexedExpr.scanGlobalVariableNameAndImportedPathInExpr(
-      exportVariable.expr,
+    indexedExpr.scanGlobalVariableNameAndImportedPathInStatementList(
+      exportVariable.statementList,
       scanData
     );
   }
@@ -158,7 +158,7 @@ const createImportedModuleName = (
 } => {
   const importedModuleNameMap = new Map<string, string>();
   for (const importedModulePath of importedModulePathSet) {
-    const identiferAndNextIdentiferIndex = reservedWord.createIdentifer(
+    const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,
       reserved
     );
@@ -180,10 +180,10 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
     scanData.importedModulePath,
     0,
-    new Set([...scanData.globalName, ...reservedWord.reservedWordSet])
+    new Set([...scanData.globalName, ...identifer.reservedWordSet])
   );
   for (const exportVariable of nodeJsCode.exportVariableList) {
-    const namedExpr = indexedExpr.nameExpr(exportVariable.statementList);
+    const namedExpr = indexedExpr.toNamedExpr(exportVariable.statementList);
   }
 
   return (
