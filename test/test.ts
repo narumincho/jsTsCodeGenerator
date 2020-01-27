@@ -18,8 +18,8 @@ describe("test", () => {
       {
         name: "middleware",
         document: "ミドルウェア",
-        expr: generator.indexedExpr.stringLiteral("文字列のリテラル"),
-        typeExpr: generator.indexedTypeExpr.functionReturnVoid([
+        statementList: [],
+        parameterList: [
           {
             name: "request",
             document: "expressのリクエスト",
@@ -30,19 +30,8 @@ describe("test", () => {
             document: "expressのレスポンス",
             typeExpr: expressImportedModule.typeList.Response
           }
-        ])
-      },
-      {
-        name: "sorena",
-        document: "ドキュメント",
-        typeExpr: generator.typeExpr.object(
-          new Map([
-            ["name", { document: "", typeExpr: generator.typeExpr.typeString }]
-          ])
-        ),
-        expr: generator.expr.createObjectLiteral(
-          new Map([["name", generator.expr.stringLiteral("sorena")]])
-        )
+        ],
+        returnType: null
       }
     ]
   };

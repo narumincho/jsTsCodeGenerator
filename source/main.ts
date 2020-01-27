@@ -28,7 +28,7 @@ type ExportFunctionVariable = {
     document: string;
     typeExpr: indexedTypeExpr.TypeExpr;
   }>;
-  readonly returnType: indexedTypeExpr.TypeExpr;
+  readonly returnType: indexedTypeExpr.TypeExpr | null;
   readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
