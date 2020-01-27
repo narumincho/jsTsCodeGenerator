@@ -496,7 +496,7 @@ export type Statement =
       thenStatementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.Throw;
+      _: Statement_.ThrowError;
       errorMessage: string;
     }
   | {
@@ -537,7 +537,7 @@ export type Statement =
 
 const enum Statement_ {
   If,
-  Throw,
+  ThrowError,
   Return,
   ReturnVoid,
   Continue,
@@ -660,7 +660,7 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
       );
       return;
 
-    case Statement_.Throw:
+    case Statement_.ThrowError:
       return;
 
     case Statement_.Return:
@@ -1084,10 +1084,10 @@ export const toNamedStatement = (
         },
         index: variableDefinitionIndex
       };
-    case Statement_.Throw:
+    case Statement_.ThrowError:
       return {
         statement: {
-          _: namedExpr.Statement_.Throw,
+          _: namedExpr.Statement_.ThrowError,
           errorMessage: statement.errorMessage
         },
         index: variableDefinitionIndex

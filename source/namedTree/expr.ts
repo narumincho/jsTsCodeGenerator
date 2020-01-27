@@ -140,7 +140,7 @@ export type Statement =
       thenStatementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.Throw;
+      _: Statement_.ThrowError;
       errorMessage: string;
     }
   | {
@@ -191,7 +191,7 @@ export type Statement =
 
 export const enum Statement_ {
   If,
-  Throw,
+  ThrowError,
   Return,
   ReturnVoid,
   Continue,
@@ -341,7 +341,7 @@ export const statementToString = (statement: Statement): string => {
         "}"
       );
 
-    case Statement_.Throw:
+    case Statement_.ThrowError:
       return 'throw new Error("' + statement.errorMessage + '");';
 
     case Statement_.Return:
