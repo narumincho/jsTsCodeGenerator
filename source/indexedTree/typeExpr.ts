@@ -190,7 +190,8 @@ export const scanGlobalVariableNameAndImportedPath = (
 
 export const toNamed = (
   typeExpr: TypeExpr,
-  reservedWord: Set<string>
+  reservedWord: ReadonlySet<string>,
+  importModuleMap: ReadonlyMap<string, string>
 ): named.TypeExpr => {
   switch (typeExpr._) {
     case TypeExpr_.Number:
@@ -283,10 +284,11 @@ export const toNamed = (
 
     case TypeExpr_.ImportedType:
       return {
-        _:  named.TypeExpr_.ImportedType,
+        _: named.TypeExpr_.ImportedType,
         name: typeExpr.name,
-        nameSpaceIdentifer: 
-      }
+        nameSpaceIdentifer:
+          "コードの文字列化にインポートの識別子をどうにかしたい"
+      };
       scanData.importedModulePath.add(typeExpr.path);
       return;
 

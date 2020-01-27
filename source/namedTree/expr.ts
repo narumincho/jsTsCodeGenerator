@@ -215,7 +215,6 @@ const lambdaBodyToString = (
 /**
  * 式をコードに変換する
  * @param expr 式
- * @param importedModuleNameMap インポートされたモジュールのパスと名前空間識別子のマップ
  */
 export const exprToString = (expr: Expr): string => {
   switch (expr._) {
@@ -326,7 +325,11 @@ const stringLiteralValueToString = (value: string): string => {
   return '"' + value.replace(/"/gu, '\\"').replace(/\n/gu, "\\n") + '"';
 };
 
-const statementToString = (statement: Statement): string => {
+/**
+ * 文をコードに変換する
+ * @param statement 文
+ */
+export const statementToString = (statement: Statement): string => {
   switch (statement._) {
     case Statement_.If:
       return (

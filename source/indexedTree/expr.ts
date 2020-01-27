@@ -827,7 +827,9 @@ export const toNamedExpr = (
 };
 
 export const toNamedStatementList = (
-  statementList: ReadonlyArray<Statement>
+  statementList: ReadonlyArray<Statement>,
+  importedModuleNameMap: ReadonlyMap<string, string>,
+  identiferIndex: identifer.IdentiferIndex
 ): ReadonlyArray<namedExpr.Statement> => {
   return [];
 };
