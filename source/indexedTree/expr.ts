@@ -505,6 +505,9 @@ export type Statement =
       expr: Expr;
     }
   | {
+      _: Statement_.Continue;
+    }
+  | {
       _: Statement_.VariableDefinition;
       expr: Expr;
       typeExpr: Expr;
