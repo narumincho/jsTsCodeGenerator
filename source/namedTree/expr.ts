@@ -186,7 +186,7 @@ export type Statement =
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.While;
+      _: Statement_.WhileTrue;
       statementList: ReadonlyArray<Statement>;
     };
 
@@ -200,7 +200,7 @@ const enum Statement_ {
   FunctionWithReturnValueVariableDefinition,
   ReturnVoidFunctionVariableDefinition,
   For,
-  While
+  WhileTrue
 }
 
 const lambdaBodyToString = (
@@ -417,7 +417,7 @@ const statementToString = (statement: Statement): string => {
         "}"
       );
 
-    case Statement_.While:
+    case Statement_.WhileTrue:
       return (
         "while (true) {\n" +
         statement.statementList
