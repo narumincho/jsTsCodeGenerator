@@ -14,7 +14,7 @@ describe("test", () => {
 
   const sampleCode: generator.NodeJsCode = {
     exportTypeAliasList: [],
-    exportVariableList: [
+    exportFunctionList: [
       {
         name: "middleware",
         document: "ミドルウェア",
@@ -53,12 +53,17 @@ describe("test", () => {
     expect(nodeJsTypeScriptCode).toMatch(importPath);
   });
   it("not include revered word", () => {
-    const nodeJsCode = {
+    const nodeJsCode: generator.NodeJsCode = {
       exportTypeAliasList: [],
-      exportVariableList: [
+      exportFunctionList: [
         {
           name: "new",
           document: "newという名前の変数",
+          parameterList: [],
+          returnType: null,
+          statementList: [
+            
+          ]
           typeExpr: generator.typeExpr.typeString,
           expr: generator.expr.stringLiteral("newData")
         }

@@ -726,9 +726,13 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 
 export const toNamedExpr = (
   expr: Expr,
-  reservedWord: Set<string>,
+  reservedWord: ReadonlySet<string>,
   importModuleMap: ReadonlyMap<string, string>,
-  identiferIndex: identifer.IdentiferIndex
+  identiferIndex: identifer.IdentiferIndex,
+  argumentAndLocalVariableNameList: ReadonlyArray<{
+    argument: ReadonlyArray<string>;
+    variable: ReadonlyArray<string>;
+  }>
 ): namedExpr.Expr => {
   switch (expr._) {
     case Expr_.NumberLiteral:
@@ -760,7 +764,13 @@ export const toNamedExpr = (
         memberList: new Map(
           [...expr.memberList].map(([name, expr]) => [
             name,
-            toNamedExpr(expr, reservedWord, importModuleMap, identiferIndex)
+            toNamedExpr(
+              expr,
+              reservedWord,
+              importModuleMap,
+              identiferIndex,
+              argumentAndLocalVariableNameList
+            )
           ])
         )
       };
@@ -771,15 +781,28 @@ export const toNamedExpr = (
           expr.expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         ),
         operator: expr.operator
       };
     case Expr_.BinaryOperator:
       return {
         _: namedExpr.Expr_.BinaryOperator,
-        left: toNamedExpr(expr, reservedWord, importModuleMap, identiferIndex),
-        right: toNamedExpr(expr, reservedWord, importModuleMap, identiferIndex),
+        left: toNamedExpr(
+          expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex,
+          argumentAndLocalVariableNameList
+        ),
+        right: toNamedExpr(
+          expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex,
+          argumentAndLocalVariableNameList
+        ),
         operator: expr.operator
       };
     case Expr_.ConditionalOperator:
@@ -789,19 +812,22 @@ export const toNamedExpr = (
           expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         ),
         elseExpr: toNamedExpr(
           expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         ),
         thenExpr: toNamedExpr(
           expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         )
       };
     case Expr_.LambdaWithReturn: {
@@ -835,8 +861,11 @@ export const toNamedExpr = (
         ),
         statementList: toNamedStatementList(
           expr.statementList,
+          reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList,
+          parameterList.map(parameter => parameter.name)
         )
       };
     }
@@ -866,8 +895,11 @@ export const toNamedExpr = (
         parameterList,
         statementList: toNamedStatementList(
           expr.statementList,
+          reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList,
+          parameterList.map(parameter => parameter.name)
         )
       };
     }
@@ -897,8 +929,10 @@ export const toNamedExpr = (
     case Expr_.Argument:
       return {
         _: namedExpr.Expr_.Argument,
-        name:
-          "引数名(" + expr.depth.toString() + "," + expr.depth.toString() + ")" // TODO
+        name: getElementByLastIndex(
+          argumentAndLocalVariableNameList,
+          expr.depth
+        ).argument[expr.index]
       };
     case Expr_.GetProperty:
       return {
@@ -907,7 +941,8 @@ export const toNamedExpr = (
           expr.expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         ),
         propertyName: expr.propertyName
       };
@@ -918,10 +953,17 @@ export const toNamedExpr = (
           expr.expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         ),
         parameterList: expr.parameterList.map(parameter =>
-          toNamedExpr(parameter, reservedWord, importModuleMap, identiferIndex)
+          toNamedExpr(
+            parameter,
+            reservedWord,
+            importModuleMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
         )
       };
     case Expr_.New:
@@ -931,29 +973,316 @@ export const toNamedExpr = (
           expr.expr,
           reservedWord,
           importModuleMap,
-          identiferIndex
+          identiferIndex,
+          argumentAndLocalVariableNameList
         ),
         parameterList: expr.parameterList.map(parameter =>
-          toNamedExpr(parameter, reservedWord, importModuleMap, identiferIndex)
+          toNamedExpr(
+            parameter,
+            reservedWord,
+            importModuleMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
         )
       };
     case Expr_.LocalVariable:
       return {
         _: namedExpr.Expr_.LocalVariable,
-        name:
-          "ローカル変数名(" +
-          expr.depth.toString(9) +
-          "," +
-          expr.index.toString() +
-          ")" // TODO
+        name: getElementByLastIndex(
+          argumentAndLocalVariableNameList,
+          expr.depth
+        ).variable[expr.index]
       };
   }
 };
 
 export const toNamedStatementList = (
   statementList: ReadonlyArray<Statement>,
+  reservedWord: ReadonlySet<string>,
   importedModuleNameMap: ReadonlyMap<string, string>,
-  identiferIndex: identifer.IdentiferIndex
+  identiferIndex: identifer.IdentiferIndex,
+  argumentAndLocalVariableNameList: ReadonlyArray<{
+    argument: ReadonlyArray<string>;
+    variable: ReadonlyArray<string>;
+  }>,
+  argumentNameList: ReadonlyArray<string>
 ): ReadonlyArray<namedExpr.Statement> => {
-  return [];
+  const variableNameInScopeList: Array<string> = [];
+
+  // スコープ内にある変数定義を見て、変数名を決める
+  for (const statement of statementList) {
+    switch (statement._) {
+      case Statement_.VariableDefinition:
+      case Statement_.ReturnVoidFunctionVariableDefinition:
+      case Statement_.FunctionWithReturnValueVariableDefinition: {
+        const identiferAndIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        variableNameInScopeList.push(identiferAndIndex.identifer);
+        identiferIndex = identiferAndIndex.nextIdentiferIndex;
+        break;
+      }
+    }
+  }
+  const newArgumentAndLocalVariableNameList: ReadonlyArray<{
+    argument: ReadonlyArray<string>;
+    variable: ReadonlyArray<string>;
+  }> = [
+    ...argumentAndLocalVariableNameList,
+    { argument: argumentNameList, variable: variableNameInScopeList }
+  ];
+  const namedStatementList: Array<namedExpr.Statement> = [];
+  let variableDefinitionIndex = 0;
+  for (const statement of statementList) {
+    const statementAndIndex = toNamedStatement(
+      statement,
+      reservedWord,
+      importedModuleNameMap,
+      identiferIndex,
+      newArgumentAndLocalVariableNameList,
+      variableDefinitionIndex
+    );
+    namedStatementList.push(statementAndIndex.statement);
+    variableDefinitionIndex = statementAndIndex.index;
+  }
+  return namedStatementList;
+};
+
+export const toNamedStatement = (
+  statement: Statement,
+  reservedWord: ReadonlySet<string>,
+  importedModuleNameMap: ReadonlyMap<string, string>,
+  identiferIndex: identifer.IdentiferIndex,
+  argumentAndLocalVariableNameList: ReadonlyArray<{
+    argument: ReadonlyArray<string>;
+    variable: ReadonlyArray<string>;
+  }>,
+  variableDefinitionIndex: number
+): { statement: namedExpr.Statement; index: number } => {
+  switch (statement._) {
+    case Statement_.If:
+      return {
+        statement: {
+          _: namedExpr.Statement_.If,
+          condition: toNamedExpr(
+            statement.condition,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          ),
+          thenStatementList: toNamedStatementList(
+            statement.thenStatementList,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList,
+            []
+          )
+        },
+        index: variableDefinitionIndex
+      };
+    case Statement_.Throw:
+      return {
+        statement: {
+          _: namedExpr.Statement_.Throw,
+          errorMessage: statement.errorMessage
+        },
+        index: variableDefinitionIndex
+      };
+
+    case Statement_.Return:
+      return {
+        statement: {
+          _: namedExpr.Statement_.Return,
+          expr: toNamedExpr(
+            statement.expr,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
+        },
+        index: variableDefinitionIndex
+      };
+    case Statement_.ReturnVoid:
+      return {
+        statement: {
+          _: namedExpr.Statement_.ReturnVoid
+        },
+        index: variableDefinitionIndex
+      };
+
+    case Statement_.Continue:
+      return {
+        statement: {
+          _: namedExpr.Statement_.Continue
+        },
+        index: variableDefinitionIndex
+      };
+
+    case Statement_.VariableDefinition:
+      return {
+        statement: {
+          _: namedExpr.Statement_.VariableDefinition,
+          expr: toNamedExpr(
+            statement.expr,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          ),
+          name: getElementByLastIndex(argumentAndLocalVariableNameList, 0)
+            .variable[variableDefinitionIndex],
+          typeExpr: typeExpr.toNamed(
+            statement.typeExpr,
+            reservedWord,
+            importedModuleNameMap
+          )
+        },
+        index: variableDefinitionIndex + 1
+      };
+    case Statement_.FunctionWithReturnValueVariableDefinition: {
+      const namedParameterList: Array<{
+        name: string;
+        typeExpr: namedTypeExpr.TypeExpr;
+      }> = [];
+      for (const parameter of statement.parameterList) {
+        const identiferAndIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        namedParameterList.push({
+          name: identiferAndIndex.identifer,
+          typeExpr: typeExpr.toNamed(
+            parameter,
+            reservedWord,
+            importedModuleNameMap
+          )
+        });
+        identiferIndex = identiferAndIndex.nextIdentiferIndex;
+      }
+      return {
+        statement: {
+          _: namedExpr.Statement_.FunctionWithReturnValueVariableDefinition,
+          name: getElementByLastIndex(argumentAndLocalVariableNameList, 0)
+            .variable[variableDefinitionIndex],
+          parameterList: namedParameterList,
+          returnType: typeExpr.toNamed(
+            statement.returnType,
+            reservedWord,
+            importedModuleNameMap
+          ),
+          statementList: toNamedStatementList(
+            statement.statementList,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList,
+            namedParameterList.map(parameter => parameter.name)
+          )
+        },
+        index: variableDefinitionIndex + 1
+      };
+    }
+    case Statement_.ReturnVoidFunctionVariableDefinition: {
+      const namedParameterList: Array<{
+        name: string;
+        typeExpr: namedTypeExpr.TypeExpr;
+      }> = [];
+      for (const parameter of statement.parameterList) {
+        const identiferAndIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        namedParameterList.push({
+          name: identiferAndIndex.identifer,
+          typeExpr: typeExpr.toNamed(
+            parameter,
+            reservedWord,
+            importedModuleNameMap
+          )
+        });
+        identiferIndex = identiferAndIndex.nextIdentiferIndex;
+      }
+      return {
+        statement: {
+          _: namedExpr.Statement_.ReturnVoidFunctionVariableDefinition,
+          name: getElementByLastIndex(argumentAndLocalVariableNameList, 0)
+            .variable[variableDefinitionIndex],
+          parameterList: namedParameterList,
+          statementList: toNamedStatementList(
+            statement.statementList,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList,
+            namedParameterList.map(parameter => parameter.name)
+          )
+        },
+        index: variableDefinitionIndex + 1
+      };
+    }
+    case Statement_.For: {
+      const counterVariableNameAndIndex = identifer.createIdentifer(
+        identiferIndex,
+        reservedWord
+      );
+      return {
+        statement: {
+          _: namedExpr.Statement_.For,
+          counterVariableName: counterVariableNameAndIndex.identifer,
+          statementList: toNamedStatementList(
+            statement.statementList,
+            reservedWord,
+            importedModuleNameMap,
+            counterVariableNameAndIndex.nextIdentiferIndex,
+            argumentAndLocalVariableNameList,
+            [counterVariableNameAndIndex.identifer]
+          ),
+          untilExpr: toNamedExpr(
+            statement.untilExpr,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
+        },
+        index: variableDefinitionIndex
+      };
+    }
+    case Statement_.WhileTrue:
+      return {
+        statement: {
+          _: namedExpr.Statement_.WhileTrue,
+          statementList: toNamedStatementList(
+            statement.statementList,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList,
+            []
+          )
+        },
+        index: variableDefinitionIndex
+      };
+  }
+};
+
+/**
+ * 配列の要素を最後のインデックスから取得する
+ * @param array 配列
+ * @param index 0から始まるindex
+ */
+const getElementByLastIndex = <T>(
+  array: ReadonlyArray<T>,
+  index: number
+): T => {
+  const element = array[array.length - 1 - index];
+  if (element === undefined) {
+    throw new Error("index error");
+  }
+  return element;
 };

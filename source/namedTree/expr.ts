@@ -168,7 +168,6 @@ export type Statement =
       }>;
       returnType: typeExpr.TypeExpr;
       statementList: ReadonlyArray<Statement>;
-      returnExpr: Expr;
     }
   | {
       _: Statement_.ReturnVoidFunctionVariableDefinition;
@@ -190,7 +189,7 @@ export type Statement =
       statementList: ReadonlyArray<Statement>;
     };
 
-const enum Statement_ {
+export const enum Statement_ {
   If,
   Throw,
   Return,

@@ -5,8 +5,8 @@ import * as identifer from "./identifer";
 import * as namedExpr from "./namedTree/expr";
 import * as namedTypeExpr from "./namedTree/typeExpr";
 
-export { indexedTypeExpr };
-export { indexedExpr };
+export { indexedTypeExpr as typeExpr };
+export { indexedExpr as expr };
 
 /**
  * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
@@ -204,21 +204,17 @@ type NamedExportFunction = {
 
 export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const scanData = scanNodeJsCode(nodeJsCode);
+  const { globalNameSet, importedModulePath } = scanNodeJsCode(nodeJsCode);
 
   // インポートしたモジュールの名前空間識別子を当てはめる
-  const importedModuleNameMapAndNextIdentiferIndex = createImportedModuleName(
-    scanData.importedModulePath,
+  const {
+    importedModuleNameMap,
+    nextIdentiferIndex
+  } = createImportedModuleName(
+    importedModulePath,
     identifer.initialIdentiferIndex,
-    scanData.globalNameSet
+    globalNameSet
   );
-  const importedModuleNameMap =
-    importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap;
-
-  const globalNameSet = new Set([
-    ...scanData.globalNameSet,
-    ...importedModuleNameMap.values()
-  ]);
 
   const namedExportTypeAliasList: Array<{
     readonly name: string;
@@ -250,7 +246,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
         typeExpr: indexedTypeExpr.toNamed(
           parameter.typeExpr,
           globalNameSet,
-          importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap
+          importedModuleNameMap
         )
       })),
       returnType:
@@ -263,16 +259,22 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
             ),
       statementList: indexedExpr.toNamedStatementList(
         exportFunction.statementList,
-        importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap,
-        importedModuleNameMapAndNextIdentiferIndex.nextIdentiferIndex
+        globalNameSet,
+        importedModuleNameMap,
+        nextIdentiferIndex,
+        [
+          {
+            variable: nodeJsCode.exportFunctionList.map(func => func.name),
+            argument: []
+          }
+        ],
+        exportFunction.parameterList.map(parameter => parameter.name)
       )
     });
   }
 
   return (
-    [
-      ...importedModuleNameMapAndNextIdentiferIndex.importedModuleNameMap.entries()
-    ]
+    [...importedModuleNameMap.entries()]
       .map(
         ([path, identifer]) =>
           "import * as " + identifer + ' from "' + path + '"'
