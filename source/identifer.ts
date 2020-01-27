@@ -21,7 +21,7 @@ export const checkUsingReservedWord = (
 /**
  * JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
  */
-const reservedByLanguageWordSet = new Set([
+const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
   "await",
   "break",
   "case",
@@ -107,7 +107,7 @@ export const initialIdentiferIndex = 0 as IdentiferIndex;
  */
 export const createIdentifer = (
   identiferIndex: IdentiferIndex,
-  reserved: Set<string>
+  reserved: ReadonlySet<string>
 ): { identifer: string; nextIdentiferIndex: IdentiferIndex } => {
   while (true) {
     const result = createIdentiferByIndex(identiferIndex);

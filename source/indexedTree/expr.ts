@@ -3,7 +3,6 @@ import * as scanType from "../scanType";
 import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
 import * as namedTypeExpr from "../namedTree/typeExpr";
-import { type } from "os";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -583,14 +582,20 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
         typeExpr.scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
       }
       typeExpr.scanGlobalVariableNameAndImportedPath(expr.returnType, scanData);
-      scanGlobalVariableNameAndImportedPathInExpr(expr.body, scanData);
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        expr.statementList,
+        scanData
+      );
       return;
 
     case Expr_.LambdaReturnVoid:
       for (const oneParameter of expr.parameterList) {
         typeExpr.scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
       }
-      scanGlobalVariableNameAndImportedPathInExpr(expr.body, scanData);
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        expr.statementList,
+        scanData
+      );
       return;
 
     case Expr_.GlobalVariable:
@@ -612,13 +617,8 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.Argument:
-      identifer.checkUsingReservedWord(
-        "argument name",
-        "ラムダ式の引数の変数名",
-        expr.name
-      );
-      scanData.globalNameSet.add(expr.name);
       return;
+
     case Expr_.Call:
       scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
@@ -727,6 +727,7 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 export const toNamedExpr = (
   expr: Expr,
   reservedWord: Set<string>,
+  importModuleMap: ReadonlyMap<string, string>,
   identiferIndex: identifer.IdentiferIndex
 ): namedExpr.Expr => {
   switch (expr._) {
@@ -759,29 +760,49 @@ export const toNamedExpr = (
         memberList: new Map(
           [...expr.memberList].map(([name, expr]) => [
             name,
-            toNamedExpr(expr, reservedWord, identiferIndex)
+            toNamedExpr(expr, reservedWord, importModuleMap, identiferIndex)
           ])
         )
       };
     case Expr_.UnaryOperator:
       return {
         _: namedExpr.Expr_.UnaryOperator,
-        expr: toNamedExpr(expr.expr, reservedWord, identiferIndex),
+        expr: toNamedExpr(
+          expr.expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        ),
         operator: expr.operator
       };
     case Expr_.BinaryOperator:
       return {
         _: namedExpr.Expr_.BinaryOperator,
-        left: toNamedExpr(expr, reservedWord, identiferIndex),
-        right: toNamedExpr(expr, reservedWord, identiferIndex),
+        left: toNamedExpr(expr, reservedWord, importModuleMap, identiferIndex),
+        right: toNamedExpr(expr, reservedWord, importModuleMap, identiferIndex),
         operator: expr.operator
       };
     case Expr_.ConditionalOperator:
       return {
         _: namedExpr.Expr_.ConditionalOperator,
-        condition: toNamedExpr(expr, reservedWord, identiferIndex),
-        elseExpr: toNamedExpr(expr, reservedWord, identiferIndex),
-        thenExpr: toNamedExpr(expr, reservedWord, identiferIndex)
+        condition: toNamedExpr(
+          expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        ),
+        elseExpr: toNamedExpr(
+          expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        ),
+        thenExpr: toNamedExpr(
+          expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        )
       };
     case Expr_.LambdaWithReturn: {
       const parameterList: Array<{
@@ -797,32 +818,135 @@ export const toNamedExpr = (
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
           name: identiferAndNextIndex.identifer,
-          typeExpr: typeExpr.toNamed(parameterType, reservedWord)
+          typeExpr: typeExpr.toNamed(
+            parameterType,
+            reservedWord,
+            importModuleMap
+          )
         });
       }
       return {
         _: namedExpr.Expr_.LambdaWithReturn,
         parameterList,
-        returnType: typeExpr.toNamed(expr.returnType, reservedWord),
-        statementList: toNamedStatementList(expr.statementList)
+        returnType: typeExpr.toNamed(
+          expr.returnType,
+          reservedWord,
+          importModuleMap
+        ),
+        statementList: toNamedStatementList(
+          expr.statementList,
+          importModuleMap,
+          identiferIndex
+        )
       };
     }
-    case Expr_.LambdaReturnVoid:
-      return {};
+    case Expr_.LambdaReturnVoid: {
+      const parameterList: Array<{
+        name: string;
+        typeExpr: namedTypeExpr.TypeExpr;
+      }> = [];
+      let identiferIndex = identifer.initialIdentiferIndex;
+      for (const parameterType of expr.parameterList) {
+        const identiferAndNextIndex = identifer.createIdentifer(
+          identiferIndex,
+          reservedWord
+        );
+        identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
+        parameterList.push({
+          name: identiferAndNextIndex.identifer,
+          typeExpr: typeExpr.toNamed(
+            parameterType,
+            reservedWord,
+            importModuleMap
+          )
+        });
+      }
+      return {
+        _: namedExpr.Expr_.LambdaReturnVoid,
+        parameterList,
+        statementList: toNamedStatementList(
+          expr.statementList,
+          importModuleMap,
+          identiferIndex
+        )
+      };
+    }
+
     case Expr_.GlobalVariable:
-      return {};
-    case Expr_.ImportedVariable:
-      return {};
+      return {
+        _: namedExpr.Expr_.GlobalVariable,
+        name: expr.name
+      };
+
+    case Expr_.ImportedVariable: {
+      const nameSpaceIdentifer: string | undefined = importModuleMap.get(
+        expr.path
+      );
+      if (nameSpaceIdentifer === undefined) {
+        throw new Error(
+          `認識されていない外部モジュールの名前空間識別子を発見した in expr (${expr.path})`
+        );
+      }
+      return {
+        _: namedExpr.Expr_.ImportedVariable,
+        nameSpaceIdentifer: nameSpaceIdentifer,
+        name: expr.name
+      };
+    }
+
     case Expr_.Argument:
-      return {};
+      return {
+        _: namedExpr.Expr_.Argument,
+        name:
+          "引数名(" + expr.depth.toString() + "," + expr.depth.toString() + ")" // TODO
+      };
     case Expr_.GetProperty:
-      return {};
+      return {
+        _: namedExpr.Expr_.GetProperty,
+        expr: toNamedExpr(
+          expr.expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        ),
+        propertyName: expr.propertyName
+      };
     case Expr_.Call:
-      return {};
+      return {
+        _: namedExpr.Expr_.Call,
+        expr: toNamedExpr(
+          expr.expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        ),
+        parameterList: expr.parameterList.map(parameter =>
+          toNamedExpr(parameter, reservedWord, importModuleMap, identiferIndex)
+        )
+      };
     case Expr_.New:
-      return {};
+      return {
+        _: namedExpr.Expr_.New,
+        expr: toNamedExpr(
+          expr.expr,
+          reservedWord,
+          importModuleMap,
+          identiferIndex
+        ),
+        parameterList: expr.parameterList.map(parameter =>
+          toNamedExpr(parameter, reservedWord, importModuleMap, identiferIndex)
+        )
+      };
     case Expr_.LocalVariable:
-      return {};
+      return {
+        _: namedExpr.Expr_.LocalVariable,
+        name:
+          "ローカル変数名(" +
+          expr.depth.toString(9) +
+          "," +
+          expr.index.toString() +
+          ")" // TODO
+      };
   }
 };
 

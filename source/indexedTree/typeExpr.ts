@@ -222,7 +222,7 @@ export const toNamed = (
           [...typeExpr.memberList].map(([memberName, member]) => [
             memberName,
             {
-              typeExpr: toNamed(member.typeExpr, reservedWord),
+              typeExpr: toNamed(member.typeExpr, reservedWord, importModuleMap),
               document: member.document
             }
           ])
@@ -243,13 +243,13 @@ export const toNamed = (
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
           name: identiferAndNextIndex.identifer,
-          typeExpr: toNamed(parameterType, reservedWord)
+          typeExpr: toNamed(parameterType, reservedWord, importModuleMap)
         });
       }
       return {
         _: named.TypeExpr_.FunctionWithReturn,
         parameter: parameterList,
-        return: toNamed(typeExpr.return, reservedWord)
+        return: toNamed(typeExpr.return, reservedWord, importModuleMap)
       };
     }
 
@@ -267,7 +267,7 @@ export const toNamed = (
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
           name: identiferAndNextIndex.identifer,
-          typeExpr: toNamed(parameterType, reservedWord)
+          typeExpr: toNamed(parameterType, reservedWord, importModuleMap)
         });
       }
       return {
@@ -279,21 +279,29 @@ export const toNamed = (
     case TypeExpr_.Union:
       return {
         _: named.TypeExpr_.Union,
-        types: typeExpr.types.map(t => toNamed(t, reservedWord))
+        types: typeExpr.types.map(t =>
+          toNamed(t, reservedWord, importModuleMap)
+        )
       };
 
-    case TypeExpr_.ImportedType:
+    case TypeExpr_.ImportedType: {
+      const nameSpaceIdentifer = importModuleMap.get(typeExpr.path);
+      if (nameSpaceIdentifer === undefined) {
+        throw new Error(
+          `認識されていない外部モジュールの名前空間識別子を発見した in typeExpr (${typeExpr.path})`
+        );
+      }
       return {
         _: named.TypeExpr_.ImportedType,
         name: typeExpr.name,
-        nameSpaceIdentifer:
-          "コードの文字列化にインポートの識別子をどうにかしたい"
+        nameSpaceIdentifer
       };
-      scanData.importedModulePath.add(typeExpr.path);
-      return;
+    }
 
     case TypeExpr_.GlobalType:
-      scanData.globalName.add(typeExpr.name);
-      return;
+      return {
+        _: named.TypeExpr_.GlobalType,
+        name: typeExpr.name
+      };
   }
 };
