@@ -1109,14 +1109,21 @@ export const toNamedExpr = (
       };
     }
 
-    case Expr_.Argument:
+    case Expr_.Argument: {
+      const name = getElementByLastIndex(
+        argumentAndLocalVariableNameList,
+        expr.depth
+      ).argument[expr.index];
+      if (name === undefined) {
+        throw Error(
+          "範囲外の引数を指定されました index=" + expr.index.toString()
+        );
+      }
       return {
         _: namedExpr.Expr_.Argument,
-        name: getElementByLastIndex(
-          argumentAndLocalVariableNameList,
-          expr.depth
-        ).argument[expr.index]
+        name
       };
+    }
     case Expr_.GetProperty:
       return {
         _: namedExpr.Expr_.GetProperty,
@@ -1169,14 +1176,21 @@ export const toNamedExpr = (
           )
         )
       };
-    case Expr_.LocalVariable:
+    case Expr_.LocalVariable: {
+      const name = getElementByLastIndex(
+        argumentAndLocalVariableNameList,
+        expr.depth
+      ).variable[expr.index];
+      if (name === undefined) {
+        throw new Error(
+          "範囲外のローカル変数を指定されました index=" + expr.index.toString()
+        );
+      }
       return {
         _: namedExpr.Expr_.LocalVariable,
-        name: getElementByLastIndex(
-          argumentAndLocalVariableNameList,
-          expr.depth
-        ).variable[expr.index]
+        name
       };
+    }
   }
 };
 
