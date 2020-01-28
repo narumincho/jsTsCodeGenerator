@@ -501,22 +501,38 @@ export const globalVariable = (name: string): Expr => ({
  * @param depth 何個スコープの外側のものか
  * @param index 何個目変数か
  */
-export const localVariable = (depth: number, index: number): Expr => ({
-  _: Expr_.LocalVariable,
-  depth,
-  index
-});
+export const localVariable = (depth: number, index: number): Expr => {
+  if (depth < 0) {
+    throw new Error("localVariable depth < 0");
+  }
+  if (index < 0) {
+    throw new Error("localVariable index < 0");
+  }
+  return {
+    _: Expr_.LocalVariable,
+    depth,
+    index
+  };
+};
 
 /**
  * ラムダ式などの引数
  * @param depth 何個スコープの外側のものか
  * @param index 何個目の引数か
  */
-export const argument = (depth: number, index: number): Expr => ({
-  _: Expr_.Argument,
-  depth,
-  index
-});
+export const argument = (depth: number, index: number): Expr => {
+  if (depth < 0) {
+    throw new Error("argument depth < 0");
+  }
+  if (index < 0) {
+    throw new Error("argument index < 0");
+  }
+  return {
+    _: Expr_.Argument,
+    depth,
+    index
+  };
+};
 
 /**
  * 文
