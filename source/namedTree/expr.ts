@@ -1,5 +1,3 @@
-import * as identifer from "../identifer";
-import * as scanType from "../scanType";
 import * as typeExpr from "./typeExpr";
 
 export type Expr =
