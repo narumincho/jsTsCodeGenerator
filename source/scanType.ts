@@ -1,4 +1,4 @@
 export type NodeJsCodeScanData = {
-  globalName: Set<string>;
+  globalNameSet: Set<string>;
   importedModulePath: Set<string>;
 };

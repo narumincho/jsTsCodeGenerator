@@ -1,26 +1,8 @@
-import * as generator from "../source/main";
 import { performance } from "perf_hooks";
+import * as generator from "../source/main";
+import { expr, typeExpr } from "../source/main";
 
 describe("test", () => {
-  /*
-   * 作りたいコード
-   *
-   * import * as api from "./api";
-   *
-   * export const middleware = (request, response) => {
-   *   if(request.accept==="text/html") {
-   *      response.setHeader("", "");
-   *      response.send("")
-   *   }
-   *   const a = request.body;
-   *   if(a[0] === 0 ){
-   *      response.send(api.getUser(a[32]))
-   *   }
-   *   response.send()
-   * }
-   *
-   */
-
   const importPath = "./express";
   const expressImportedModule = generator.createImportNodeModule<
     ["Request", "Response"],
@@ -33,12 +15,12 @@ describe("test", () => {
 
   const sampleCode: generator.NodeJsCode = {
     exportTypeAliasList: [],
-    exportVariableList: [
+    exportFunctionList: [
       {
         name: "middleware",
         document: "ミドルウェア",
-        expr: generator.expr.stringLiteral("文字列のリテラル"),
-        typeExpr: generator.typeExpr.functionReturnVoid([
+        statementList: [],
+        parameterList: [
           {
             name: "request",
             document: "expressのリクエスト",
@@ -49,19 +31,8 @@ describe("test", () => {
             document: "expressのレスポンス",
             typeExpr: expressImportedModule.typeList.Response
           }
-        ])
-      },
-      {
-        name: "sorena",
-        document: "ドキュメント",
-        typeExpr: generator.typeExpr.object(
-          new Map([
-            ["name", { document: "", typeExpr: generator.typeExpr.typeString }]
-          ])
-        ),
-        expr: generator.expr.createObjectLiteral(
-          new Map([["name", generator.expr.stringLiteral("sorena")]])
-        )
+        ],
+        returnType: null
       }
     ]
   };
@@ -83,14 +54,15 @@ describe("test", () => {
     expect(nodeJsTypeScriptCode).toMatch(importPath);
   });
   it("not include revered word", () => {
-    const nodeJsCode = {
+    const nodeJsCode: generator.NodeJsCode = {
       exportTypeAliasList: [],
-      exportVariableList: [
+      exportFunctionList: [
         {
           name: "new",
-          document: "newという名前の変数",
-          typeExpr: generator.typeExpr.typeString,
-          expr: generator.expr.stringLiteral("newData")
+          document: "newという名前の関数",
+          parameterList: [],
+          returnType: null,
+          statementList: []
         }
       ]
     };
@@ -101,16 +73,21 @@ describe("test", () => {
   it("escape string literal", () => {
     const nodeJsCode: generator.NodeJsCode = {
       exportTypeAliasList: [],
-      exportVariableList: [
+      exportFunctionList: [
         {
           name: "stringValue",
           document: "文字列リテラルでエスケープしているか調べる",
-          expr: generator.expr.stringLiteral(`
+          parameterList: [],
+          returnType: generator.typeExpr.typeString,
+          statementList: [
+            expr.returnStatement(
+              expr.stringLiteral(`
 
-        改行
-        "ダブルクオーテーション"
-`),
-          typeExpr: generator.typeExpr.typeString
+              改行
+              "ダブルクオーテーション"
+      `)
+            )
+          ]
         }
       ]
     };
@@ -127,10 +104,11 @@ describe("test", () => {
     >("express", ["Request", "Response"], []);
     const nodeJsCode: generator.NodeJsCode = {
       exportTypeAliasList: [],
-      exportVariableList: [
+      exportFunctionList: [
         {
           name: "middleware",
-          typeExpr: generator.typeExpr.functionReturnVoid([
+          document: "ミドルウェア",
+          parameterList: [
             {
               name: "request",
               document: "リクエスト",
@@ -141,41 +119,37 @@ describe("test", () => {
               document: "レスポンス",
               typeExpr: expressModule.typeList.Response
             }
-          ]),
-          document: "ミドルウェア",
-          expr: generator.expr.createLambdaReturnVoid<["request", "response"]>(
-            [
-              {
-                name: "request",
-                document: "リクエスト",
-                typeExpr: expressModule.typeList.Request
-              },
-              {
-                name: "response",
-                document: "レスポンス",
-                typeExpr: expressModule.typeList.Response
-              }
-            ],
-            args =>
-              generator.expr.ifWithVoidReturn(
-                generator.expr.getProperty(
-                  generator.expr.getProperty(args[0], "headers"),
-                  "accept"
-                ),
-                generator.expr.call(
-                  generator.expr.getProperty(args[0], "send"),
-                  [
-                    generator.expr.stringLiteral(
-                      "HTMLをリクエストした。ドキュメントとクライアント用のコードを返したい"
-                    )
-                  ]
-                ),
-                generator.expr.call(
-                  generator.expr.getProperty(args[0], "send"),
-                  [generator.expr.stringLiteral("APIとして動作したい")]
-                )
+          ],
+          returnType: null,
+          statementList: [
+            expr.variableDefinition(
+              typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
+              expr.getProperty(
+                expr.getProperty(expr.argument(0, 0), "headers"),
+                "accept"
               )
-          )
+            ),
+            expr.ifStatement(
+              expr.logicalAnd(
+                expr.notEqual(expr.localVariable(0, 0), expr.undefinedLiteral),
+                expr.call(
+                  expr.getProperty(expr.localVariable(0, 0), "includes"),
+                  [expr.stringLiteral("text/html")]
+                )
+              ),
+              [
+                expr.evaluateExpr(
+                  expr.call(
+                    expr.getProperty(expr.argument(1, 1), "setHeader"),
+                    [
+                      expr.stringLiteral("content-type"),
+                      expr.stringLiteral("text/html")
+                    ]
+                  )
+                )
+              ]
+            )
+          ]
         }
       ]
     };
