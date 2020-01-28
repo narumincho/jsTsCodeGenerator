@@ -135,6 +135,10 @@ type BinaryOperator =
 
 export type Statement =
   | {
+      _: Statement_.EvaluateExpr;
+      expr: Expr;
+    }
+  | {
       _: Statement_.If;
       condition: Expr;
       thenStatementList: ReadonlyArray<Statement>;
@@ -193,6 +197,7 @@ export type Statement =
     };
 
 export const enum Statement_ {
+  EvaluateExpr,
   If,
   ThrowError,
   Return,
@@ -334,6 +339,9 @@ const stringLiteralValueToString = (value: string): string => {
  */
 export const statementToString = (statement: Statement): string => {
   switch (statement._) {
+    case Statement_.EvaluateExpr:
+      return indentString + exprToString(statement.expr, indent) + ";";
+
     case Statement_.If:
       return (
         "if (" +

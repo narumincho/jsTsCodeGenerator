@@ -500,6 +500,10 @@ export const argument = (depth: number, index: number): Expr => ({
  */
 export type Statement =
   | {
+      _: Statement_.EvaluateExpr;
+      expr: Expr;
+    }
+  | {
       _: Statement_.If;
       condition: Expr;
       thenStatementList: ReadonlyArray<Statement>;
@@ -548,6 +552,7 @@ export type Statement =
     };
 
 const enum Statement_ {
+  EvaluateExpr,
   If,
   ThrowError,
   Return,
@@ -560,6 +565,16 @@ const enum Statement_ {
   WhileTrue,
   Break
 }
+
+/**
+ * expr;
+ * 式を評価する
+ * @param expr 式
+ */
+export const evaluateExpr = (expr: Expr): Statement => ({
+  _: Statement_.EvaluateExpr,
+  expr
+});
 
 /**
  * if (condition) { thenStatementList }
@@ -658,7 +673,7 @@ export const returnVoidFunctionVariableDefinition = (
 });
 
 /**
- * for (let a = 0; a < untilExpr; a++) { statementList }
+ * for (let a = 0; a < untilExpr; a+=1) { statementList }
  * for文。繰り返し。カウンタ変数へのアクセスは `argument` で行う
  * @param untilExpr 繰り返す数 + 1
  * @param statementList 繰り返す内容
@@ -790,6 +805,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
   scanData: scanType.NodeJsCodeScanData
 ): void => {
   switch (statement._) {
+    case Statement_.EvaluateExpr:
+      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      return;
+
     case Statement_.If:
       scanGlobalVariableNameAndImportedPathInExpr(
         statement.condition,
@@ -931,14 +950,14 @@ export const toNamedExpr = (
       return {
         _: namedExpr.Expr_.BinaryOperator,
         left: toNamedExpr(
-          expr,
+          expr.left,
           reservedWord,
           importModuleMap,
           identiferIndex,
           argumentAndLocalVariableNameList
         ),
         right: toNamedExpr(
-          expr,
+          expr.right,
           reservedWord,
           importModuleMap,
           identiferIndex,
@@ -1202,6 +1221,20 @@ export const toNamedStatement = (
   variableDefinitionIndex: number
 ): { statement: namedExpr.Statement; index: number } => {
   switch (statement._) {
+    case Statement_.EvaluateExpr:
+      return {
+        statement: {
+          _: namedExpr.Statement_.EvaluateExpr,
+          expr: toNamedExpr(
+            statement.expr,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
+        },
+        index: variableDefinitionIndex
+      };
     case Statement_.If:
       return {
         statement: {
