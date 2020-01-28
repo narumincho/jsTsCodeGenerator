@@ -1,5 +1,6 @@
-import * as generator from "../source/main";
 import { performance } from "perf_hooks";
+import * as generator from "../source/main";
+import { expr, typeExpr } from "../source/main";
 
 describe("test", () => {
   const importPath = "./express";
@@ -58,14 +59,10 @@ describe("test", () => {
       exportFunctionList: [
         {
           name: "new",
-          document: "newという名前の変数",
+          document: "newという名前の関数",
           parameterList: [],
           returnType: null,
-          statementList: [
-            
-          ]
-          typeExpr: generator.typeExpr.typeString,
-          expr: generator.expr.stringLiteral("newData")
+          statementList: []
         }
       ]
     };
@@ -76,16 +73,21 @@ describe("test", () => {
   it("escape string literal", () => {
     const nodeJsCode: generator.NodeJsCode = {
       exportTypeAliasList: [],
-      exportVariableList: [
+      exportFunctionList: [
         {
           name: "stringValue",
           document: "文字列リテラルでエスケープしているか調べる",
-          expr: generator.expr.stringLiteral(`
+          parameterList: [],
+          returnType: generator.typeExpr.typeString,
+          statementList: [
+            expr.returnStatement(
+              expr.stringLiteral(`
 
-        改行
-        "ダブルクオーテーション"
-`),
-          typeExpr: generator.typeExpr.typeString
+              改行
+              "ダブルクオーテーション"
+      `)
+            )
+          ]
         }
       ]
     };
@@ -102,10 +104,11 @@ describe("test", () => {
     >("express", ["Request", "Response"], []);
     const nodeJsCode: generator.NodeJsCode = {
       exportTypeAliasList: [],
-      exportVariableList: [
+      exportFunctionList: [
         {
           name: "middleware",
-          typeExpr: generator.typeExpr.functionReturnVoid([
+          document: "ミドルウェア",
+          parameterList: [
             {
               name: "request",
               document: "リクエスト",
@@ -116,41 +119,37 @@ describe("test", () => {
               document: "レスポンス",
               typeExpr: expressModule.typeList.Response
             }
-          ]),
-          document: "ミドルウェア",
-          expr: generator.expr.createLambdaReturnVoid<["request", "response"]>(
-            [
-              {
-                name: "request",
-                document: "リクエスト",
-                typeExpr: expressModule.typeList.Request
-              },
-              {
-                name: "response",
-                document: "レスポンス",
-                typeExpr: expressModule.typeList.Response
-              }
-            ],
-            args =>
-              generator.expr.ifWithVoidReturn(
-                generator.expr.getProperty(
-                  generator.expr.getProperty(args[0], "headers"),
-                  "accept"
-                ),
-                generator.expr.call(
-                  generator.expr.getProperty(args[0], "send"),
-                  [
-                    generator.expr.stringLiteral(
-                      "HTMLをリクエストした。ドキュメントとクライアント用のコードを返したい"
-                    )
-                  ]
-                ),
-                generator.expr.call(
-                  generator.expr.getProperty(args[0], "send"),
-                  [generator.expr.stringLiteral("APIとして動作したい")]
-                )
+          ],
+          returnType: null,
+          statementList: [
+            expr.variableDefinition(
+              typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
+              expr.getProperty(
+                expr.getProperty(expr.argument(0, 0), "headers"),
+                "accept"
               )
-          )
+            ),
+            expr.ifStatement(
+              expr.logicalAnd(
+                expr.notEqual(expr.localVariable(0, 0), expr.undefinedLiteral),
+                expr.call(
+                  expr.getProperty(expr.localVariable(0, 0), "includes"),
+                  [expr.stringLiteral("text/html")]
+                )
+              ),
+              [
+                expr.evaluateExpr(
+                  expr.call(
+                    expr.getProperty(expr.argument(1, 1), "setHeader"),
+                    [
+                      expr.stringLiteral("content-type"),
+                      expr.stringLiteral("text/html")
+                    ]
+                  )
+                )
+              ]
+            )
+          ]
         }
       ]
     };
