@@ -187,6 +187,9 @@ export type Statement =
   | {
       _: Statement_.WhileTrue;
       statementList: ReadonlyArray<Statement>;
+    }
+  | {
+      _: Statement_.Break;
     };
 
 export const enum Statement_ {
@@ -199,7 +202,8 @@ export const enum Statement_ {
   FunctionWithReturnValueVariableDefinition,
   ReturnVoidFunctionVariableDefinition,
   For,
-  WhileTrue
+  WhileTrue,
+  Break
 }
 
 const lambdaBodyToString = (
@@ -427,5 +431,8 @@ export const statementToString = (statement: Statement): string => {
           .join(";\n") +
         "}"
       );
+
+    case Statement_.Break:
+      return "break;";
   }
 };

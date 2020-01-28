@@ -130,8 +130,6 @@ type BinaryOperator =
   | "&&"
   | "||";
 
-type ValueOf<T> = T[keyof T];
-
 /**
  * 数値リテラル `123`
  * @param value 値
@@ -477,11 +475,22 @@ export const globalVariable = (name: string): Expr => ({
 
 /**
  * ローカル変数
- * @param expr 式
- * @param id 識別するためのID  (同じものがあった場合スコープの内側を優先)
+ * @param depth 何個スコープの外側のものか
+ * @param index 何個目変数か
  */
 export const localVariable = (depth: number, index: number): Expr => ({
   _: Expr_.LocalVariable,
+  depth,
+  index
+});
+
+/**
+ * ラムダ式などの引数
+ * @param depth 何個スコープの外側のものか
+ * @param index 何個目の引数か
+ */
+export const argument = (depth: number, index: number): Expr => ({
+  _: Expr_.Argument,
   depth,
   index
 });
@@ -533,6 +542,9 @@ export type Statement =
   | {
       _: Statement_.WhileTrue;
       statementList: ReadonlyArray<Statement>;
+    }
+  | {
+      _: Statement_.Break;
     };
 
 const enum Statement_ {
@@ -545,8 +557,137 @@ const enum Statement_ {
   FunctionWithReturnValueVariableDefinition,
   ReturnVoidFunctionVariableDefinition,
   For,
-  WhileTrue
+  WhileTrue,
+  Break
 }
+
+/**
+ * if (condition) { thenStatementList }
+ * @param condition 条件式
+ * @param thenStatementList 条件が成立したらどうするか
+ */
+export const ifStatement = (
+  condition: Expr,
+  thenStatementList: ReadonlyArray<Statement>
+): Statement => ({
+  _: Statement_.If,
+  condition,
+  thenStatementList
+});
+
+/**
+ * throw Error("エラーメッセージ");
+ * @param errorMessage エラーメッセージ
+ */
+export const throwError = (errorMessage: string): Statement => ({
+  _: Statement_.ThrowError,
+  errorMessage
+});
+
+/**
+ * return expr;
+ * @param expr 関数が返す値
+ */
+export const returnStatement = (expr: Expr): Statement => ({
+  _: Statement_.Return,
+  expr
+});
+
+/**
+ * return;
+ * 戻り値がvoidの関数を早く抜ける
+ */
+export const returnVoidStatement = (): Statement => ({
+  _: Statement_.ReturnVoid
+});
+
+/**
+ * continue
+ * forの繰り返しを次に進める
+ */
+export const continueStatement = (): Statement => ({
+  _: Statement_.Continue
+});
+
+/**
+ * const a: typeExpr = expr
+ * ローカル変数の定義。変数名は自動で決まる
+ * @param typeExpr 型
+ * @param expr 式
+ */
+export const variableDefinition = (
+  typeExpr: typeExpr.TypeExpr,
+  expr: Expr
+): Statement => ({
+  _: Statement_.VariableDefinition,
+  expr,
+  typeExpr
+});
+
+/**
+ * const a = (parameterList): returnType => { statementList }
+ * ローカル関数の定義。変数名は自動で決まる
+ * @param parameterList パラメータ
+ * @param returnType 戻り値の型
+ * @param statementList 関数本体
+ */
+export const functionWithReturnValueVariableDefinition = (
+  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  returnType: typeExpr.TypeExpr,
+  statementList: ReadonlyArray<Statement>
+): Statement => ({
+  _: Statement_.FunctionWithReturnValueVariableDefinition,
+  parameterList,
+  returnType,
+  statementList
+});
+
+/**
+ * const a = (parameterList): void => { statementList }
+ * 戻り値がないローカル関数の定義。変数名は自動で決まる
+ * @param parameterList パラメータ
+ * @param statementList 関数本体
+ */
+export const returnVoidFunctionVariableDefinition = (
+  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  statementList: ReadonlyArray<Statement>
+): Statement => ({
+  _: Statement_.ReturnVoidFunctionVariableDefinition,
+  parameterList,
+  statementList
+});
+
+/**
+ * for (let a = 0; a < untilExpr; a++) { statementList }
+ * for文。繰り返し。カウンタ変数へのアクセスは `argument` で行う
+ * @param untilExpr 繰り返す数 + 1
+ * @param statementList 繰り返す内容
+ */
+export const forStatement = (
+  untilExpr: Expr,
+  statementList: ReadonlyArray<Statement>
+): Statement => ({
+  _: Statement_.For,
+  statementList,
+  untilExpr
+});
+
+/**
+ * while (true) { statementList }
+ * @param statementList ループする内容
+ */
+export const whileTrue = (
+  statementList: ReadonlyArray<Statement>
+): Statement => ({
+  _: Statement_.WhileTrue,
+  statementList
+});
+
+/**
+ * break;
+ * whileのループから抜ける
+ */
+export const breakStatement = (): Statement => ({ _: Statement_.Break });
 
 /**
  * 名前をつけたり、するために式を走査する
@@ -1022,7 +1163,6 @@ export const toNamedStatementList = (
         );
         variableNameInScopeList.push(identiferAndIndex.identifer);
         identiferIndex = identiferAndIndex.nextIdentiferIndex;
-        break;
       }
     }
   }
@@ -1265,6 +1405,13 @@ export const toNamedStatement = (
             argumentAndLocalVariableNameList,
             []
           )
+        },
+        index: variableDefinitionIndex
+      };
+    case Statement_.Break:
+      return {
+        statement: {
+          _: namedExpr.Statement_.Break
         },
         index: variableDefinitionIndex
       };
