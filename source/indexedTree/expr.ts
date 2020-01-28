@@ -614,7 +614,7 @@ export const ifStatement = (
 });
 
 /**
- * throw Error("エラーメッセージ");
+ * throw new Error("エラーメッセージ");
  * @param errorMessage エラーメッセージ
  */
 export const throwError = (errorMessage: string): Statement => ({
