@@ -149,6 +149,29 @@ export const stringLiteral = (string: string): Expr => ({
 });
 
 /**
+ * booleanリテラル
+ * @param value trueかfalse
+ */
+export const booleanLiteral = (value: boolean): Expr => ({
+  _: Expr_.BooleanLiteral,
+  value
+});
+
+/**
+ *  undefinedリテラル
+ */
+export const undefinedLiteral: Expr = {
+  _: Expr_.UndefinedLiteral
+};
+
+/**
+ * nullリテラル
+ */
+export const nullLiteral: Expr = {
+  _: Expr_.NullLiteral
+};
+
+/**
  * 単項マイナス演算子 `-a`
  * @param expr 式
  */

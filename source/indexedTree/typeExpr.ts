@@ -117,6 +117,15 @@ export const functionReturnVoid = (
 });
 
 /**
+ * ユニオン型 a | b
+ * @param types 型のリスト
+ */
+export const union = (types: ReadonlyArray<TypeExpr>): TypeExpr => ({
+  _: TypeExpr_.Union,
+  types
+});
+
+/**
  * インポートされた外部の型
  * @param path インポートするモジュールのパス
  * @param name 型名
