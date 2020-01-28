@@ -148,6 +148,10 @@ const scanNodeJsCode = (
         parameter.name
       );
       scanData.globalNameSet.add(parameter.name);
+      indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
+        parameter.typeExpr,
+        scanData
+      );
     }
 
     if (exportVariable.returnType !== null) {
@@ -318,12 +322,9 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
           (exportFunction.returnType === null
             ? "void"
             : namedTypeExpr.typeExprToString(exportFunction.returnType)) +
-          " => {" +
-          exportFunction.statementList
-            .map(statement => namedExpr.statementToString(statement))
-            .join(";") +
-          "}"
+          " => " +
+          namedExpr.lambdaBodyToString(exportFunction.statementList, 0)
       )
-      .join(";\n")
+      .join("\n\n")
   );
 };

@@ -211,20 +211,26 @@ export const enum Statement_ {
   Break
 }
 
-const lambdaBodyToString = (
-  statementList: ReadonlyArray<Statement>
+/**
+ * ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形にする
+ * @param statementList
+ * @param indent
+ */
+export const lambdaBodyToString = (
+  statementList: ReadonlyArray<Statement>,
+  indent: number
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === Statement_.Return) {
-    return "(" + exprToString(statementList[0].expr) + ")";
+    return "(" + exprToString(statementList[0].expr, indent) + ")";
   }
-  return "{\n" + statementList.map(statementToString).join(";\n") + "}";
+  return statementListToString(statementList, indent);
 };
 
 /**
  * 式をコードに変換する
  * @param expr 式
  */
-export const exprToString = (expr: Expr): string => {
+export const exprToString = (expr: Expr, indent: number): string => {
   switch (expr._) {
     case Expr_.NumberLiteral:
       return expr.value.toString();
@@ -245,31 +251,31 @@ export const exprToString = (expr: Expr): string => {
       return (
         "{" +
         [...expr.memberList.entries()]
-          .map(([key, value]) => key + ":" + exprToString(value))
+          .map(([key, value]) => key + ":" + exprToString(value, indent))
           .join(", ") +
         "}"
       );
 
     case Expr_.UnaryOperator:
-      return expr.operator + "(" + exprToString(expr.expr) + ")";
+      return expr.operator + "(" + exprToString(expr.expr, indent) + ")";
     case Expr_.BinaryOperator:
       return (
         "(" +
-        exprToString(expr.left) +
+        exprToString(expr.left, indent) +
         ")" +
         expr.operator +
         "(" +
-        exprToString(expr.right) +
+        exprToString(expr.right, indent) +
         ")"
       );
     case Expr_.ConditionalOperator:
       return (
         "(" +
-        exprToString(expr.condition) +
+        exprToString(expr.condition, indent) +
         ")?(" +
-        exprToString(expr.thenExpr) +
+        exprToString(expr.thenExpr, indent) +
         "):(" +
-        exprToString(expr.elseExpr) +
+        exprToString(expr.elseExpr, indent) +
         ")"
       );
 
@@ -282,7 +288,7 @@ export const exprToString = (expr: Expr): string => {
         "): " +
         typeExpr.typeExprToString(expr.returnType) +
         "=>" +
-        lambdaBodyToString(expr.statementList)
+        lambdaBodyToString(expr.statementList, indent)
       );
 
     case Expr_.LambdaReturnVoid:
@@ -292,7 +298,7 @@ export const exprToString = (expr: Expr): string => {
           .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
           .join(",") +
         "): void=>" +
-        lambdaBodyToString(expr.statementList)
+        lambdaBodyToString(expr.statementList, indent)
       );
 
     case Expr_.GlobalVariable:
@@ -305,22 +311,22 @@ export const exprToString = (expr: Expr): string => {
       return expr.name;
 
     case Expr_.GetProperty:
-      return "(" + exprToString(expr.expr) + ")." + expr.propertyName;
+      return "(" + exprToString(expr.expr, indent) + ")." + expr.propertyName;
 
     case Expr_.Call:
       return (
-        exprToString(expr.expr) +
+        exprToString(expr.expr, indent) +
         "(" +
-        expr.parameterList.map(e => exprToString(e)).join(", ") +
+        expr.parameterList.map(e => exprToString(e, indent)).join(", ") +
         ")"
       );
 
     case Expr_.New:
       return (
         "new (" +
-        exprToString(expr.expr) +
+        exprToString(expr.expr, indent) +
         ")(" +
-        expr.parameterList.map(e => exprToString(e)).join(", ") +
+        expr.parameterList.map(e => exprToString(e, indent)).join(", ") +
         ")"
       );
 
@@ -333,51 +339,71 @@ const stringLiteralValueToString = (value: string): string => {
   return '"' + value.replace(/"/gu, '\\"').replace(/\n/gu, "\\n") + '"';
 };
 
+export const statementListToString = (
+  statementList: ReadonlyArray<Statement>,
+  indent: number
+): string =>
+  "{\n" +
+  statementList
+    .map(statement => statementToString(statement, indent))
+    .join("\n") +
+  "\n" +
+  "  ".repeat(indent) +
+  "}";
+
 /**
  * 文をコードに変換する
  * @param statement 文
  */
-export const statementToString = (statement: Statement): string => {
+export const statementToString = (
+  statement: Statement,
+  indent: number
+): string => {
+  const indentString = "  ".repeat(indent);
   switch (statement._) {
     case Statement_.EvaluateExpr:
       return indentString + exprToString(statement.expr, indent) + ";";
 
     case Statement_.If:
       return (
+        indentString +
         "if (" +
-        exprToString(statement.condition) +
-        "){\n" +
-        statement.thenStatementList
-          .map(s => "  " + statementToString(s))
-          .join("\n") +
-        "}"
+        exprToString(statement.condition, indent) +
+        ") " +
+        statementListToString(statement.thenStatementList, indent + 1)
       );
 
     case Statement_.ThrowError:
-      return 'throw new Error("' + statement.errorMessage + '");';
+      return (
+        indentString + 'throw new Error("' + statement.errorMessage + '");'
+      );
 
     case Statement_.Return:
-      return "return" + exprToString(statement.expr) + ";";
+      return (
+        indentString + "return" + exprToString(statement.expr, indent) + ";"
+      );
 
     case Statement_.ReturnVoid:
-      return "return;";
+      return indentString + "return;";
 
     case Statement_.Continue:
-      return "continue;";
+      return indentString + "continue;";
 
     case Statement_.VariableDefinition:
       return (
+        indentString +
         "const " +
         statement.name +
         ":" +
         typeExpr.typeExprToString(statement.typeExpr) +
         " = " +
-        exprToString(statement.expr) +
+        exprToString(statement.expr, indent) +
         ";"
       );
 
     case Statement_.FunctionWithReturnValueVariableDefinition:
       return (
+        indentString +
         "const " +
         statement.name +
         " = (" +
@@ -392,7 +418,7 @@ export const statementToString = (statement: Statement): string => {
         "):" +
         typeExpr.typeExprToString(statement.returnType) +
         "=>" +
-        lambdaBodyToString(statement.statementList) +
+        lambdaBodyToString(statement.statementList, indent + 1) +
         ";"
       );
 
@@ -410,7 +436,7 @@ export const statementToString = (statement: Statement): string => {
           )
           .join(",") +
         "): void =>" +
-        lambdaBodyToString(statement.statementList) +
+        lambdaBodyToString(statement.statementList, indent + 1) +
         ";"
       );
 
@@ -421,23 +447,17 @@ export const statementToString = (statement: Statement): string => {
         " = 0; " +
         statement.counterVariableName +
         " < " +
-        exprToString(statement.untilExpr) +
+        exprToString(statement.untilExpr, indent) +
         ";" +
         statement.counterVariableName +
-        "+= 1){\n" +
-        statement.statementList
-          .map(s => "  " + statementToString(s))
-          .join(";\n") +
-        "}"
+        "+= 1)" +
+        statementListToString(statement.statementList, indent + 1)
       );
 
     case Statement_.WhileTrue:
       return (
-        "while (true) {\n" +
-        statement.statementList
-          .map(s => "  " + statementToString(s))
-          .join(";\n") +
-        "}"
+        "while (true) " +
+        statementListToString(statement.statementList, indent + 1)
       );
 
     case Statement_.Break:
