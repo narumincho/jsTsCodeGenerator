@@ -68,7 +68,7 @@ export type Expr =
       name: string;
     }
   | {
-      _: Expr_.GetProperty;
+      _: Expr_.Get;
       expr: Expr;
       propertyName: string;
     }
@@ -102,7 +102,7 @@ export const enum Expr_ {
   GlobalVariable,
   ImportedVariable,
   Argument,
-  GetProperty,
+  Get,
   Call,
   IfWithVoidReturn,
   New,
@@ -308,7 +308,7 @@ export const exprToString = (expr: Expr, indent: number): string => {
     case Expr_.Argument:
       return expr.name;
 
-    case Expr_.GetProperty:
+    case Expr_.Get:
       return "(" + exprToString(expr.expr, indent) + ")." + expr.propertyName;
 
     case Expr_.Call:

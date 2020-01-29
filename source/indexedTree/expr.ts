@@ -1142,7 +1142,7 @@ export const toNamedExpr = (
     }
     case Expr_.Get:
       return {
-        _: namedExpr.Expr_.GetProperty,
+        _: namedExpr.Expr_.Get,
         expr: toNamedExpr(
           expr.expr,
           reservedWord,
