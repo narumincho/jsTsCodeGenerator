@@ -180,4 +180,34 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("request");
   });
+  it("get array index", () => {
+    const global = generator.createGlobalNamespace<["Uint8Array"], []>(
+      ["Uint8Array"],
+      []
+    );
+    const code = generator.toNodeJsCodeAsTypeScript({
+      exportTypeAliasList: [],
+      exportFunctionList: [
+        generator.exportFunction({
+          name: "getZeroIndexElement",
+          document: "Uint8Arrayの0番目の要素を取得する",
+          parameterList: [
+            {
+              name: "array",
+              document: "Uint8Array",
+              typeExpr: global.typeList.Uint8Array
+            }
+          ],
+          returnType: typeExpr.typeNumber,
+          statementList: [
+            expr.returnStatement(
+              expr.getByExpr(expr.argument(0, 0), expr.literal(0))
+            )
+          ]
+        })
+      ]
+    });
+    console.log(code);
+    expect(code).toMatch("[0]");
+  });
 });
