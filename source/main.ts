@@ -123,7 +123,7 @@ const scanNodeJsCode = (
     importedModulePath: new Set()
   };
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
-    identifer.checkUsingReservedWord(
+    identifer.checkIdentiferThrow(
       "export type name",
       "外部に公開する型の名前",
       exportTypeAlias.name
@@ -135,14 +135,14 @@ const scanNodeJsCode = (
     );
   }
   for (const exportVariable of nodeJsCode.exportFunctionList) {
-    identifer.checkUsingReservedWord(
+    identifer.checkIdentiferThrow(
       "export variable name",
       "外部に公開する変数名",
       exportVariable.name
     );
     scanData.globalNameSet.add(exportVariable.name);
     for (const parameter of exportVariable.parameterList) {
-      identifer.checkUsingReservedWord(
+      identifer.checkIdentiferThrow(
         "export function parameter name",
         "外部に公開する関数の引数名",
         parameter.name

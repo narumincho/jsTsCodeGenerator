@@ -1,4 +1,5 @@
 import * as typeExpr from "./typeExpr";
+import * as identifer from "../identifer";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -70,7 +71,7 @@ export type Expr =
   | {
       _: Expr_.Get;
       expr: Expr;
-      propertyName: string;
+      propertyName: Expr;
     }
   | {
       _: Expr_.Call;
@@ -309,7 +310,15 @@ export const exprToString = (expr: Expr, indent: number): string => {
       return expr.name;
 
     case Expr_.Get:
-      return "(" + exprToString(expr.expr, indent) + ")." + expr.propertyName;
+      return (
+        "(" +
+        exprToString(expr.expr, indent) +
+        ")" +
+        (expr.propertyName._ === Expr_.StringLiteral &&
+        identifer.isIdentifer(expr.propertyName.value)
+          ? "." + expr.propertyName.value
+          : "[" + exprToString(expr.propertyName, indent) + "]")
+      );
 
     case Expr_.Call:
       return (

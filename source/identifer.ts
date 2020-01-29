@@ -1,23 +1,77 @@
+const enum CheckIdentiferResult {
+  IsEmpty,
+  FirstCharInvalid,
+  CharInvalid,
+  Reserved
+}
+
 /**
- * 言語で決められた予約語かできるだけ使いたくないものかどうか調べる
+ * 識別子として使える文字かどうか調べ、使えなかったら例外を発生させる。日本語の識別子は使えないものとする
  * @param nameInEnglish 調べている場所 エラーメッセージのためのヒント 英語
  * @param nameInJapanese 調べている場所 エラーメッセージのためのヒント 日本語
- * @param reservedWord 予約語かどうか調べるワード
+ * @param word 識別子として使えるかどうか調べるワード
  * @throws 予約語だった場合
  */
-export const checkUsingReservedWord = (
+export const checkIdentiferThrow = (
   nameInEnglish: string,
   nameInJapanese: string,
   word: string
 ): void => {
-  if (reservedByLanguageWordSet.has(word)) {
-    throw new Error(
-      `${nameInEnglish} is revered or names that cannot be used in context. word = ${word}
-  ${nameInJapanese}が予約語か文脈によって使えない名前になっています ワード = ${word}`
-    );
+  const result = checkIdentifer(word);
+  if (result === null) {
+    return;
+  }
+  switch (result) {
+    case CheckIdentiferResult.IsEmpty:
+      throw new Error(`${nameInEnglish} is empty.
+${nameInJapanese}が空文字列で指定されています
+`);
+    case CheckIdentiferResult.FirstCharInvalid:
+      throw new Error(`${nameInEnglish} is use invalid char in first. word = ${word}
+${nameInJapanese}の先頭に識別子で使えない文字が使われています ワード = ${word}
+`);
+    case CheckIdentiferResult.CharInvalid:
+      throw new Error(`${nameInEnglish} is use invalid char. word = ${word}
+${nameInJapanese}に識別子で使えない文字が含まれています ワード = ${word}
+`);
+    case CheckIdentiferResult.Reserved:
+      throw new Error(
+        `${nameInEnglish} is revered or names that cannot be used in context. word = ${word}
+    ${nameInJapanese}が予約語か文脈によって使えない名前になっています ワード = ${word}`
+      );
   }
 };
 
+/**
+ *識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
+ * @param word 識別子として使えるかどうか調べるワード
+ */
+export const isIdentifer = (word: string): boolean =>
+  checkIdentifer(word) === null;
+
+export const checkIdentifer = (word: string): CheckIdentiferResult | null => {
+  if (word.length <= 0) {
+    return CheckIdentiferResult.IsEmpty;
+  }
+  if (
+    !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(word[0])
+  ) {
+    return CheckIdentiferResult.FirstCharInvalid;
+  }
+  for (let i = 1; i < word.length; i++) {
+    if (
+      !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
+        word[i]
+      )
+    ) {
+      return CheckIdentiferResult.CharInvalid;
+    }
+  }
+  if (reservedByLanguageWordSet.has(word)) {
+    return CheckIdentiferResult.Reserved;
+  }
+  return null;
+};
 /**
  * JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
  */

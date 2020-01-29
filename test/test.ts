@@ -1,6 +1,7 @@
 import { performance } from "perf_hooks";
 import * as generator from "../source/main";
 import { expr, typeExpr } from "../source/main";
+import * as identifer from "../source/identifer";
 
 describe("test", () => {
   const importPath = "./express";
@@ -65,6 +66,40 @@ describe("test", () => {
     expect(() => {
       generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     }).toThrow();
+  });
+  it("識別子として使えない文字はエラー", () => {
+    expect(() => {
+      generator.toNodeJsCodeAsTypeScript({
+        exportTypeAliasList: [],
+        exportFunctionList: [
+          {
+            name: "0name",
+            document: "0から始まる識別子",
+            parameterList: [],
+            returnType: null,
+            statementList: []
+          }
+        ]
+      });
+    }).toThrow();
+  });
+  it("識別子の生成で識別子に使えない文字が含まれているかどうか", () => {
+    expect(() => {
+      const reserved: ReadonlySet<string> = new Set();
+      let index = identifer.initialIdentiferIndex;
+      for (let i = 0; i < 999; i++) {
+        const createIdentiferResult = identifer.createIdentifer(
+          index,
+          reserved
+        );
+        index = createIdentiferResult.nextIdentiferIndex;
+        identifer.checkIdentiferThrow(
+          "test",
+          "test",
+          createIdentiferResult.identifer
+        );
+      }
+    }).not.toThrow();
   });
   it("escape string literal", () => {
     const nodeJsCode: generator.NodeJsCode = {
