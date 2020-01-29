@@ -8,10 +8,6 @@ describe("test", () => {
     ["Request", "Response"],
     []
   >(importPath, ["Request", "Response"], []);
-  const globalNamespace = generator.createGlobalNamespace<
-    ["Uint8Array"],
-    ["console"]
-  >(["Uint8Array"], ["console"]);
 
   const sampleCode: generator.NodeJsCode = {
     exportTypeAliasList: [],
