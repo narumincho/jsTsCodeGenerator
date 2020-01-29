@@ -651,9 +651,9 @@ export const returnStatement = (expr: Expr): Statement => ({
  * return;
  * 戻り値がvoidの関数を早く抜ける
  */
-export const returnVoidStatement = (): Statement => ({
+export const returnVoidStatement: Statement = {
   _: Statement_.ReturnVoid
-});
+};
 
 /**
  * continue
