@@ -67,7 +67,7 @@ export type Expr =
       depth: number;
     }
   | {
-      _: Expr_.GetProperty;
+      _: Expr_.Get;
       expr: Expr;
       propertyName: string;
     }
@@ -102,7 +102,7 @@ const enum Expr_ {
   GlobalVariable,
   ImportedVariable,
   Argument,
-  GetProperty,
+  Get,
   Call,
   New,
   LocalVariable
@@ -129,6 +129,66 @@ type BinaryOperator =
   | "|"
   | "&&"
   | "||";
+
+type Literal =
+  | number
+  | string
+  | boolean
+  | undefined
+  | null
+  | { [key in string]: Expr | Literal };
+
+/**
+ * 直接JavaScriptのデータからリテラルを生成する。
+ * ただし "_"のキーを持つオブジェクトはこの方法では作れない。`objectLiteral`を使おう
+ * @param value
+ */
+export const literal = (value: Literal): Expr => {
+  if (typeof value === "number") {
+    return numberLiteral(value);
+  }
+  if (typeof value === "string") {
+    return stringLiteral(value);
+  }
+  if (typeof value === "boolean") {
+    return booleanLiteral(value);
+  }
+  if (value === undefined) {
+    return undefinedLiteral;
+  }
+  if (value === null) {
+    return nullLiteral;
+  }
+  const objectLiteralMemberMap = new Map<string, Expr>();
+  for (const [valueKey, valueValue] of Object.entries(value)) {
+    if (typeof valueValue === "number") {
+      objectLiteralMemberMap.set(valueKey, numberLiteral(valueValue));
+      continue;
+    }
+    if (typeof valueValue === "string") {
+      objectLiteralMemberMap.set(valueKey, stringLiteral(valueValue));
+      continue;
+    }
+    if (typeof valueValue === "boolean") {
+      objectLiteralMemberMap.set(valueKey, booleanLiteral(valueValue));
+      continue;
+    }
+    if (valueValue === undefined) {
+      objectLiteralMemberMap.set(valueKey, undefinedLiteral);
+      continue;
+    }
+    if (valueValue === null) {
+      objectLiteralMemberMap.set(valueKey, nullLiteral);
+      continue;
+    }
+    if (typeof valueValue._ === "number") {
+      objectLiteralMemberMap.set(valueKey, valueValue as Expr);
+    } else {
+      objectLiteralMemberMap.set(valueKey, literal(valueValue as Literal));
+    }
+  }
+  return objectLiteral(objectLiteralMemberMap);
+};
 
 /**
  * 数値リテラル `123`
@@ -416,10 +476,10 @@ export const logicalOr = (left: Expr, right: Expr): Expr => ({
  * オブジェクトリテラル
  * 順番は保証されないので、副作用の含んだ式を入れないこと
  */
-export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
+export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
   return {
     _: Expr_.ObjectLiteral,
-    memberList: memberList
+    memberList: memberMap
   };
 };
 
@@ -429,7 +489,7 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * @param returnType 戻り値
  * @param statementList 本体
  */
-export const createLambdaWithReturn = (
+export const lambdaWithReturn = (
   parameterList: ReadonlyArray<typeExpr.TypeExpr>,
   returnType: typeExpr.TypeExpr,
   statementList: ReadonlyArray<Statement>
@@ -445,7 +505,7 @@ export const createLambdaWithReturn = (
  * @param parameter パラメーター
  * @param statementList 本体
  */
-export const createLambdaReturnVoid = (
+export const lambdaReturnVoid = (
   parameterList: ReadonlyArray<typeExpr.TypeExpr>,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
@@ -459,8 +519,8 @@ export const createLambdaReturnVoid = (
  * @param expr 式
  * @param propertyName プロパティ
  */
-export const getProperty = (expr: Expr, propertyName: string): Expr => ({
-  _: Expr_.GetProperty,
+export const get = (expr: Expr, propertyName: string): Expr => ({
+  _: Expr_.Get,
   expr,
   propertyName
 });
@@ -475,6 +535,18 @@ export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
   expr,
   parameterList
 });
+
+/**
+ * メソッドを呼ぶ (getとcallのシンタックスシュガー)
+ * @param expr
+ * @param methodName
+ * @param parameterList
+ */
+export const callMethod = (
+  expr: Expr,
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr => call(get(expr, methodName), parameterList);
 
 /**
  * インポートした変数
@@ -651,9 +723,9 @@ export const returnStatement = (expr: Expr): Statement => ({
  * return;
  * 戻り値がvoidの関数を早く抜ける
  */
-export const returnVoidStatement = (): Statement => ({
+export const returnVoidStatement: Statement = {
   _: Statement_.ReturnVoid
-});
+};
 
 /**
  * continue
@@ -1140,9 +1212,9 @@ export const toNamedExpr = (
         name
       };
     }
-    case Expr_.GetProperty:
+    case Expr_.Get:
       return {
-        _: namedExpr.Expr_.GetProperty,
+        _: namedExpr.Expr_.Get,
         expr: toNamedExpr(
           expr.expr,
           reservedWord,
