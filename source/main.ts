@@ -16,24 +16,59 @@ export type NodeJsCode = {
   exportFunctionList: ReadonlyArray<ExportFunction>;
 };
 
-type ExportTypeAlias = {
+export type ExportTypeAlias = {
   readonly name: string;
   readonly document: string;
   readonly typeExpr: indexedTypeExpr.TypeExpr;
+};
+
+/**
+ * 外部に公開する型定義
+ * @param name 型定義名
+ * @param document ドキュメント
+ * @param typeExpr 式
+ * @throws 使えない名前だった
+ */
+export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
+  identifer.checkIdentiferThrow(
+    "export type alias name",
+    "外部に公開する型定義の名前",
+    data.name
+  );
+  return data;
 };
 
 type ExportFunction = {
   readonly name: string;
   readonly document: string;
   readonly parameterList: ReadonlyArray<{
-    name: string;
-    document: string;
-    typeExpr: indexedTypeExpr.TypeExpr;
+    readonly name: string;
+    readonly document: string;
+    readonly typeExpr: indexedTypeExpr.TypeExpr;
   }>;
   readonly returnType: indexedTypeExpr.TypeExpr | null;
   readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
+/**
+ * 外部に公開する関数
+ * @throws 使えない名前が含まれている
+ */
+export const exportFunction = (data: ExportFunction): ExportFunction => {
+  identifer.checkIdentiferThrow(
+    "export function parameter name",
+    "外部に公開する変数名",
+    data.name
+  );
+  for (const parameter of data.parameterList) {
+    identifer.checkIdentiferThrow(
+      "export function parameter name",
+      "外部に公開する関数の引数名",
+      parameter.name
+    );
+  }
+  return data;
+};
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
@@ -123,7 +158,7 @@ const scanNodeJsCode = (
     importedModulePath: new Set()
   };
   for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
-    identifer.checkUsingReservedWord(
+    identifer.checkIdentiferThrow(
       "export type name",
       "外部に公開する型の名前",
       exportTypeAlias.name
@@ -135,14 +170,14 @@ const scanNodeJsCode = (
     );
   }
   for (const exportVariable of nodeJsCode.exportFunctionList) {
-    identifer.checkUsingReservedWord(
+    identifer.checkIdentiferThrow(
       "export variable name",
       "外部に公開する変数名",
       exportVariable.name
     );
     scanData.globalNameSet.add(exportVariable.name);
     for (const parameter of exportVariable.parameterList) {
-      identifer.checkUsingReservedWord(
+      identifer.checkIdentiferThrow(
         "export function parameter name",
         "外部に公開する関数の引数名",
         parameter.name

@@ -69,7 +69,7 @@ export type Expr =
   | {
       _: Expr_.Get;
       expr: Expr;
-      propertyName: string;
+      propertyName: Expr;
     }
   | {
       _: Expr_.Call;
@@ -517,12 +517,23 @@ export const lambdaReturnVoid = (
 /**
  * プロパティの値を取得する
  * @param expr 式
- * @param propertyName プロパティ
+ * @param propertyName プロパティ名の式
+ */
+export const getByExpr = (expr: Expr, propertyName: Expr): Expr => ({
+  _: Expr_.Get,
+  expr,
+  propertyName
+});
+
+/**
+ * プロパティの値を取得する。getByExprのシンタックスシュガー
+ * @param expr 式
+ * @param propertyName プロパティ名
  */
 export const get = (expr: Expr, propertyName: string): Expr => ({
   _: Expr_.Get,
   expr,
-  propertyName
+  propertyName: stringLiteral(propertyName)
 });
 
 /**
@@ -835,7 +846,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.ObjectLiteral:
       for (const [propertyName, member] of expr.memberList) {
-        identifer.checkUsingReservedWord(
+        identifer.checkIdentiferThrow(
           "object literal property name",
           "オブジェクトリテラルのプロパティ名",
           propertyName
@@ -866,7 +877,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.GlobalVariable:
-      identifer.checkUsingReservedWord(
+      identifer.checkIdentiferThrow(
         "global variable name",
         "グローバル空間の変数名",
         expr.name
@@ -875,7 +886,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.ImportedVariable:
-      identifer.checkUsingReservedWord(
+      identifer.checkIdentiferThrow(
         "imported variable name",
         "インポートした変数名",
         expr.name
@@ -884,6 +895,10 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.Argument:
+      return;
+
+    case Expr_.Get:
+      scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
       return;
 
     case Expr_.Call:
@@ -1222,8 +1237,15 @@ export const toNamedExpr = (
           identiferIndex,
           argumentAndLocalVariableNameList
         ),
-        propertyName: expr.propertyName
+        propertyName: toNamedExpr(
+          expr.propertyName,
+          reservedWord,
+          importModuleMap,
+          identiferIndex,
+          argumentAndLocalVariableNameList
+        )
       };
+
     case Expr_.Call:
       return {
         _: namedExpr.Expr_.Call,
