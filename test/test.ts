@@ -124,28 +124,21 @@ describe("test", () => {
           statementList: [
             expr.variableDefinition(
               typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
-              expr.getProperty(
-                expr.getProperty(expr.argument(0, 0), "headers"),
-                "accept"
-              )
+              expr.get(expr.get(expr.argument(0, 0), "headers"), "accept")
             ),
             expr.ifStatement(
               expr.logicalAnd(
                 expr.notEqual(expr.localVariable(0, 0), expr.undefinedLiteral),
-                expr.call(
-                  expr.getProperty(expr.localVariable(0, 0), "includes"),
-                  [expr.stringLiteral("text/html")]
-                )
+                expr.call(expr.get(expr.localVariable(0, 0), "includes"), [
+                  expr.stringLiteral("text/html")
+                ])
               ),
               [
                 expr.evaluateExpr(
-                  expr.call(
-                    expr.getProperty(expr.argument(1, 1), "setHeader"),
-                    [
-                      expr.stringLiteral("content-type"),
-                      expr.stringLiteral("text/html")
-                    ]
-                  )
+                  expr.call(expr.get(expr.argument(1, 1), "setHeader"), [
+                    expr.stringLiteral("content-type"),
+                    expr.stringLiteral("text/html")
+                  ])
                 )
               ]
             )

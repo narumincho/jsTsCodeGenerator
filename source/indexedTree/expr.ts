@@ -67,7 +67,7 @@ export type Expr =
       depth: number;
     }
   | {
-      _: Expr_.GetProperty;
+      _: Expr_.Get;
       expr: Expr;
       propertyName: string;
     }
@@ -102,7 +102,7 @@ const enum Expr_ {
   GlobalVariable,
   ImportedVariable,
   Argument,
-  GetProperty,
+  Get,
   Call,
   New,
   LocalVariable
@@ -459,8 +459,8 @@ export const createLambdaReturnVoid = (
  * @param expr 式
  * @param propertyName プロパティ
  */
-export const getProperty = (expr: Expr, propertyName: string): Expr => ({
-  _: Expr_.GetProperty,
+export const get = (expr: Expr, propertyName: string): Expr => ({
+  _: Expr_.Get,
   expr,
   propertyName
 });
@@ -1140,7 +1140,7 @@ export const toNamedExpr = (
         name
       };
     }
-    case Expr_.GetProperty:
+    case Expr_.Get:
       return {
         _: namedExpr.Expr_.GetProperty,
         expr: toNamedExpr(
