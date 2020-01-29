@@ -416,7 +416,7 @@ export const logicalOr = (left: Expr, right: Expr): Expr => ({
  * オブジェクトリテラル
  * 順番は保証されないので、副作用の含んだ式を入れないこと
  */
-export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
+export const objectLiteral = (memberList: Map<string, Expr>): Expr => {
   return {
     _: Expr_.ObjectLiteral,
     memberList: memberList
@@ -429,7 +429,7 @@ export const createObjectLiteral = (memberList: Map<string, Expr>): Expr => {
  * @param returnType 戻り値
  * @param statementList 本体
  */
-export const createLambdaWithReturn = (
+export const lambdaWithReturn = (
   parameterList: ReadonlyArray<typeExpr.TypeExpr>,
   returnType: typeExpr.TypeExpr,
   statementList: ReadonlyArray<Statement>
@@ -445,7 +445,7 @@ export const createLambdaWithReturn = (
  * @param parameter パラメーター
  * @param statementList 本体
  */
-export const createLambdaReturnVoid = (
+export const lambdaReturnVoid = (
   parameterList: ReadonlyArray<typeExpr.TypeExpr>,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
