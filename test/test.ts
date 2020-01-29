@@ -129,13 +129,13 @@ describe("test", () => {
             expr.ifStatement(
               expr.logicalAnd(
                 expr.notEqual(expr.localVariable(0, 0), expr.undefinedLiteral),
-                expr.call(expr.get(expr.localVariable(0, 0), "includes"), [
+                expr.callMethod(expr.localVariable(0, 0), "includes", [
                   expr.stringLiteral("text/html")
                 ])
               ),
               [
                 expr.evaluateExpr(
-                  expr.call(expr.get(expr.argument(1, 1), "setHeader"), [
+                  expr.callMethod(expr.argument(1, 1), "setHeader", [
                     expr.stringLiteral("content-type"),
                     expr.stringLiteral("text/html")
                   ])

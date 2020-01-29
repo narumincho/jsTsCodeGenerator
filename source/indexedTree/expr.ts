@@ -477,6 +477,18 @@ export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
 });
 
 /**
+ * メソッドを呼ぶ (getとcallのシンタックスシュガー)
+ * @param expr
+ * @param methodName
+ * @param parameterList
+ */
+export const callMethod = (
+  expr: Expr,
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr => call(get(expr, methodName), parameterList);
+
+/**
  * インポートした変数
  * @param path モジュールのパス
  * @param name 変数名
