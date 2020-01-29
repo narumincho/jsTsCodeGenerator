@@ -5,7 +5,6 @@
     "lib": ["ES2020"],
     "strict": true,
     "moduleResolution": "node",
-    "removeComments": true,
     "newLine": "LF",
     "outDir": "distribution",
     "declaration": true
