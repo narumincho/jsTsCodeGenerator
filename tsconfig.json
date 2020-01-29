@@ -9,5 +9,6 @@
     "newLine": "LF",
     "outDir": "distribution",
     "declaration": true
-  }
+  },
+  "exclude": ["test/**"]
 }
