@@ -1,7 +1,7 @@
-# jsTsCodeGenerator
+# js-ts-code-generator
 
-[![npm version](https://badge.fury.io/js/jstscodegenerator.svg)](https://badge.fury.io/js/jstscodegenerator)
-[![NPM](https://nodei.co/npm/jstscodegenerator.png)](https://nodei.co/npm/jstscodegenerator/)
+[![npm version](https://badge.fury.io/js/js-ts-code-generator.svg)](https://badge.fury.io/js/js-ts-code-generator)
+[![NPM](https://nodei.co/npm/js-ts-code-generator.png)](https://nodei.co/npm/js-ts-code-generator/)
 
 ## コンセプト
 
@@ -17,9 +17,8 @@
 
 ## どのレベルまでやるか処理
 
-- 1 度しか使わないのはインライン化をする
-- 共通項を取り出さない
-- 内部の変数名短くするが、オブジェクトのキー、関数の引数名は変更しない
+- 内部の(変数名、引数名)を自動で名前を決める
+- 外部に公開する(関数名、引数名)、オブジェクトのキーは変更しない
 - JavaScript 文法系統のものをここで処理する
 - JavaScript の Built in Object 等はここで持たない
 

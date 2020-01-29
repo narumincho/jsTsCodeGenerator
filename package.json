@@ -1,6 +1,6 @@
 {
-  "name": "jstscodegenerator",
-  "version": "0.0.4",
+  "name": "js-ts-code-generator",
+  "version": "0.0.5",
   "description": "TypeScript And JavaScript Code Generator",
   "main": "distribution/main.js",
   "scripts": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/narumincho/jsTsCodeGenerator.git"
+    "url": "git+https://github.com/narumincho/js-ts-code-generator.git"
   },
   "author": "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/narumincho/jsTsCodeGenerator/issues"
+    "url": "https://github.com/narumincho/js-ts-code-generator/issues"
   },
-  "homepage": "https://github.com/narumincho/jsTsCodeGenerator#readme",
+  "homepage": "https://github.com/narumincho/js-ts-code-generator#readme",
   "devDependencies": {
     "@types/jest": "^25.1.0",
     "@types/node": "^13.5.1",
