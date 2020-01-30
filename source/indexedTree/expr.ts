@@ -626,6 +626,12 @@ export type Statement =
       expr: Expr;
     }
   | {
+      _: Statement_.Set;
+      targetObject: Expr;
+      targetPropertyName: Expr;
+      expr: Expr;
+    }
+  | {
       _: Statement_.If;
       condition: Expr;
       thenStatementList: ReadonlyArray<Statement>;
@@ -675,6 +681,7 @@ export type Statement =
 
 const enum Statement_ {
   EvaluateExpr,
+  Set,
   If,
   ThrowError,
   Return,
@@ -695,6 +702,23 @@ const enum Statement_ {
  */
 export const evaluateExpr = (expr: Expr): Statement => ({
   _: Statement_.EvaluateExpr,
+  expr
+});
+
+/**
+ * プロパティの値を設定する。targetObject[targetPropertyName] = expr;
+ * @param targetObject
+ * @param targetPropertyName
+ * @param expr
+ */
+export const setByExpr = (
+  targetObject: Expr,
+  targetPropertyName: Expr,
+  expr: Expr
+): Statement => ({
+  _: Statement_.Set,
+  targetObject,
+  targetPropertyName,
   expr
 });
 
@@ -899,6 +923,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.Get:
       scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
+      scanGlobalVariableNameAndImportedPathInExpr(expr.propertyName, scanData);
       return;
 
     case Expr_.Call:
@@ -932,6 +957,18 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 ): void => {
   switch (statement._) {
     case Statement_.EvaluateExpr:
+      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      return;
+
+    case Statement_.Set:
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.targetObject,
+        scanData
+      );
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.targetPropertyName,
+        scanData
+      );
       scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
       return;
 
@@ -1382,6 +1419,35 @@ export const toNamedStatement = (
         },
         index: variableDefinitionIndex
       };
+    case Statement_.Set:
+      return {
+        statement: {
+          _: namedExpr.Statement_.Set,
+          targetObject: toNamedExpr(
+            statement.targetObject,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          ),
+          targetPropertyName: toNamedExpr(
+            statement.targetPropertyName,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          ),
+          expr: toNamedExpr(
+            statement.expr,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
+        },
+        index: variableDefinitionIndex
+      };
+
     case Statement_.If:
       return {
         statement: {

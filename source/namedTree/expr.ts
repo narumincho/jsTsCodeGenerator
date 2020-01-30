@@ -138,6 +138,12 @@ export type Statement =
       expr: Expr;
     }
   | {
+      _: Statement_.Set;
+      targetObject: Expr;
+      targetPropertyName: Expr;
+      expr: Expr;
+    }
+  | {
       _: Statement_.If;
       condition: Expr;
       thenStatementList: ReadonlyArray<Statement>;
@@ -197,6 +203,7 @@ export type Statement =
 
 export const enum Statement_ {
   EvaluateExpr,
+  Set,
   If,
   ThrowError,
   Return,
@@ -377,6 +384,19 @@ export const statementToString = (
   switch (statement._) {
     case Statement_.EvaluateExpr:
       return indentString + exprToString(statement.expr, indent) + ";";
+
+    case Statement_.Set:
+      return (
+        indentString +
+        exprToString(statement.targetObject, indent) +
+        (statement.targetPropertyName._ === Expr_.StringLiteral &&
+        identifer.isIdentifer(statement.targetPropertyName.value)
+          ? "." + statement.targetPropertyName.value
+          : "[" + exprToString(statement.targetPropertyName, indent) + "]") +
+        " = " +
+        exprToString(statement.expr, indent) +
+        ";"
+      );
 
     case Statement_.If:
       return (
