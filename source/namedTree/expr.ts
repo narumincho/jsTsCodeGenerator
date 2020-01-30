@@ -343,7 +343,14 @@ export const exprToString = (expr: Expr, indent: number): string => {
 };
 
 const stringLiteralValueToString = (value: string): string => {
-  return '"' + value.replace(/"/gu, '\\"').replace(/\n/gu, "\\n") + '"';
+  return (
+    '"' +
+    value
+      .replace(/\\/gu, "\\\\")
+      .replace(/"/gu, '\\"')
+      .replace(/\n/gu, "\\n") +
+    '"'
+  );
 };
 
 export const statementListToString = (
