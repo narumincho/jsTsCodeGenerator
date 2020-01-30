@@ -355,7 +355,7 @@ const stringLiteralValueToString = (value: string): string => {
     value
       .replace(/\\/gu, "\\\\")
       .replace(/"/gu, '\\"')
-      .replace(/\n/gu, "\\n") +
+      .replace(/\r\n|\n/gu, "\\n") +
     '"'
   );
 };
