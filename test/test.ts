@@ -216,28 +216,32 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("[0]");
   });
-  it("statementList in { } ", () => {
-    const global = generator.createGlobalNamespace<[], ["console"]>(
-      [],
-      ["console"]
-    );
+  const sorenaGlobal = generator.createGlobalNamespace<[], ["console"]>(
+    [],
+    ["console"]
+  );
 
-    const code = generator.toNodeJsCodeAsTypeScript({
-      exportTypeAliasList: [],
-      exportFunctionList: [],
-      statementList: [
-        expr.variableDefinition(
-          typeExpr.typeString,
-          expr.stringLiteral("それな")
-        ),
-        expr.evaluateExpr(
-          expr.callMethod(global.variableList.console, "log", [
-            expr.localVariable(0, 0)
-          ])
-        )
-      ]
-    });
-    console.log(code);
-    expect(code).toMatch(/\{[^\{]*"それな[^\}]*\}/u);
+  const sorenaCode = generator.toESModulesBrowserCode({
+    exportTypeAliasList: [],
+    exportFunctionList: [],
+    statementList: [
+      expr.variableDefinition(
+        typeExpr.typeString,
+        expr.stringLiteral("それな")
+      ),
+      expr.evaluateExpr(
+        expr.callMethod(sorenaGlobal.variableList.console, "log", [
+          expr.localVariable(0, 0)
+        ])
+      )
+    ]
+  });
+
+  it("statementList in { } ", () => {
+    console.log(sorenaCode);
+    expect(sorenaCode).toMatch(/\{[^{]*"それな[^}]*\}/u);
+  });
+  it("ESModules Browser Code not include type ", () => {
+    expect(sorenaCode).not.toMatch(/string/u);
   });
 });

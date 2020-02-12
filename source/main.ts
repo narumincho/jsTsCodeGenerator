@@ -412,7 +412,11 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
             ? "void"
             : namedTypeExpr.typeExprToString(exportFunction.returnType)) +
           " => " +
-          namedExpr.lambdaBodyToString(exportFunction.statementList, 0)
+          namedExpr.lambdaBodyToString(
+            exportFunction.statementList,
+            0,
+            namedExpr.CodeType.TypeScript
+          )
       )
       .join("\n\n") +
     "\n" +
@@ -430,7 +434,8 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
         ],
         []
       ),
-      1
+      1,
+      namedExpr.CodeType.TypeScript
     )
   );
 };
@@ -466,21 +471,18 @@ export const toESModulesBrowserCode = (code: Code): string => {
     namedExportFunctionList
       .map(
         (exportFunction): string =>
-          "/** \n * " +
-          exportFunction.document.split("\n").join("\n * ") +
-          "\n" +
-          exportFunction.parameterList
-            .map(p => " * @param " + p.name + " " + p.document)
-            .join("\n") +
-          "\n" +
-          " */\nexport const " +
+          "export const " +
           exportFunction.name +
-          " = (" +
+          "=(" +
           exportFunction.parameterList
             .map(parameter => parameter.name)
-            .join(", ") +
-          ") => " +
-          namedExpr.lambdaBodyToString(exportFunction.statementList, 0)
+            .join(",") +
+          ")=>" +
+          namedExpr.lambdaBodyToString(
+            exportFunction.statementList,
+            0,
+            namedExpr.CodeType.JavaScript
+          )
       )
       .join("\n\n") +
     "\n" +
@@ -498,7 +500,8 @@ export const toESModulesBrowserCode = (code: Code): string => {
         ],
         []
       ),
-      1
+      1,
+      namedExpr.CodeType.JavaScript
     )
   );
 };

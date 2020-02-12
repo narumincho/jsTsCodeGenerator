@@ -217,6 +217,11 @@ export const enum Statement_ {
   Break
 }
 
+export const enum CodeType {
+  JavaScript,
+  TypeScript
+}
+
 /**
  * ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形にする
  * @param statementList
@@ -224,19 +229,28 @@ export const enum Statement_ {
  */
 export const lambdaBodyToString = (
   statementList: ReadonlyArray<Statement>,
-  indent: number
+  indent: number,
+  codeType: CodeType
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === Statement_.Return) {
-    return "(" + exprToString(statementList[0].expr, indent) + ")";
+    return (
+      "(" +
+      exprToTypeScriptCodeAsString(statementList[0].expr, indent, codeType) +
+      ")"
+    );
   }
-  return statementListToString(statementList, indent);
+  return statementListToString(statementList, indent, codeType);
 };
 
 /**
  * 式をコードに変換する
  * @param expr 式
  */
-export const exprToString = (expr: Expr, indent: number): string => {
+const exprToTypeScriptCodeAsString = (
+  expr: Expr,
+  indent: number,
+  codeType: CodeType
+): string => {
   switch (expr._) {
     case Expr_.NumberLiteral:
       return expr.value.toString();
@@ -257,55 +271,85 @@ export const exprToString = (expr: Expr, indent: number): string => {
       return (
         "{" +
         [...expr.memberList.entries()]
-          .map(([key, value]) => key + ":" + exprToString(value, indent))
+          .map(
+            ([key, value]) =>
+              key + ":" + exprToTypeScriptCodeAsString(value, indent, codeType)
+          )
           .join(", ") +
         "}"
       );
 
     case Expr_.UnaryOperator:
-      return expr.operator + "(" + exprToString(expr.expr, indent) + ")";
+      return (
+        expr.operator +
+        "(" +
+        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
+        ")"
+      );
     case Expr_.BinaryOperator:
       return (
         "(" +
-        exprToString(expr.left, indent) +
+        exprToTypeScriptCodeAsString(expr.left, indent, codeType) +
         ")" +
         expr.operator +
         "(" +
-        exprToString(expr.right, indent) +
+        exprToTypeScriptCodeAsString(expr.right, indent, codeType) +
         ")"
       );
     case Expr_.ConditionalOperator:
       return (
         "(" +
-        exprToString(expr.condition, indent) +
+        exprToTypeScriptCodeAsString(expr.condition, indent, codeType) +
         ")?(" +
-        exprToString(expr.thenExpr, indent) +
+        exprToTypeScriptCodeAsString(expr.thenExpr, indent, codeType) +
         "):(" +
-        exprToString(expr.elseExpr, indent) +
+        exprToTypeScriptCodeAsString(expr.elseExpr, indent, codeType) +
         ")"
       );
 
     case Expr_.LambdaWithReturn:
-      return (
-        "(" +
-        expr.parameterList
-          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
-          .join(", ") +
-        "): " +
-        typeExpr.typeExprToString(expr.returnType) +
-        "=>" +
-        lambdaBodyToString(expr.statementList, indent)
-      );
+      switch (codeType) {
+        case CodeType.TypeScript:
+          return (
+            "(" +
+            expr.parameterList
+              .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+              .join(", ") +
+            "): " +
+            typeExpr.typeExprToString(expr.returnType) +
+            "=>" +
+            lambdaBodyToString(expr.statementList, indent, codeType)
+          );
+        case CodeType.JavaScript:
+          return (
+            "(" +
+            expr.parameterList.map(o => o.name).join(", ") +
+            ")=>" +
+            lambdaBodyToString(expr.statementList, indent, codeType)
+          );
+      }
+      break;
 
     case Expr_.LambdaReturnVoid:
-      return (
-        "(" +
-        expr.parameterList
-          .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
-          .join(",") +
-        "): void=>" +
-        lambdaBodyToString(expr.statementList, indent)
-      );
+      switch (codeType) {
+        case CodeType.TypeScript:
+          return (
+            "(" +
+            expr.parameterList
+              .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+              .join(", ") +
+            "): void=>" +
+            lambdaBodyToString(expr.statementList, indent, codeType)
+          );
+        case CodeType.JavaScript:
+          return (
+            "(" +
+            expr.parameterList.map(o => o.name).join(",") +
+            ")=>" +
+            lambdaBodyToString(expr.statementList, indent, codeType)
+          );
+      }
+      break;
 
     case Expr_.GlobalVariable:
       return expr.name;
@@ -319,28 +363,34 @@ export const exprToString = (expr: Expr, indent: number): string => {
     case Expr_.Get:
       return (
         "(" +
-        exprToString(expr.expr, indent) +
+        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
         ")" +
         (expr.propertyName._ === Expr_.StringLiteral &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
-          : "[" + exprToString(expr.propertyName, indent) + "]")
+          : "[" +
+            exprToTypeScriptCodeAsString(expr.propertyName, indent, codeType) +
+            "]")
       );
 
     case Expr_.Call:
       return (
-        exprToString(expr.expr, indent) +
+        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
         "(" +
-        expr.parameterList.map(e => exprToString(e, indent)).join(", ") +
+        expr.parameterList
+          .map(e => exprToTypeScriptCodeAsString(e, indent, codeType))
+          .join(", ") +
         ")"
       );
 
     case Expr_.New:
       return (
         "new (" +
-        exprToString(expr.expr, indent) +
+        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
         ")(" +
-        expr.parameterList.map(e => exprToString(e, indent)).join(", ") +
+        expr.parameterList
+          .map(e => exprToTypeScriptCodeAsString(e, indent, codeType))
+          .join(", ") +
         ")"
       );
 
@@ -362,39 +412,53 @@ const stringLiteralValueToString = (value: string): string => {
 
 export const statementListToString = (
   statementList: ReadonlyArray<Statement>,
-  indent: number
+  indent: number,
+  codeType: CodeType
 ): string =>
   "{\n" +
   statementList
-    .map(statement => statementToString(statement, indent))
+    .map(statement =>
+      statementToTypeScriptCodeAsString(statement, indent, codeType)
+    )
     .join("\n") +
   "\n" +
   "  ".repeat(indent) +
   "}";
 
 /**
- * 文をコードに変換する
+ * 文をTypeScriptのコードに変換する
  * @param statement 文
  */
-export const statementToString = (
+const statementToTypeScriptCodeAsString = (
   statement: Statement,
-  indent: number
+  indent: number,
+  codeType: CodeType
 ): string => {
   const indentString = "  ".repeat(indent);
   switch (statement._) {
     case Statement_.EvaluateExpr:
-      return indentString + exprToString(statement.expr, indent) + ";";
+      return (
+        indentString +
+        exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+        ";"
+      );
 
     case Statement_.Set:
       return (
         indentString +
-        exprToString(statement.targetObject, indent) +
+        exprToTypeScriptCodeAsString(statement.targetObject, indent, codeType) +
         (statement.targetPropertyName._ === Expr_.StringLiteral &&
         identifer.isIdentifer(statement.targetPropertyName.value)
           ? "." + statement.targetPropertyName.value
-          : "[" + exprToString(statement.targetPropertyName, indent) + "]") +
+          : "[" +
+            exprToTypeScriptCodeAsString(
+              statement.targetPropertyName,
+              indent,
+              codeType
+            ) +
+            "]") +
         " = " +
-        exprToString(statement.expr, indent) +
+        exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
 
@@ -402,9 +466,9 @@ export const statementToString = (
       return (
         indentString +
         "if (" +
-        exprToString(statement.condition, indent) +
+        exprToTypeScriptCodeAsString(statement.condition, indent, codeType) +
         ") " +
-        statementListToString(statement.thenStatementList, indent + 1)
+        statementListToString(statement.thenStatementList, indent + 1, codeType)
       );
 
     case Statement_.ThrowError:
@@ -414,7 +478,10 @@ export const statementToString = (
 
     case Statement_.Return:
       return (
-        indentString + "return" + exprToString(statement.expr, indent) + ";"
+        indentString +
+        "return" +
+        exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+        ";"
       );
 
     case Statement_.ReturnVoid:
@@ -424,55 +491,97 @@ export const statementToString = (
       return indentString + "continue;";
 
     case Statement_.VariableDefinition:
-      return (
-        indentString +
-        "const " +
-        statement.name +
-        ":" +
-        typeExpr.typeExprToString(statement.typeExpr) +
-        " = " +
-        exprToString(statement.expr, indent) +
-        ";"
-      );
+      switch (codeType) {
+        case CodeType.TypeScript:
+          return (
+            indentString +
+            "const " +
+            statement.name +
+            ":" +
+            typeExpr.typeExprToString(statement.typeExpr) +
+            " = " +
+            exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+            ";"
+          );
+        case CodeType.JavaScript:
+          return (
+            indentString +
+            "const " +
+            statement.name +
+            "=" +
+            exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+            ";"
+          );
+      }
+      break;
 
     case Statement_.FunctionWithReturnValueVariableDefinition:
-      return (
-        indentString +
-        "const " +
-        statement.name +
-        " = (" +
-        statement.parameterList
-          .map(
-            parameter =>
-              parameter.name +
-              ":" +
-              typeExpr.typeExprToString(parameter.typeExpr)
-          )
-          .join(",") +
-        "):" +
-        typeExpr.typeExprToString(statement.returnType) +
-        "=>" +
-        lambdaBodyToString(statement.statementList, indent + 1) +
-        ";"
-      );
+      switch (codeType) {
+        case CodeType.TypeScript:
+          return (
+            indentString +
+            "const " +
+            statement.name +
+            " = (" +
+            statement.parameterList
+              .map(
+                parameter =>
+                  parameter.name +
+                  ":" +
+                  typeExpr.typeExprToString(parameter.typeExpr)
+              )
+              .join(", ") +
+            "): " +
+            typeExpr.typeExprToString(statement.returnType) +
+            "=>" +
+            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            ";"
+          );
+        case CodeType.JavaScript:
+          return (
+            indentString +
+            "const " +
+            statement.name +
+            " = (" +
+            statement.parameterList.map(parameter => parameter.name).join(",") +
+            ")=>" +
+            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            ";"
+          );
+      }
+      break;
 
     case Statement_.ReturnVoidFunctionVariableDefinition:
-      return (
-        "const " +
-        statement.name +
-        " = (" +
-        statement.parameterList
-          .map(
-            parameter =>
-              parameter.name +
-              ":" +
-              typeExpr.typeExprToString(parameter.typeExpr)
-          )
-          .join(",") +
-        "): void =>" +
-        lambdaBodyToString(statement.statementList, indent + 1) +
-        ";"
-      );
+      switch (codeType) {
+        case CodeType.TypeScript:
+          return (
+            "const " +
+            statement.name +
+            " = (" +
+            statement.parameterList
+              .map(
+                parameter =>
+                  parameter.name +
+                  ": " +
+                  typeExpr.typeExprToString(parameter.typeExpr)
+              )
+              .join(", ") +
+            "): void =>" +
+            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            ";"
+          );
+        case CodeType.JavaScript:
+          return (
+            "const " +
+            statement.name +
+            " = (" +
+            statement.parameterList.map(parameter => parameter.name).join(",") +
+            ")=>" +
+            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            ";"
+          );
+      }
+      break;
 
     case Statement_.For:
       return (
@@ -481,17 +590,17 @@ export const statementToString = (
         " = 0; " +
         statement.counterVariableName +
         " < " +
-        exprToString(statement.untilExpr, indent) +
+        exprToTypeScriptCodeAsString(statement.untilExpr, indent, codeType) +
         ";" +
         statement.counterVariableName +
         "+= 1)" +
-        statementListToString(statement.statementList, indent + 1)
+        statementListToString(statement.statementList, indent + 1, codeType)
       );
 
     case Statement_.WhileTrue:
       return (
         "while (true) " +
-        statementListToString(statement.statementList, indent + 1)
+        statementListToString(statement.statementList, indent + 1, codeType)
       );
 
     case Statement_.Break:
