@@ -10,7 +10,7 @@ describe("test", () => {
     []
   >(importPath, ["Request", "Response"], []);
 
-  const sampleCode: generator.NodeJsCode = {
+  const sampleCode: generator.Code = {
     exportTypeAliasList: [],
     exportFunctionList: [
       generator.exportFunction({
@@ -31,7 +31,8 @@ describe("test", () => {
         ],
         returnType: null
       })
-    ]
+    ],
+    statementList: []
   };
   const start = performance.now();
   const nodeJsTypeScriptCode = generator.toNodeJsCodeAsTypeScript(sampleCode);
@@ -62,7 +63,8 @@ describe("test", () => {
             returnType: null,
             statementList: []
           })
-        ]
+        ],
+        statementList: []
       });
     }).toThrow();
   });
@@ -78,7 +80,8 @@ describe("test", () => {
             returnType: null,
             statementList: []
           })
-        ]
+        ],
+        statementList: []
       });
     }).toThrow();
   });
@@ -101,7 +104,7 @@ describe("test", () => {
     }).not.toThrow();
   });
   it("escape string literal", () => {
-    const nodeJsCode: generator.NodeJsCode = {
+    const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
       exportFunctionList: [
         generator.exportFunction({
@@ -119,7 +122,8 @@ describe("test", () => {
             )
           ]
         })
-      ]
+      ],
+      statementList: []
     };
     const codeAsString = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     console.log(codeAsString);
@@ -132,7 +136,7 @@ describe("test", () => {
       ["Request", "Response"],
       []
     >("express", ["Request", "Response"], []);
-    const nodeJsCode: generator.NodeJsCode = {
+    const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
       exportFunctionList: [
         generator.exportFunction({
@@ -174,7 +178,8 @@ describe("test", () => {
             )
           ]
         })
-      ]
+      ],
+      statementList: []
     };
     const code = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
     console.log(code);
@@ -205,9 +210,34 @@ describe("test", () => {
             )
           ]
         })
-      ]
+      ],
+      statementList: []
     });
     console.log(code);
     expect(code).toMatch("[0]");
+  });
+  it("statementList in { } ", () => {
+    const global = generator.createGlobalNamespace<[], ["console"]>(
+      [],
+      ["console"]
+    );
+
+    const code = generator.toNodeJsCodeAsTypeScript({
+      exportTypeAliasList: [],
+      exportFunctionList: [],
+      statementList: [
+        expr.variableDefinition(
+          typeExpr.typeString,
+          expr.stringLiteral("それな")
+        ),
+        expr.evaluateExpr(
+          expr.callMethod(global.variableList.console, "log", [
+            expr.localVariable(0, 0)
+          ])
+        )
+      ]
+    });
+    console.log(code);
+    expect(code).toMatch(/\{[^\{]*"それな[^\}]*\}/u);
   });
 });

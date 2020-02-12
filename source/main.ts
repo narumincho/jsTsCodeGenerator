@@ -9,11 +9,22 @@ export { indexedTypeExpr as typeExpr };
 export { indexedExpr as expr };
 
 /**
- * Node.js向けのコード。TypeScriptでも出力できるように型情報をつける必要がある
+ * TypeScriptやJavaScriptのコードを表現する。
+ * TypeScriptでも出力できるように型情報をつける必要がある
  */
-export type NodeJsCode = {
-  exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
-  exportFunctionList: ReadonlyArray<ExportFunction>;
+export type Code = {
+  /**
+   * 外部に公開する型定義
+   */
+  readonly exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
+  /**
+   * 外部に公開する関数
+   */
+  readonly exportFunctionList: ReadonlyArray<ExportFunction>;
+  /**
+   * 公開する関数を定義した後に実行するコード
+   */
+  readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
 export type ExportTypeAlias = {
@@ -150,14 +161,12 @@ export const createGlobalNamespace = <
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-const scanNodeJsCode = (
-  nodeJsCode: NodeJsCode
-): scanType.NodeJsCodeScanData => {
+const scanNodeJsCode = (code: Code): scanType.NodeJsCodeScanData => {
   const scanData: scanType.NodeJsCodeScanData = {
     globalNameSet: new Set(),
     importedModulePath: new Set()
   };
-  for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
+  for (const exportTypeAlias of code.exportTypeAliasList) {
     identifer.checkIdentiferThrow(
       "export type name",
       "外部に公開する型の名前",
@@ -169,7 +178,7 @@ const scanNodeJsCode = (
       scanData
     );
   }
-  for (const exportVariable of nodeJsCode.exportFunctionList) {
+  for (const exportVariable of code.exportFunctionList) {
     identifer.checkIdentiferThrow(
       "export variable name",
       "外部に公開する変数名",
@@ -200,6 +209,10 @@ const scanNodeJsCode = (
       scanData
     );
   }
+  indexedExpr.scanGlobalVariableNameAndImportedPathInStatementList(
+    code.statementList,
+    scanData
+  );
   return scanData;
 };
 
@@ -241,9 +254,13 @@ type NamedExportFunction = {
   readonly statementList: ReadonlyArray<namedExpr.Statement>;
 };
 
-export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
+export const toESModulesBrowserCode = (): string => {
+  return "";
+};
+
+export const toNodeJsCodeAsTypeScript = (code: Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const { globalNameSet, importedModulePath } = scanNodeJsCode(nodeJsCode);
+  const { globalNameSet, importedModulePath } = scanNodeJsCode(code);
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
@@ -260,7 +277,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
     readonly document: string;
     readonly typeExpr: namedTypeExpr.TypeExpr;
   }> = [];
-  for (const exportTypeAlias of nodeJsCode.exportTypeAliasList) {
+  for (const exportTypeAlias of code.exportTypeAliasList) {
     namedExportTypeAliasList.push({
       name: exportTypeAlias.name,
       document: exportTypeAlias.document,
@@ -274,8 +291,18 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
 
   const namedExportFunctionList: Array<NamedExportFunction> = [];
 
+  const rootName: ReadonlyArray<{
+    argument: ReadonlyArray<string>;
+    variable: ReadonlyArray<string>;
+  }> = [
+    {
+      variable: code.exportFunctionList.map(func => func.name),
+      argument: []
+    }
+  ];
+
   // 外部に公開する関数を名前付けした構造にする
-  for (const exportFunction of nodeJsCode.exportFunctionList) {
+  for (const exportFunction of code.exportFunctionList) {
     namedExportFunctionList.push({
       name: exportFunction.name,
       document: exportFunction.document,
@@ -301,12 +328,7 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
         globalNameSet,
         importedModuleNameMap,
         nextIdentiferIndex,
-        [
-          {
-            variable: nodeJsCode.exportFunctionList.map(func => func.name),
-            argument: []
-          }
-        ],
+        rootName,
         exportFunction.parameterList.map(parameter => parameter.name)
       )
     });
@@ -360,6 +382,18 @@ export const toNodeJsCodeAsTypeScript = (nodeJsCode: NodeJsCode): string => {
           " => " +
           namedExpr.lambdaBodyToString(exportFunction.statementList, 0)
       )
-      .join("\n\n")
+      .join("\n\n") +
+    "\n" +
+    namedExpr.statementListToString(
+      indexedExpr.toNamedStatementList(
+        code.statementList,
+        globalNameSet,
+        importedModuleNameMap,
+        nextIdentiferIndex,
+        rootName,
+        []
+      ),
+      1
+    )
   );
 };
