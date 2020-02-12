@@ -161,7 +161,7 @@ export const createGlobalNamespace = <
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-const scanNodeJsCode = (code: Code): scanType.NodeJsCodeScanData => {
+const scanCode = (code: Code): scanType.NodeJsCodeScanData => {
   const scanData: scanType.NodeJsCodeScanData = {
     globalNameSet: new Set(),
     importedModulePath: new Set()
@@ -254,13 +254,94 @@ type NamedExportFunction = {
   readonly statementList: ReadonlyArray<namedExpr.Statement>;
 };
 
-export const toESModulesBrowserCode = (): string => {
-  return "";
+/** 外部に公開する型定義に名前をつける */
+const toNamedExportTypeAliasList = (
+  exportTypeAliasList: ReadonlyArray<ExportTypeAlias>,
+  globalNameSet: ReadonlySet<string>,
+  importedModuleNameIdentiferMap: ReadonlyMap<string, string>
+): ReadonlyArray<{
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: namedTypeExpr.TypeExpr;
+}> => {
+  const namedList: Array<{
+    readonly name: string;
+    readonly document: string;
+    readonly typeExpr: namedTypeExpr.TypeExpr;
+  }> = [];
+  for (const exportTypeAlias of exportTypeAliasList) {
+    namedList.push({
+      name: exportTypeAlias.name,
+      document: exportTypeAlias.document,
+      typeExpr: indexedTypeExpr.toNamed(
+        exportTypeAlias.typeExpr,
+        globalNameSet,
+        importedModuleNameIdentiferMap
+      )
+    });
+  }
+  return namedList;
+};
+
+/**
+ * 外部に公開する関数に名前をつける
+ */
+const toNamedExportFunctionList = (
+  exportFunctionList: ReadonlyArray<ExportFunction>,
+  globalNameSet: ReadonlySet<string>,
+  importedModuleNameIdentiferMap: ReadonlyMap<string, string>,
+  identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex
+): ReadonlyArray<NamedExportFunction> => {
+  const namedList: Array<NamedExportFunction> = [];
+
+  const rootFunctionListAsRootLocalVariable: ReadonlyArray<{
+    argument: ReadonlyArray<string>;
+    variable: ReadonlyArray<string>;
+  }> = [
+    {
+      variable: exportFunctionList.map(func => func.name),
+      argument: []
+    }
+  ];
+
+  // 外部に公開する関数を名前付けした構造にする
+  for (const exportFunction of exportFunctionList) {
+    namedList.push({
+      name: exportFunction.name,
+      document: exportFunction.document,
+      parameterList: exportFunction.parameterList.map(parameter => ({
+        name: parameter.name,
+        document: parameter.document,
+        typeExpr: indexedTypeExpr.toNamed(
+          parameter.typeExpr,
+          globalNameSet,
+          importedModuleNameIdentiferMap
+        )
+      })),
+      returnType:
+        exportFunction.returnType === null
+          ? null
+          : indexedTypeExpr.toNamed(
+              exportFunction.returnType,
+              globalNameSet,
+              importedModuleNameIdentiferMap
+            ),
+      statementList: indexedExpr.toNamedStatementList(
+        exportFunction.statementList,
+        globalNameSet,
+        importedModuleNameIdentiferMap,
+        identiferIndexOnCreatedImportIdentifer,
+        rootFunctionListAsRootLocalVariable,
+        exportFunction.parameterList.map(parameter => parameter.name)
+      )
+    });
+  }
+  return namedList;
 };
 
 export const toNodeJsCodeAsTypeScript = (code: Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const { globalNameSet, importedModulePath } = scanNodeJsCode(code);
+  const { globalNameSet, importedModulePath } = scanCode(code);
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
@@ -272,67 +353,18 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
     globalNameSet
   );
 
-  const namedExportTypeAliasList: Array<{
-    readonly name: string;
-    readonly document: string;
-    readonly typeExpr: namedTypeExpr.TypeExpr;
-  }> = [];
-  for (const exportTypeAlias of code.exportTypeAliasList) {
-    namedExportTypeAliasList.push({
-      name: exportTypeAlias.name,
-      document: exportTypeAlias.document,
-      typeExpr: indexedTypeExpr.toNamed(
-        exportTypeAlias.typeExpr,
-        globalNameSet,
-        importedModuleNameMap
-      )
-    });
-  }
+  const namedExportTypeAliasList = toNamedExportTypeAliasList(
+    code.exportTypeAliasList,
+    globalNameSet,
+    importedModuleNameMap
+  );
 
-  const namedExportFunctionList: Array<NamedExportFunction> = [];
-
-  const rootName: ReadonlyArray<{
-    argument: ReadonlyArray<string>;
-    variable: ReadonlyArray<string>;
-  }> = [
-    {
-      variable: code.exportFunctionList.map(func => func.name),
-      argument: []
-    }
-  ];
-
-  // 外部に公開する関数を名前付けした構造にする
-  for (const exportFunction of code.exportFunctionList) {
-    namedExportFunctionList.push({
-      name: exportFunction.name,
-      document: exportFunction.document,
-      parameterList: exportFunction.parameterList.map(parameter => ({
-        name: parameter.name,
-        document: parameter.document,
-        typeExpr: indexedTypeExpr.toNamed(
-          parameter.typeExpr,
-          globalNameSet,
-          importedModuleNameMap
-        )
-      })),
-      returnType:
-        exportFunction.returnType === null
-          ? null
-          : indexedTypeExpr.toNamed(
-              exportFunction.returnType,
-              globalNameSet,
-              importedModuleNameMap
-            ),
-      statementList: indexedExpr.toNamedStatementList(
-        exportFunction.statementList,
-        globalNameSet,
-        importedModuleNameMap,
-        nextIdentiferIndex,
-        rootName,
-        exportFunction.parameterList.map(parameter => parameter.name)
-      )
-    });
-  }
+  const namedExportFunctionList = toNamedExportFunctionList(
+    code.exportFunctionList,
+    globalNameSet,
+    importedModuleNameMap,
+    nextIdentiferIndex
+  );
 
   return (
     [...importedModuleNameMap.entries()]
@@ -390,7 +422,80 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
         globalNameSet,
         importedModuleNameMap,
         nextIdentiferIndex,
-        rootName,
+        [
+          {
+            variable: code.exportFunctionList.map(func => func.name),
+            argument: []
+          }
+        ],
+        []
+      ),
+      1
+    )
+  );
+};
+
+export const toESModulesBrowserCode = (code: Code): string => {
+  // グローバル空間にある名前とimportしたESモジュールのURLを集める
+  const { globalNameSet, importedModulePath } = scanCode(code);
+
+  // インポートしたモジュールの名前空間識別子を当てはめる
+  const {
+    importedModuleNameMap,
+    nextIdentiferIndex
+  } = createImportedModuleName(
+    importedModulePath,
+    identifer.initialIdentiferIndex,
+    globalNameSet
+  );
+
+  const namedExportFunctionList = toNamedExportFunctionList(
+    code.exportFunctionList,
+    globalNameSet,
+    importedModuleNameMap,
+    nextIdentiferIndex
+  );
+
+  return (
+    [...importedModuleNameMap.entries()]
+      .map(
+        ([url, identifer]) => "import * as " + identifer + ' from "' + url + '"'
+      )
+      .join(";\n") +
+    ";\n" +
+    namedExportFunctionList
+      .map(
+        (exportFunction): string =>
+          "/** \n * " +
+          exportFunction.document.split("\n").join("\n * ") +
+          "\n" +
+          exportFunction.parameterList
+            .map(p => " * @param " + p.name + " " + p.document)
+            .join("\n") +
+          "\n" +
+          " */\nexport const " +
+          exportFunction.name +
+          " = (" +
+          exportFunction.parameterList
+            .map(parameter => parameter.name)
+            .join(", ") +
+          ") => " +
+          namedExpr.lambdaBodyToString(exportFunction.statementList, 0)
+      )
+      .join("\n\n") +
+    "\n" +
+    namedExpr.statementListToString(
+      indexedExpr.toNamedStatementList(
+        code.statementList,
+        globalNameSet,
+        importedModuleNameMap,
+        nextIdentiferIndex,
+        [
+          {
+            variable: code.exportFunctionList.map(func => func.name),
+            argument: []
+          }
+        ],
         []
       ),
       1
