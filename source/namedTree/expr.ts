@@ -233,8 +233,15 @@ export const lambdaBodyToString = (
   codeType: CodeType
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === Statement_.Return) {
-    return (
-      "(" + exprToCodeAsString(statementList[0].expr, indent, codeType) + ")"
+    return exprToStringWithCombineStrength(
+      {
+        _: Expr_.LambdaReturnVoid,
+        parameterList: [],
+        statementList: []
+      },
+      statementList[0].expr,
+      indent,
+      codeType
     );
   }
   return statementListToString(statementList, indent, codeType);
@@ -284,29 +291,28 @@ const exprToCodeAsString = (
     case Expr_.UnaryOperator:
       return (
         expr.operator +
-        "(" +
-        exprToCodeAsString(expr.expr, indent, codeType) +
-        ")"
+        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType)
       );
     case Expr_.BinaryOperator:
-      return (
-        "(" +
-        exprToCodeAsString(expr.left, indent, codeType) +
-        ")" +
-        expr.operator +
-        "(" +
-        exprToCodeAsString(expr.right, indent, codeType) +
-        ")"
+      return binaryOperatorExprToString(
+        expr.operator,
+        expr.left,
+        expr.right,
+        indent,
+        codeType
       );
     case Expr_.ConditionalOperator:
       return (
-        "(" +
-        exprToCodeAsString(expr.condition, indent, codeType) +
-        ")?(" +
-        exprToCodeAsString(expr.thenExpr, indent, codeType) +
-        "):(" +
-        exprToCodeAsString(expr.elseExpr, indent, codeType) +
-        ")"
+        exprToStringWithCombineStrength(
+          expr,
+          expr.condition,
+          indent,
+          codeType
+        ) +
+        "?" +
+        exprToStringWithCombineStrength(expr, expr.thenExpr, indent, codeType) +
+        ":" +
+        exprToStringWithCombineStrength(expr, expr.elseExpr, indent, codeType)
       );
 
     case Expr_.LambdaWithReturn:
@@ -364,9 +370,7 @@ const exprToCodeAsString = (
 
     case Expr_.Get:
       return (
-        "(" +
-        exprToCodeAsString(expr.expr, indent, codeType) +
-        ")" +
+        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
         (expr.propertyName._ === Expr_.StringLiteral &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
@@ -375,7 +379,7 @@ const exprToCodeAsString = (
 
     case Expr_.Call:
       return (
-        exprToCodeAsString(expr.expr, indent, codeType) +
+        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
         "(" +
         expr.parameterList
           .map(e => exprToCodeAsString(e, indent, codeType))
@@ -385,9 +389,9 @@ const exprToCodeAsString = (
 
     case Expr_.New:
       return (
-        "new (" +
-        exprToCodeAsString(expr.expr, indent, codeType) +
-        ")(" +
+        "new " +
+        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
+        "(" +
         expr.parameterList
           .map(e => exprToCodeAsString(e, indent, codeType))
           .join(", ") +
@@ -408,6 +412,146 @@ const stringLiteralValueToString = (value: string): string => {
       .replace(/\r\n|\n/gu, "\\n") +
     '"'
   );
+};
+
+const enum Associativity {
+  LeftToRight,
+  RightToLeft
+}
+
+const binaryOperatorAssociativity = (
+  binaryOperator: BinaryOperator
+): Associativity => {
+  switch (binaryOperator) {
+    case "**":
+      return Associativity.RightToLeft;
+    case "*":
+    case "/":
+    case "%":
+    case "+":
+    case "-":
+    case "<<":
+    case ">>":
+    case ">>>":
+    case "<":
+    case "<=":
+    case "===":
+    case "!==":
+    case "&":
+    case "^":
+    case "|":
+    case "&&":
+    case "||":
+      return Associativity.LeftToRight;
+  }
+};
+
+const binaryOperatorExprToString = (
+  operator: BinaryOperator,
+  left: Expr,
+  right: Expr,
+  indent: number,
+  codeType: CodeType
+): string => {
+  const operatorExprCombineStrength = exprCombineStrength({
+    _: Expr_.BinaryOperator,
+    operator,
+    left,
+    right
+  });
+  const leftExprCombineStrength = exprCombineStrength(left);
+  const rightExprCombineStrength = exprCombineStrength(right);
+  const associativity = binaryOperatorAssociativity(operator);
+
+  return (
+    (operatorExprCombineStrength > leftExprCombineStrength ||
+    (operatorExprCombineStrength === leftExprCombineStrength &&
+      associativity === Associativity.RightToLeft)
+      ? "(" + exprToCodeAsString(left, indent, codeType) + ")"
+      : exprToCodeAsString(left, indent, codeType)) +
+    (codeType === CodeType.TypeScript ? " " + operator + " " : operator) +
+    (operatorExprCombineStrength > rightExprCombineStrength ||
+    (operatorExprCombineStrength === rightExprCombineStrength &&
+      associativity === Associativity.LeftToRight)
+      ? "(" + exprToCodeAsString(right, indent, codeType) + ")"
+      : exprToCodeAsString(right, indent, codeType))
+  );
+};
+
+const exprToStringWithCombineStrength = (
+  expr: Expr,
+  target: Expr,
+  indent: number,
+  codeType: CodeType
+): string => {
+  if (exprCombineStrength(expr) > exprCombineStrength(target)) {
+    return "(" + exprToCodeAsString(target, indent, codeType) + ")";
+  }
+  return exprToCodeAsString(target, indent, codeType);
+};
+
+const exprCombineStrength = (expr: Expr): number => {
+  switch (expr._) {
+    case Expr_.NumberLiteral:
+    case Expr_.StringLiteral:
+    case Expr_.BooleanLiteral:
+    case Expr_.NullLiteral:
+    case Expr_.UndefinedLiteral:
+    case Expr_.ObjectLiteral:
+    case Expr_.GlobalVariable:
+    case Expr_.ImportedVariable:
+    case Expr_.Argument:
+    case Expr_.LocalVariable:
+      return 21;
+    case Expr_.Get:
+    case Expr_.Call:
+    case Expr_.New:
+      return 20;
+    case Expr_.UnaryOperator:
+      return 17;
+    case Expr_.BinaryOperator:
+      return binaryOperatorCombineStrength(expr.operator);
+    case Expr_.ConditionalOperator:
+    case Expr_.LambdaWithReturn:
+    case Expr_.LambdaReturnVoid:
+      return 4;
+  }
+};
+
+const binaryOperatorCombineStrength = (
+  binaryOperator: BinaryOperator
+): number => {
+  switch (binaryOperator) {
+    case "**":
+      return 16;
+    case "*":
+    case "/":
+    case "%":
+      return 15;
+    case "+":
+    case "-":
+      return 14;
+    case "<<":
+    case ">>":
+    case ">>>":
+      return 13;
+    case "<":
+    case "<=":
+      return 12;
+    case "===":
+    case "!==":
+      return 11;
+    case "&":
+      return 10;
+    case "^":
+      return 9;
+    case "|":
+      return 8;
+    case "&&":
+      return 6;
+    case "||":
+      return 5;
+  }
 };
 
 export const statementListToString = (
