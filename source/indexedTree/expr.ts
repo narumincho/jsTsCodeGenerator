@@ -560,6 +560,20 @@ export const callMethod = (
 ): Expr => call(get(expr, methodName), parameterList);
 
 /**
+ * 式からインスタンスを作成する `new Date()`
+ * @param expr 式
+ * @param parameterList パラメーターのリスト
+ */
+export const newExpr = (
+  expr: Expr,
+  parameterList: ReadonlyArray<Expr>
+): Expr => ({
+  _: Expr_.New,
+  expr,
+  parameterList
+});
+
+/**
  * インポートした変数
  * @param path モジュールのパス
  * @param name 変数名
