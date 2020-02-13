@@ -273,14 +273,7 @@ const exprToCodeAsString = (
             ([key, value]) =>
               (identifer.isIdentifer(key)
                 ? key
-                : exprToCodeAsString(
-                    {
-                      _: Expr_.StringLiteral,
-                      value: key
-                    },
-                    indent,
-                    codeType
-                  )) +
+                : stringLiteralValueToString(key)) +
               ":" +
               exprToCodeAsString(value, indent, codeType)
           )
@@ -476,7 +469,10 @@ const statementToTypeScriptCodeAsString = (
 
     case Statement_.ThrowError:
       return (
-        indentString + 'throw new Error("' + statement.errorMessage + '");'
+        indentString +
+        "throw new Error(" +
+        stringLiteralValueToString(statement.errorMessage) +
+        ");"
       );
 
     case Statement_.Return:
