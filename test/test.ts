@@ -263,7 +263,7 @@ describe("test", () => {
     expect(code).toMatch(/"a b c"/u);
   });
   it("binary operator combine", () => {
-    const code = generator.toNodeJsCodeAsTypeScript({
+    const code = generator.toESModulesBrowserCode({
       exportFunctionList: [],
       exportTypeAliasList: [],
       statementList: [
