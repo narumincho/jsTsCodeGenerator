@@ -883,12 +883,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
       return;
 
     case Expr_.ObjectLiteral:
-      for (const [propertyName, member] of expr.memberList) {
-        identifer.checkIdentiferThrow(
-          "object literal property name",
-          "オブジェクトリテラルのプロパティ名",
-          propertyName
-        );
+      for (const [, member] of expr.memberList) {
         scanGlobalVariableNameAndImportedPathInExpr(member, scanData);
       }
       return;

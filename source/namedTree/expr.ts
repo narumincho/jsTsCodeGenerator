@@ -273,7 +273,18 @@ const exprToTypeScriptCodeAsString = (
         [...expr.memberList.entries()]
           .map(
             ([key, value]) =>
-              key + ":" + exprToTypeScriptCodeAsString(value, indent, codeType)
+              (identifer.isIdentifer(key)
+                ? key
+                : exprToTypeScriptCodeAsString(
+                    {
+                      _: Expr_.StringLiteral,
+                      value: key
+                    },
+                    indent,
+                    codeType
+                  )) +
+              ":" +
+              exprToTypeScriptCodeAsString(value, indent, codeType)
           )
           .join(", ") +
         "}"
