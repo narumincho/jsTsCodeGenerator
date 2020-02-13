@@ -262,4 +262,38 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch(/"a b c"/u);
   });
+  it("binary operator combine", () => {
+    const code = generator.toNodeJsCodeAsTypeScript({
+      exportFunctionList: [],
+      exportTypeAliasList: [],
+      statementList: [
+        expr.evaluateExpr(
+          expr.equal(
+            expr.equal(
+              expr.addition(
+                expr.multiplication(
+                  expr.numberLiteral(3),
+                  expr.numberLiteral(9)
+                ),
+                expr.multiplication(
+                  expr.numberLiteral(7),
+                  expr.numberLiteral(6)
+                )
+              ),
+              expr.addition(
+                expr.addition(expr.numberLiteral(2), expr.numberLiteral(3)),
+                expr.addition(expr.numberLiteral(5), expr.numberLiteral(8))
+              )
+            ),
+            expr.multiplication(
+              expr.numberLiteral(5),
+              expr.addition(expr.numberLiteral(7), expr.numberLiteral(8))
+            )
+          )
+        )
+      ]
+    });
+    console.log(code);
+    expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
+  });
 });

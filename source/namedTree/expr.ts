@@ -289,14 +289,12 @@ const exprToCodeAsString = (
         codeType
       );
     case Expr_.BinaryOperator:
-      return (
-        "(" +
-        exprToCodeAsString(expr.left, indent, codeType) +
-        ")" +
-        expr.operator +
-        "(" +
-        exprToCodeAsString(expr.right, indent, codeType) +
-        ")"
+      return binaryOperatorExprToString(
+        expr.operator,
+        expr.left,
+        expr.right,
+        indent,
+        codeType
       );
     case Expr_.ConditionalOperator:
       return (
@@ -437,6 +435,140 @@ const unaryOperatorExprToString = (
     case Expr_.LambdaWithReturn:
     case Expr_.LambdaReturnVoid:
       return operator + "(" + exprToCodeAsString(expr, indent, codeType) + ")";
+  }
+};
+
+const enum Associativity {
+  LeftToRight,
+  RightToLeft
+}
+
+const binaryOperatorAssociativity = (
+  binaryOperator: BinaryOperator
+): Associativity => {
+  switch (binaryOperator) {
+    case "**":
+      return Associativity.RightToLeft;
+    case "*":
+    case "/":
+    case "%":
+    case "+":
+    case "-":
+    case "<<":
+    case ">>":
+    case ">>>":
+    case "<":
+    case "<=":
+    case "===":
+    case "!==":
+    case "&":
+    case "^":
+    case "|":
+    case "&&":
+    case "||":
+      return Associativity.LeftToRight;
+  }
+};
+
+const binaryOperatorExprToString = (
+  operator: BinaryOperator,
+  left: Expr,
+  right: Expr,
+  indent: number,
+  codeType: CodeType
+): string => {
+  const operatorExprCombineStrength = exprCombineStrength({
+    _: Expr_.BinaryOperator,
+    operator,
+    left,
+    right
+  });
+  const leftExprCombineStrength = exprCombineStrength(left);
+  const rightExprCombineStrength = exprCombineStrength(right);
+  const associativity = binaryOperatorAssociativity(operator);
+
+  return (
+    (operatorExprCombineStrength > leftExprCombineStrength ||
+    (operatorExprCombineStrength === leftExprCombineStrength &&
+      associativity === Associativity.RightToLeft)
+      ? "(" + exprToCodeAsString(left, indent, codeType) + ")"
+      : exprToCodeAsString(left, indent, codeType)) +
+    operator +
+    (operatorExprCombineStrength > rightExprCombineStrength ||
+    (operatorExprCombineStrength === rightExprCombineStrength &&
+      associativity === Associativity.LeftToRight)
+      ? "(" + exprToCodeAsString(right, indent, codeType) + ")"
+      : exprToCodeAsString(right, indent, codeType))
+  );
+};
+
+const enum Strength {
+  Week,
+  Strong,
+  Same
+}
+
+const exprCombineStrength = (expr: Expr): number => {
+  switch (expr._) {
+    case Expr_.NumberLiteral:
+    case Expr_.StringLiteral:
+    case Expr_.BooleanLiteral:
+    case Expr_.NullLiteral:
+    case Expr_.UndefinedLiteral:
+    case Expr_.ObjectLiteral:
+    case Expr_.GlobalVariable:
+    case Expr_.ImportedVariable:
+    case Expr_.Argument:
+    case Expr_.LocalVariable:
+      return 21;
+    case Expr_.Get:
+    case Expr_.Call:
+    case Expr_.New:
+      return 20;
+    case Expr_.UnaryOperator:
+      return 17;
+    case Expr_.BinaryOperator:
+      return binaryOperatorCombineStrength(expr.operator);
+    case Expr_.ConditionalOperator:
+    case Expr_.LambdaWithReturn:
+    case Expr_.LambdaReturnVoid:
+      return 4;
+  }
+};
+
+const binaryOperatorCombineStrength = (
+  binaryOperator: BinaryOperator
+): number => {
+  switch (binaryOperator) {
+    case "**":
+      return 16;
+    case "*":
+    case "/":
+    case "%":
+      return 15;
+    case "+":
+    case "-":
+      return 14;
+    case "<<":
+    case ">>":
+    case ">>>":
+      return 13;
+    case "<":
+    case "<=":
+      return 12;
+    case "===":
+    case "!==":
+      return 11;
+    case "&":
+      return 10;
+    case "^":
+      return 9;
+    case "|":
+      return 8;
+    case "&&":
+      return 6;
+    case "||":
+      return 5;
   }
 };
 
