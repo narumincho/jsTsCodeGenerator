@@ -234,9 +234,7 @@ export const lambdaBodyToString = (
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === Statement_.Return) {
     return (
-      "(" +
-      exprToTypeScriptCodeAsString(statementList[0].expr, indent, codeType) +
-      ")"
+      "(" + exprToCodeAsString(statementList[0].expr, indent, codeType) + ")"
     );
   }
   return statementListToString(statementList, indent, codeType);
@@ -246,7 +244,7 @@ export const lambdaBodyToString = (
  * 式をコードに変換する
  * @param expr 式
  */
-const exprToTypeScriptCodeAsString = (
+const exprToCodeAsString = (
   expr: Expr,
   indent: number,
   codeType: CodeType
@@ -273,7 +271,18 @@ const exprToTypeScriptCodeAsString = (
         [...expr.memberList.entries()]
           .map(
             ([key, value]) =>
-              key + ":" + exprToTypeScriptCodeAsString(value, indent, codeType)
+              (identifer.isIdentifer(key)
+                ? key
+                : exprToCodeAsString(
+                    {
+                      _: Expr_.StringLiteral,
+                      value: key
+                    },
+                    indent,
+                    codeType
+                  )) +
+              ":" +
+              exprToCodeAsString(value, indent, codeType)
           )
           .join(", ") +
         "}"
@@ -283,27 +292,27 @@ const exprToTypeScriptCodeAsString = (
       return (
         expr.operator +
         "(" +
-        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
+        exprToCodeAsString(expr.expr, indent, codeType) +
         ")"
       );
     case Expr_.BinaryOperator:
       return (
         "(" +
-        exprToTypeScriptCodeAsString(expr.left, indent, codeType) +
+        exprToCodeAsString(expr.left, indent, codeType) +
         ")" +
         expr.operator +
         "(" +
-        exprToTypeScriptCodeAsString(expr.right, indent, codeType) +
+        exprToCodeAsString(expr.right, indent, codeType) +
         ")"
       );
     case Expr_.ConditionalOperator:
       return (
         "(" +
-        exprToTypeScriptCodeAsString(expr.condition, indent, codeType) +
+        exprToCodeAsString(expr.condition, indent, codeType) +
         ")?(" +
-        exprToTypeScriptCodeAsString(expr.thenExpr, indent, codeType) +
+        exprToCodeAsString(expr.thenExpr, indent, codeType) +
         "):(" +
-        exprToTypeScriptCodeAsString(expr.elseExpr, indent, codeType) +
+        exprToCodeAsString(expr.elseExpr, indent, codeType) +
         ")"
       );
 
@@ -363,22 +372,20 @@ const exprToTypeScriptCodeAsString = (
     case Expr_.Get:
       return (
         "(" +
-        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
+        exprToCodeAsString(expr.expr, indent, codeType) +
         ")" +
         (expr.propertyName._ === Expr_.StringLiteral &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
-          : "[" +
-            exprToTypeScriptCodeAsString(expr.propertyName, indent, codeType) +
-            "]")
+          : "[" + exprToCodeAsString(expr.propertyName, indent, codeType) + "]")
       );
 
     case Expr_.Call:
       return (
-        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
+        exprToCodeAsString(expr.expr, indent, codeType) +
         "(" +
         expr.parameterList
-          .map(e => exprToTypeScriptCodeAsString(e, indent, codeType))
+          .map(e => exprToCodeAsString(e, indent, codeType))
           .join(", ") +
         ")"
       );
@@ -386,10 +393,10 @@ const exprToTypeScriptCodeAsString = (
     case Expr_.New:
       return (
         "new (" +
-        exprToTypeScriptCodeAsString(expr.expr, indent, codeType) +
+        exprToCodeAsString(expr.expr, indent, codeType) +
         ")(" +
         expr.parameterList
-          .map(e => exprToTypeScriptCodeAsString(e, indent, codeType))
+          .map(e => exprToCodeAsString(e, indent, codeType))
           .join(", ") +
         ")"
       );
@@ -439,26 +446,22 @@ const statementToTypeScriptCodeAsString = (
     case Statement_.EvaluateExpr:
       return (
         indentString +
-        exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+        exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
 
     case Statement_.Set:
       return (
         indentString +
-        exprToTypeScriptCodeAsString(statement.targetObject, indent, codeType) +
+        exprToCodeAsString(statement.targetObject, indent, codeType) +
         (statement.targetPropertyName._ === Expr_.StringLiteral &&
         identifer.isIdentifer(statement.targetPropertyName.value)
           ? "." + statement.targetPropertyName.value
           : "[" +
-            exprToTypeScriptCodeAsString(
-              statement.targetPropertyName,
-              indent,
-              codeType
-            ) +
+            exprToCodeAsString(statement.targetPropertyName, indent, codeType) +
             "]") +
         " = " +
-        exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+        exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
 
@@ -466,7 +469,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "if (" +
-        exprToTypeScriptCodeAsString(statement.condition, indent, codeType) +
+        exprToCodeAsString(statement.condition, indent, codeType) +
         ") " +
         statementListToString(statement.thenStatementList, indent + 1, codeType)
       );
@@ -480,7 +483,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "return" +
-        exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+        exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
 
@@ -500,7 +503,7 @@ const statementToTypeScriptCodeAsString = (
             ":" +
             typeExpr.typeExprToString(statement.typeExpr) +
             " = " +
-            exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+            exprToCodeAsString(statement.expr, indent, codeType) +
             ";"
           );
         case CodeType.JavaScript:
@@ -509,7 +512,7 @@ const statementToTypeScriptCodeAsString = (
             "const " +
             statement.name +
             "=" +
-            exprToTypeScriptCodeAsString(statement.expr, indent, codeType) +
+            exprToCodeAsString(statement.expr, indent, codeType) +
             ";"
           );
       }
@@ -590,7 +593,7 @@ const statementToTypeScriptCodeAsString = (
         " = 0; " +
         statement.counterVariableName +
         " < " +
-        exprToTypeScriptCodeAsString(statement.untilExpr, indent, codeType) +
+        exprToCodeAsString(statement.untilExpr, indent, codeType) +
         ";" +
         statement.counterVariableName +
         "+= 1)" +

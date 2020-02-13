@@ -244,4 +244,22 @@ describe("test", () => {
   it("ESModules Browser Code not include type ", () => {
     expect(sorenaCode).not.toMatch(/string/u);
   });
+  it("object literal key is escaped", () => {
+    const code = generator.toNodeJsCodeAsTypeScript({
+      exportFunctionList: [],
+      exportTypeAliasList: [],
+      statementList: [
+        expr.evaluateExpr(
+          expr.objectLiteral(
+            new Map([
+              ["abc", expr.numberLiteral(3)],
+              ["a b c", expr.stringLiteral("separated")]
+            ])
+          )
+        )
+      ]
+    });
+    console.log(code);
+    expect(code).toMatch(/"a b c"/u);
+  });
 });
