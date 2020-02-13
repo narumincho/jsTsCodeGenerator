@@ -282,11 +282,11 @@ const exprToCodeAsString = (
       );
 
     case Expr_.UnaryOperator:
-      return (
-        expr.operator +
-        "(" +
-        exprToCodeAsString(expr.expr, indent, codeType) +
-        ")"
+      return unaryOperatorExprToString(
+        expr.operator,
+        expr.expr,
+        indent,
+        codeType
       );
     case Expr_.BinaryOperator:
       return (
@@ -408,6 +408,36 @@ const stringLiteralValueToString = (value: string): string => {
       .replace(/\r\n|\n/gu, "\\n") +
     '"'
   );
+};
+
+const unaryOperatorExprToString = (
+  operator: UnaryOperator,
+  expr: Expr,
+  indent: number,
+  codeType: CodeType
+): string => {
+  switch (expr._) {
+    case Expr_.NumberLiteral:
+    case Expr_.StringLiteral:
+    case Expr_.BooleanLiteral:
+    case Expr_.NullLiteral:
+    case Expr_.UndefinedLiteral:
+    case Expr_.ObjectLiteral:
+    case Expr_.GlobalVariable:
+    case Expr_.ImportedVariable:
+    case Expr_.Argument:
+    case Expr_.Get:
+    case Expr_.Call:
+    case Expr_.New:
+    case Expr_.LocalVariable:
+      return operator + exprToCodeAsString(expr, indent, codeType);
+    case Expr_.UnaryOperator:
+    case Expr_.BinaryOperator:
+    case Expr_.ConditionalOperator:
+    case Expr_.LambdaWithReturn:
+    case Expr_.LambdaReturnVoid:
+      return operator + "(" + exprToCodeAsString(expr, indent, codeType) + ")";
+  }
 };
 
 export const statementListToString = (
