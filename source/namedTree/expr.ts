@@ -95,6 +95,7 @@ export type Expr =
       _: Expr_.ConstEnumPattern;
       typeName: string;
       patternName: string;
+      patternIndex: number;
     };
 
 export const enum Expr_ {
@@ -424,7 +425,12 @@ const exprToCodeAsString = (
       return expr.name;
 
     case Expr_.ConstEnumPattern:
-      return expr.typeName + "." + expr.patternName;
+      switch (codeType) {
+        case CodeType.JavaScript:
+          return expr.patternIndex.toString();
+        case CodeType.TypeScript:
+          return expr.typeName + "." + expr.patternName;
+      }
   }
 };
 

@@ -330,21 +330,27 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
   });
-  it("export const enum", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasList: [],
-      exportConstEnumList: [
-        {
-          name: "Color",
-          patternList: ["Red", "Green", "Blue"]
-        }
-      ],
-      exportFunctionList: [],
-      statementList: [expr.evaluateExpr(expr.constEnumPattern("Color", "Red"))]
-    });
+  const constEnumCode: generator.Code = {
+    exportTypeAliasList: [],
+    exportConstEnumList: [
+      {
+        name: "Color",
+        patternList: ["Red", "Green", "Blue"]
+      }
+    ],
+    exportFunctionList: [],
+    statementList: [expr.evaluateExpr(expr.constEnumPattern("Color", "Red"))]
+  };
+  it("export const enum in TypeScript", () => {
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript(constEnumCode);
     console.log(code);
     expect(code).toMatch(
       /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue[\s\S]*Color.Red/u
     );
+  });
+  it("export const enum in JavaScript", () => {
+    const code = generator.toESModulesBrowserCode(constEnumCode);
+    console.log(code);
+    expect(code).toMatch(/0/u);
   });
 });

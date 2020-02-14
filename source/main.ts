@@ -186,11 +186,8 @@ export const createGlobalNamespace = <
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-const scanCode = (code: Code): scanType.NodeJsCodeScanData => {
-  const scanData: scanType.NodeJsCodeScanData = {
-    globalNameSet: new Set(),
-    importedModulePath: new Set()
-  };
+const scanCode = (code: Code): scanType.ScanData => {
+  const scanData: scanType.ScanData = scanType.init;
   for (const exportTypeAlias of code.exportTypeAliasList) {
     identifer.checkIdentiferThrow(
       "export type name",
@@ -329,7 +326,8 @@ const toNamedExportFunctionList = (
   exportFunctionList: ReadonlyArray<ExportFunction>,
   globalNameSet: ReadonlySet<string>,
   importedModuleNameIdentiferMap: ReadonlyMap<string, string>,
-  identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex
+  identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex,
+  exposedConstEnumType: ReadonlyMap<string, ReadonlyArray<string>>
 ): ReadonlyArray<NamedExportFunction> => {
   const namedList: Array<NamedExportFunction> = [];
 
@@ -371,7 +369,8 @@ const toNamedExportFunctionList = (
         importedModuleNameIdentiferMap,
         identiferIndexOnCreatedImportIdentifer,
         rootFunctionListAsRootLocalVariable,
-        exportFunction.parameterList.map(parameter => parameter.name)
+        exportFunction.parameterList.map(parameter => parameter.name),
+        exposedConstEnumType
       )
     });
   }
@@ -381,7 +380,10 @@ const toNamedExportFunctionList = (
 export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
-
+  const exposedConstEnumType: ReadonlyMap<
+    string,
+    ReadonlyArray<string>
+  > = new Map(code.exportConstEnumList.map(e => [e.name, e.patternList]));
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
     importedModuleNameMap,
@@ -402,7 +404,8 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
     code.exportFunctionList,
     globalNameSet,
     importedModuleNameMap,
-    nextIdentiferIndex
+    nextIdentiferIndex,
+    exposedConstEnumType
   );
 
   return (
@@ -487,7 +490,8 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
                 argument: []
               }
             ],
-            []
+            [],
+            exposedConstEnumType
           ),
           0,
           namedExpr.CodeType.TypeScript
@@ -498,6 +502,10 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
 export const toESModulesBrowserCode = (code: Code): string => {
   // グローバル空間にある名前とimportしたESモジュールのURLを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
+  const exposedConstEnumType: ReadonlyMap<
+    string,
+    ReadonlyArray<string>
+  > = new Map(code.exportConstEnumList.map(e => [e.name, e.patternList]));
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
@@ -513,7 +521,8 @@ export const toESModulesBrowserCode = (code: Code): string => {
     code.exportFunctionList,
     globalNameSet,
     importedModuleNameMap,
-    nextIdentiferIndex
+    nextIdentiferIndex,
+    exposedConstEnumType
   );
 
   return (
@@ -555,7 +564,8 @@ export const toESModulesBrowserCode = (code: Code): string => {
                 argument: []
               }
             ],
-            []
+            [],
+            exposedConstEnumType
           ),
           0,
           namedExpr.CodeType.JavaScript
