@@ -339,7 +339,7 @@ const toNamedExportFunctionList = (
   return namedList;
 };
 
-export const toNodeJsCodeAsTypeScript = (code: Code): string => {
+export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
 
