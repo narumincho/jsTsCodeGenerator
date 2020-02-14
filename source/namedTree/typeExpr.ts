@@ -13,7 +13,7 @@ export type TypeExpr =
     }
   | {
       _: TypeExpr_.FunctionWithReturn;
-      parameter: ReadonlyArray<{
+      parameterList: ReadonlyArray<{
         name: string;
         typeExpr: TypeExpr;
       }>;
@@ -21,7 +21,7 @@ export type TypeExpr =
     }
   | {
       _: TypeExpr_.FunctionReturnVoid;
-      parameter: ReadonlyArray<{
+      parameterList: ReadonlyArray<{
         name: string;
         typeExpr: TypeExpr;
       }>;
@@ -29,6 +29,11 @@ export type TypeExpr =
   | {
       _: TypeExpr_.Union;
       types: ReadonlyArray<TypeExpr>;
+    }
+  | {
+      _: TypeExpr_.WithTypeParameter;
+      typeExpr: TypeExpr;
+      typeParameterList: ReadonlyArray<TypeExpr>;
     }
   | {
       _: TypeExpr_.ImportedType;
@@ -47,6 +52,7 @@ export const enum TypeExpr_ {
   FunctionWithReturn,
   FunctionReturnVoid,
   Union,
+  WithTypeParameter,
   ImportedType,
   GlobalType
 }
@@ -102,15 +108,26 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
       );
 
     case TypeExpr_.FunctionWithReturn:
-      return parameterAndReturnToString(typeExpr.parameter, typeExpr.return);
+      return parameterAndReturnToString(
+        typeExpr.parameterList,
+        typeExpr.return
+      );
 
     case TypeExpr_.FunctionReturnVoid:
-      return parameterAndReturnToString(typeExpr.parameter, null);
+      return parameterAndReturnToString(typeExpr.parameterList, null);
 
     case TypeExpr_.Union:
       return typeExpr.types
         .map(typeExpr => typeExprToString(typeExpr))
-        .join("|");
+        .join(" | ");
+
+    case TypeExpr_.WithTypeParameter:
+      return (
+        typeExprToString(typeExpr.typeExpr) +
+        "<" +
+        typeExpr.typeParameterList.map(typeExprToString).join(", ") +
+        ">"
+      );
 
     case TypeExpr_.GlobalType:
       return typeExpr.name;

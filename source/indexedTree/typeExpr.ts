@@ -17,12 +17,17 @@ export type TypeExpr =
     }
   | {
       _: TypeExpr_.FunctionWithReturn;
-      parameter: ReadonlyArray<TypeExpr>;
+      parameterList: ReadonlyArray<TypeExpr>;
       return: TypeExpr;
     }
   | {
       _: TypeExpr_.FunctionReturnVoid;
-      parameter: ReadonlyArray<TypeExpr>;
+      parameterList: ReadonlyArray<TypeExpr>;
+    }
+  | {
+      _: TypeExpr_.WithTypeParameter;
+      typeExpr: TypeExpr;
+      typeParameterList: ReadonlyArray<TypeExpr>;
     }
   | {
       _: TypeExpr_.Union;
@@ -45,6 +50,7 @@ const enum TypeExpr_ {
   FunctionWithReturn,
   FunctionReturnVoid,
   Union,
+  WithTypeParameter,
   ImportedType,
   GlobalType
 }
@@ -102,7 +108,7 @@ export const functionWithReturn = (
   returnType: TypeExpr
 ): TypeExpr => ({
   _: TypeExpr_.FunctionWithReturn,
-  parameter: parameter,
+  parameterList: parameter,
   return: returnType
 });
 
@@ -113,16 +119,28 @@ export const functionReturnVoid = (
   parameter: ReadonlyArray<TypeExpr>
 ): TypeExpr => ({
   _: TypeExpr_.FunctionReturnVoid,
-  parameter: parameter
+  parameterList: parameter
 });
 
 /**
- * ユニオン型 a | b
+ * ユニオン型 `a | b`
  * @param types 型のリスト
  */
 export const union = (types: ReadonlyArray<TypeExpr>): TypeExpr => ({
   _: TypeExpr_.Union,
   types
+});
+
+/**
+ * 型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`
+ */
+export const withTypeParameter = (
+  typeExpr: TypeExpr,
+  typeParameterList: ReadonlyArray<TypeExpr>
+): TypeExpr => ({
+  _: TypeExpr_.WithTypeParameter,
+  typeExpr,
+  typeParameterList
 });
 
 /**
@@ -169,21 +187,28 @@ export const scanGlobalVariableNameAndImportedPath = (
       return;
 
     case TypeExpr_.FunctionWithReturn:
-      for (const oneParameter of typeExpr.parameter) {
-        scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
+      for (const parameter of typeExpr.parameterList) {
+        scanGlobalVariableNameAndImportedPath(parameter, scanData);
       }
       scanGlobalVariableNameAndImportedPath(typeExpr.return, scanData);
       return;
 
     case TypeExpr_.FunctionReturnVoid:
-      for (const oneParameter of typeExpr.parameter) {
-        scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
+      for (const parameter of typeExpr.parameterList) {
+        scanGlobalVariableNameAndImportedPath(parameter, scanData);
       }
       return;
 
     case TypeExpr_.Union:
       for (const oneType of typeExpr.types) {
         scanGlobalVariableNameAndImportedPath(oneType, scanData);
+      }
+      return;
+
+    case TypeExpr_.WithTypeParameter:
+      scanGlobalVariableNameAndImportedPath(typeExpr.typeExpr, scanData);
+      for (const parameter of typeExpr.typeParameterList) {
+        scanGlobalVariableNameAndImportedPath(parameter, scanData);
       }
       return;
 
@@ -244,7 +269,7 @@ export const toNamed = (
         typeExpr: named.TypeExpr;
       }> = [];
       let identiferIndex = identifer.initialIdentiferIndex;
-      for (const parameterType of typeExpr.parameter) {
+      for (const parameterType of typeExpr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
           reservedWord
@@ -257,7 +282,7 @@ export const toNamed = (
       }
       return {
         _: named.TypeExpr_.FunctionWithReturn,
-        parameter: parameterList,
+        parameterList: parameterList,
         return: toNamed(typeExpr.return, reservedWord, importModuleMap)
       };
     }
@@ -268,7 +293,7 @@ export const toNamed = (
         typeExpr: named.TypeExpr;
       }> = [];
       let identiferIndex = identifer.initialIdentiferIndex;
-      for (const parameterType of typeExpr.parameter) {
+      for (const parameterType of typeExpr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
           reservedWord
@@ -281,7 +306,7 @@ export const toNamed = (
       }
       return {
         _: named.TypeExpr_.FunctionReturnVoid,
-        parameter: parameterList
+        parameterList: parameterList
       };
     }
 
@@ -289,6 +314,14 @@ export const toNamed = (
       return {
         _: named.TypeExpr_.Union,
         types: typeExpr.types.map(t =>
+          toNamed(t, reservedWord, importModuleMap)
+        )
+      };
+    case TypeExpr_.WithTypeParameter:
+      return {
+        _: named.TypeExpr_.WithTypeParameter,
+        typeExpr: toNamed(typeExpr.typeExpr, reservedWord, importModuleMap),
+        typeParameterList: typeExpr.typeParameterList.map(t =>
           toNamed(t, reservedWord, importModuleMap)
         )
       };

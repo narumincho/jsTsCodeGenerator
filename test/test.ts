@@ -242,7 +242,27 @@ describe("test", () => {
     expect(sorenaCode).toMatch(/\{[^{]*"それな[^}]*\}/u);
   });
   it("ESModules Browser Code not include type ", () => {
-    expect(sorenaCode).not.toMatch(/string/u);
+    expect(sorenaCode).not.toMatch("string");
+  });
+  it("type parameter", () => {
+    const code = generator.toNodeJsCodeAsTypeScript({
+      exportFunctionList: [
+        {
+          name: "sample",
+          document: "",
+          parameterList: [],
+          returnType: typeExpr.withTypeParameter(
+            typeExpr.globalType("Promise"),
+            [typeExpr.typeString]
+          ),
+          statementList: []
+        }
+      ],
+      exportTypeAliasList: [],
+      statementList: []
+    });
+    console.log(code);
+    expect(code).toMatch("Promise<string>");
   });
   it("object literal key is escaped", () => {
     const code = generator.toNodeJsCodeAsTypeScript({
