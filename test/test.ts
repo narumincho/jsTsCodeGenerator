@@ -340,11 +340,11 @@ describe("test", () => {
         }
       ],
       exportFunctionList: [],
-      statementList: []
+      statementList: [expr.evaluateExpr(expr.constEnumPattern("Color", "Red"))]
     });
     console.log(code);
     expect(code).toMatch(
-      /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue/u
+      /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue[\s\S]*Color.Red/u
     );
   });
 });

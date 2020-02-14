@@ -89,6 +89,11 @@ export type Expr =
       _: Expr_.LocalVariable;
       index: number;
       depth: number;
+    }
+  | {
+      _: Expr_.ConstEnumPattern;
+      typeName: string;
+      patternName: string;
     };
 
 const enum Expr_ {
@@ -110,7 +115,8 @@ const enum Expr_ {
   Get,
   Call,
   New,
-  LocalVariable
+  LocalVariable,
+  ConstEnumPattern
 }
 
 type UnaryOperator = "-" | "~" | "!";
@@ -625,6 +631,19 @@ export const localVariable = (depth: number, index: number): Expr => {
   };
 };
 
+/**
+ * 列挙型の値を取得する。`Color.Red`
+ * @param typeName 型の名前
+ * @param patternName パターンの名前
+ */
+export const constEnumPattern = (
+  typeName: string,
+  patternName: string
+): Expr => ({
+  _: Expr_.ConstEnumPattern,
+  typeName,
+  patternName
+});
 /**
  * ラムダ式などの引数
  * @param depth 何個スコープの外側のものか
@@ -1379,6 +1398,13 @@ export const toNamedExpr = (
         name
       };
     }
+
+    case Expr_.ConstEnumPattern:
+      return {
+        _: namedExpr.Expr_.ConstEnumPattern,
+        patternName: expr.patternName,
+        typeName: expr.typeName
+      };
   }
 };
 
