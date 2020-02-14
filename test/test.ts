@@ -4,11 +4,10 @@ import { expr, typeExpr } from "../source/main";
 import * as identifer from "../source/identifer";
 
 describe("test", () => {
-  const importPath = "./express";
-  const expressImportedModule = generator.createImportNodeModule<
-    ["Request", "Response"],
-    []
-  >(importPath, ["Request", "Response"], []);
+  const expressType = typeExpr.importedTypeList("express", [
+    "Request",
+    "Response"
+  ] as const);
 
   const sampleCode: generator.Code = {
     exportTypeAliasList: [],
@@ -22,12 +21,12 @@ describe("test", () => {
           {
             name: "request",
             document: "expressのリクエスト",
-            typeExpr: expressImportedModule.typeList.Request
+            typeExpr: expressType.Request
           },
           {
             name: "response",
             document: "expressのレスポンス",
-            typeExpr: expressImportedModule.typeList.Response
+            typeExpr: expressType.Response
           }
         ],
         returnType: null
@@ -52,7 +51,7 @@ describe("test", () => {
     expect(nodeJsTypeScriptCode).toMatch(/import/);
   });
   it("include import path", () => {
-    expect(nodeJsTypeScriptCode).toMatch(importPath);
+    expect(nodeJsTypeScriptCode).toMatch("express");
   });
   it("not include revered word", () => {
     expect(() => {
@@ -140,10 +139,10 @@ describe("test", () => {
   });
 
   it("include function parameter name", () => {
-    const expressModule = generator.createImportNodeModule<
-      ["Request", "Response"],
-      []
-    >("express", ["Request", "Response"], []);
+    const expressType = typeExpr.importedTypeList("express", [
+      "Request",
+      "Response"
+    ] as const);
     const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
       exportConstEnumList: [],
@@ -155,12 +154,12 @@ describe("test", () => {
             {
               name: "request",
               document: "リクエスト",
-              typeExpr: expressModule.typeList.Request
+              typeExpr: expressType.Request
             },
             {
               name: "response",
               document: "レスポンス",
-              typeExpr: expressModule.typeList.Response
+              typeExpr: expressType.Response
             }
           ],
           returnType: null,
@@ -195,7 +194,7 @@ describe("test", () => {
     expect(code).toMatch("request");
   });
   it("get array index", () => {
-    const uint8ArrayType = typeExpr.globalType("Uint8Array");
+    const globalType = typeExpr.globalTypeList(["Uint8Array"] as const);
 
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportTypeAliasList: [],
@@ -208,7 +207,7 @@ describe("test", () => {
             {
               name: "array",
               document: "Uint8Array",
-              typeExpr: uint8ArrayType
+              typeExpr: globalType.Uint8Array
             }
           ],
           returnType: typeExpr.typeNumber,
@@ -224,6 +223,8 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("[0]");
   });
+  const globalVariable = expr.globalVariableList(["console"] as const);
+
   const scopedCode = generator.toESModulesBrowserCode({
     exportTypeAliasList: [],
     exportFunctionList: [],
@@ -234,7 +235,7 @@ describe("test", () => {
         expr.stringLiteral("それな")
       ),
       expr.evaluateExpr(
-        expr.callMethod(expr.globalVariable("console"), "log", [
+        expr.callMethod(globalVariable.console, "log", [
           expr.localVariable(0, 0)
         ])
       )
@@ -249,16 +250,16 @@ describe("test", () => {
     expect(scopedCode).not.toMatch("string");
   });
   it("type parameter", () => {
+    const globalType = typeExpr.globalTypeList(["Promise"] as const);
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportFunctionList: [
         {
           name: "sample",
           document: "",
           parameterList: [],
-          returnType: typeExpr.withTypeParameter(
-            typeExpr.globalType("Promise"),
-            [typeExpr.typeString]
-          ),
+          returnType: typeExpr.withTypeParameter(globalType.Promise, [
+            typeExpr.typeString
+          ]),
           statementList: []
         }
       ],
