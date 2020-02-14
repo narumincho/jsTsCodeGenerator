@@ -12,6 +12,7 @@ describe("test", () => {
 
   const sampleCode: generator.Code = {
     exportTypeAliasList: [],
+    exportConstEnumList: [],
     exportFunctionList: [
       generator.exportFunction({
         name: "middleware",
@@ -35,7 +36,9 @@ describe("test", () => {
     statementList: []
   };
   const start = performance.now();
-  const nodeJsTypeScriptCode = generator.toNodeJsCodeAsTypeScript(sampleCode);
+  const nodeJsTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
+    sampleCode
+  );
   const time = performance.now() - start;
   console.log(time.toString() + "ms");
   console.log(nodeJsTypeScriptCode);
@@ -53,8 +56,9 @@ describe("test", () => {
   });
   it("not include revered word", () => {
     expect(() => {
-      generator.toNodeJsCodeAsTypeScript({
+      generator.toNodeJsOrBrowserCodeAsTypeScript({
         exportTypeAliasList: [],
+        exportConstEnumList: [],
         exportFunctionList: [
           generator.exportFunction({
             name: "new",
@@ -70,8 +74,9 @@ describe("test", () => {
   });
   it("識別子として使えない文字はエラー", () => {
     expect(() => {
-      generator.toNodeJsCodeAsTypeScript({
+      generator.toNodeJsOrBrowserCodeAsTypeScript({
         exportTypeAliasList: [],
+        exportConstEnumList: [],
         exportFunctionList: [
           generator.exportFunction({
             name: "0name",
@@ -106,6 +111,7 @@ describe("test", () => {
   it("escape string literal", () => {
     const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
+      exportConstEnumList: [],
       exportFunctionList: [
         generator.exportFunction({
           name: "stringValue",
@@ -125,7 +131,9 @@ describe("test", () => {
       ],
       statementList: []
     };
-    const codeAsString = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
+    const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
+      nodeJsCode
+    );
     console.log(codeAsString);
     expect(codeAsString).toMatch(/\\"/);
     expect(codeAsString).toMatch(/\\n/);
@@ -138,6 +146,7 @@ describe("test", () => {
     >("express", ["Request", "Response"], []);
     const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
+      exportConstEnumList: [],
       exportFunctionList: [
         generator.exportFunction({
           name: "middleware",
@@ -181,7 +190,7 @@ describe("test", () => {
       ],
       statementList: []
     };
-    const code = generator.toNodeJsCodeAsTypeScript(nodeJsCode);
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript(nodeJsCode);
     console.log(code);
     expect(code).toMatch("request");
   });
@@ -190,8 +199,9 @@ describe("test", () => {
       ["Uint8Array"],
       []
     );
-    const code = generator.toNodeJsCodeAsTypeScript({
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportTypeAliasList: [],
+      exportConstEnumList: [],
       exportFunctionList: [
         generator.exportFunction({
           name: "getZeroIndexElement",
@@ -224,6 +234,7 @@ describe("test", () => {
   const sorenaCode = generator.toESModulesBrowserCode({
     exportTypeAliasList: [],
     exportFunctionList: [],
+    exportConstEnumList: [],
     statementList: [
       expr.variableDefinition(
         typeExpr.typeString,
@@ -245,7 +256,7 @@ describe("test", () => {
     expect(sorenaCode).not.toMatch("string");
   });
   it("type parameter", () => {
-    const code = generator.toNodeJsCodeAsTypeScript({
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportFunctionList: [
         {
           name: "sample",
@@ -259,15 +270,17 @@ describe("test", () => {
         }
       ],
       exportTypeAliasList: [],
+      exportConstEnumList: [],
       statementList: []
     });
     console.log(code);
     expect(code).toMatch("Promise<string>");
   });
   it("object literal key is escaped", () => {
-    const code = generator.toNodeJsCodeAsTypeScript({
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportFunctionList: [],
       exportTypeAliasList: [],
+      exportConstEnumList: [],
       statementList: [
         expr.evaluateExpr(
           expr.objectLiteral(
@@ -286,6 +299,7 @@ describe("test", () => {
     const code = generator.toESModulesBrowserCode({
       exportFunctionList: [],
       exportTypeAliasList: [],
+      exportConstEnumList: [],
       statementList: [
         expr.evaluateExpr(
           expr.equal(
@@ -315,5 +329,22 @@ describe("test", () => {
     });
     console.log(code);
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
+  });
+  it("export const enum", () => {
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
+      exportTypeAliasList: [],
+      exportConstEnumList: [
+        {
+          name: "Color",
+          patternList: ["Red", "Green", "Blue"]
+        }
+      ],
+      exportFunctionList: [],
+      statementList: []
+    });
+    console.log(code);
+    expect(code).toMatch(
+      /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue/u
+    );
   });
 });

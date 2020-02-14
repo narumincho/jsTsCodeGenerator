@@ -18,6 +18,10 @@ export type Code = {
    */
   readonly exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
   /**
+   * 外部に公開する列挙型
+   */
+  readonly exportConstEnumList: ReadonlyArray<ExportConstEnum>;
+  /**
    * 外部に公開する関数
    */
   readonly exportFunctionList: ReadonlyArray<ExportFunction>;
@@ -46,6 +50,27 @@ export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
     "外部に公開する型定義の名前",
     data.name
   );
+  return data;
+};
+
+export type ExportConstEnum = {
+  readonly name: string;
+  readonly patternList: ReadonlyArray<string>;
+};
+
+export const exportConstEnum = (data: ExportConstEnum): ExportConstEnum => {
+  identifer.checkIdentiferThrow(
+    "export const enum name",
+    "外部に公開する列挙型の名前",
+    data.name
+  );
+  for (const pattern of data.patternList) {
+    identifer.checkIdentiferThrow(
+      "const enum mamber",
+      "列挙型のパターン",
+      pattern
+    );
+  }
   return data;
 };
 
