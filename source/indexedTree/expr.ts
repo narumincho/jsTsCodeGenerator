@@ -38,6 +38,10 @@ export type Expr =
       elseExpr: Expr;
     }
   | {
+      _: Expr_.ArrayLiteral;
+      exprList: ReadonlyArray<Expr>;
+    }
+  | {
       _: Expr_.ObjectLiteral;
       memberList: Map<string, Expr>;
     }
@@ -93,6 +97,7 @@ const enum Expr_ {
   BooleanLiteral,
   UndefinedLiteral,
   NullLiteral,
+  ArrayLiteral,
   ObjectLiteral,
   UnaryOperator,
   BinaryOperator,
@@ -470,6 +475,14 @@ export const logicalOr = (left: Expr, right: Expr): Expr => ({
   operator: "||",
   left,
   right
+});
+
+/**
+ * 配列リテラル `[1, 2, 3]`
+ */
+export const arrayLiteral = (exprList: ReadonlyArray<Expr>): Expr => ({
+  _: Expr_.ArrayLiteral,
+  exprList
 });
 
 /**
@@ -882,6 +895,12 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
     case Expr_.NullLiteral:
       return;
 
+    case Expr_.ArrayLiteral:
+      for (const exprElement of expr.exprList) {
+        scanGlobalVariableNameAndImportedPathInExpr(exprElement, scanData);
+      }
+      return;
+
     case Expr_.ObjectLiteral:
       for (const [, member] of expr.memberList) {
         scanGlobalVariableNameAndImportedPathInExpr(member, scanData);
@@ -1089,6 +1108,19 @@ export const toNamedExpr = (
     case Expr_.NullLiteral:
       return {
         _: namedExpr.Expr_.NullLiteral
+      };
+    case Expr_.ArrayLiteral:
+      return {
+        _: namedExpr.Expr_.ArrayLiteral,
+        exprList: expr.exprList.map(expr =>
+          toNamedExpr(
+            expr,
+            reservedWord,
+            importModuleMap,
+            identiferIndex,
+            argumentAndLocalVariableNameList
+          )
+        )
       };
     case Expr_.ObjectLiteral:
       return {
