@@ -147,43 +147,6 @@ export const createImportNodeModule = <
 };
 
 /**
- * グローバル空間の型と変数の型情報を渡して使えるようにする
- * @param global グローバル空間の型と変数の型情報
- * @param body コード本体
- */
-export const createGlobalNamespace = <
-  typeList extends Array<string>,
-  variableList extends Array<string>
->(
-  typeList: typeList,
-  variableList: variableList
-): {
-  typeList: { [name in ValueOf<typeList> & string]: indexedTypeExpr.TypeExpr };
-  variableList: { [name in ValueOf<variableList> & string]: indexedExpr.Expr };
-} => {
-  const typeListObject = {} as {
-    [name in ValueOf<typeList> & string]: indexedTypeExpr.TypeExpr;
-  };
-  const variableListObject = {} as {
-    [name in ValueOf<variableList> & string]: indexedExpr.Expr;
-  };
-  for (const typeName of typeList) {
-    typeListObject[
-      typeName as ValueOf<typeList> & string
-    ] = indexedTypeExpr.globalType(typeName);
-  }
-  for (const variableName of variableList) {
-    variableListObject[
-      variableName as ValueOf<variableList> & string
-    ] = indexedExpr.globalVariable(variableName);
-  }
-  return {
-    typeList: typeListObject,
-    variableList: variableListObject
-  };
-};
-
-/**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
 const scanCode = (code: Code): scanType.ScanData => {

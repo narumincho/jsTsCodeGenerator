@@ -195,10 +195,8 @@ describe("test", () => {
     expect(code).toMatch("request");
   });
   it("get array index", () => {
-    const global = generator.createGlobalNamespace<["Uint8Array"], []>(
-      ["Uint8Array"],
-      []
-    );
+    const uint8ArrayType = typeExpr.globalType("Uint8Array");
+
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportTypeAliasList: [],
       exportConstEnumList: [],
@@ -210,7 +208,7 @@ describe("test", () => {
             {
               name: "array",
               document: "Uint8Array",
-              typeExpr: global.typeList.Uint8Array
+              typeExpr: uint8ArrayType
             }
           ],
           returnType: typeExpr.typeNumber,
@@ -226,12 +224,7 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("[0]");
   });
-  const sorenaGlobal = generator.createGlobalNamespace<[], ["console"]>(
-    [],
-    ["console"]
-  );
-
-  const sorenaCode = generator.toESModulesBrowserCode({
+  const scopedCode = generator.toESModulesBrowserCode({
     exportTypeAliasList: [],
     exportFunctionList: [],
     exportConstEnumList: [],
@@ -241,19 +234,19 @@ describe("test", () => {
         expr.stringLiteral("それな")
       ),
       expr.evaluateExpr(
-        expr.callMethod(sorenaGlobal.variableList.console, "log", [
+        expr.callMethod(expr.globalVariable("console"), "log", [
           expr.localVariable(0, 0)
         ])
       )
     ]
   });
 
-  it("statementList in { } ", () => {
-    console.log(sorenaCode);
-    expect(sorenaCode).toMatch(/\{[^{]*"それな[^}]*\}/u);
+  it("statementList in { } scope curly braces", () => {
+    console.log(scopedCode);
+    expect(scopedCode).toMatch(/\{[^{]*"それな[^}]*\}/u);
   });
   it("ESModules Browser Code not include type ", () => {
-    expect(sorenaCode).not.toMatch("string");
+    expect(scopedCode).not.toMatch("string");
   });
   it("type parameter", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
