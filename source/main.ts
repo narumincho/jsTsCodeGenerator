@@ -18,6 +18,10 @@ export type Code = {
    */
   readonly exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
   /**
+   * 外部に公開する列挙型
+   */
+  readonly exportConstEnumList: ReadonlyArray<ExportConstEnum>;
+  /**
    * 外部に公開する関数
    */
   readonly exportFunctionList: ReadonlyArray<ExportFunction>;
@@ -46,6 +50,27 @@ export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
     "外部に公開する型定義の名前",
     data.name
   );
+  return data;
+};
+
+export type ExportConstEnum = {
+  readonly name: string;
+  readonly patternList: ReadonlyArray<string>;
+};
+
+export const exportConstEnum = (data: ExportConstEnum): ExportConstEnum => {
+  identifer.checkIdentiferThrow(
+    "export const enum name",
+    "外部に公開する列挙型の名前",
+    data.name
+  );
+  for (const pattern of data.patternList) {
+    identifer.checkIdentiferThrow(
+      "const enum mamber",
+      "列挙型のパターン",
+      pattern
+    );
+  }
   return data;
 };
 
@@ -161,11 +186,8 @@ export const createGlobalNamespace = <
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-const scanCode = (code: Code): scanType.NodeJsCodeScanData => {
-  const scanData: scanType.NodeJsCodeScanData = {
-    globalNameSet: new Set(),
-    importedModulePath: new Set()
-  };
+const scanCode = (code: Code): scanType.ScanData => {
+  const scanData: scanType.ScanData = scanType.init;
   for (const exportTypeAlias of code.exportTypeAliasList) {
     identifer.checkIdentiferThrow(
       "export type name",
@@ -177,6 +199,20 @@ const scanCode = (code: Code): scanType.NodeJsCodeScanData => {
       exportTypeAlias.typeExpr,
       scanData
     );
+  }
+  for (const exportConstEnum of code.exportConstEnumList) {
+    identifer.checkIdentiferThrow(
+      "export const enum name",
+      "外部に公開する列挙型の名前",
+      exportConstEnum.name
+    );
+    for (const pattern of exportConstEnum.patternList) {
+      identifer.checkIdentiferThrow(
+        "const enum mamber",
+        "列挙型のパターン",
+        pattern
+      );
+    }
   }
   for (const exportVariable of code.exportFunctionList) {
     identifer.checkIdentiferThrow(
@@ -290,7 +326,8 @@ const toNamedExportFunctionList = (
   exportFunctionList: ReadonlyArray<ExportFunction>,
   globalNameSet: ReadonlySet<string>,
   importedModuleNameIdentiferMap: ReadonlyMap<string, string>,
-  identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex
+  identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex,
+  exposedConstEnumType: ReadonlyMap<string, ReadonlyArray<string>>
 ): ReadonlyArray<NamedExportFunction> => {
   const namedList: Array<NamedExportFunction> = [];
 
@@ -332,17 +369,21 @@ const toNamedExportFunctionList = (
         importedModuleNameIdentiferMap,
         identiferIndexOnCreatedImportIdentifer,
         rootFunctionListAsRootLocalVariable,
-        exportFunction.parameterList.map(parameter => parameter.name)
+        exportFunction.parameterList.map(parameter => parameter.name),
+        exposedConstEnumType
       )
     });
   }
   return namedList;
 };
 
-export const toNodeJsCodeAsTypeScript = (code: Code): string => {
+export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
-
+  const exposedConstEnumType: ReadonlyMap<
+    string,
+    ReadonlyArray<string>
+  > = new Map(code.exportConstEnumList.map(e => [e.name, e.patternList]));
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
     importedModuleNameMap,
@@ -363,17 +404,19 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
     code.exportFunctionList,
     globalNameSet,
     importedModuleNameMap,
-    nextIdentiferIndex
+    nextIdentiferIndex,
+    exposedConstEnumType
   );
 
   return (
-    [...importedModuleNameMap.entries()]
-      .map(
-        ([path, identifer]) =>
-          "import * as " + identifer + ' from "' + path + '"'
-      )
-      .join(";\n") +
-    ";\n" +
+    (importedModuleNameMap.size === 0
+      ? ""
+      : [...importedModuleNameMap.entries()]
+          .map(
+            ([path, identifer]) =>
+              "import * as " + identifer + ' from "' + path + '"'
+          )
+          .join(";\n") + ";\n") +
     namedExportTypeAliasList
       .map(
         exportTypeAlias =>
@@ -385,6 +428,19 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
           namedTypeExpr.typeExprToString(exportTypeAlias.typeExpr)
       )
       .join(";\n") +
+    "\n" +
+    code.exportConstEnumList
+      .map(
+        exportConstEnum =>
+          "export const enum " +
+          exportConstEnum.name +
+          " {\n" +
+          exportConstEnum.patternList
+            .map(pattern => "  " + pattern)
+            .join(",\n") +
+          "\n}"
+      )
+      .join("\n") +
     "\n" +
     namedExportFunctionList
       .map(
@@ -434,7 +490,8 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
                 argument: []
               }
             ],
-            []
+            [],
+            exposedConstEnumType
           ),
           0,
           namedExpr.CodeType.TypeScript
@@ -445,6 +502,10 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
 export const toESModulesBrowserCode = (code: Code): string => {
   // グローバル空間にある名前とimportしたESモジュールのURLを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
+  const exposedConstEnumType: ReadonlyMap<
+    string,
+    ReadonlyArray<string>
+  > = new Map(code.exportConstEnumList.map(e => [e.name, e.patternList]));
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
@@ -460,7 +521,8 @@ export const toESModulesBrowserCode = (code: Code): string => {
     code.exportFunctionList,
     globalNameSet,
     importedModuleNameMap,
-    nextIdentiferIndex
+    nextIdentiferIndex,
+    exposedConstEnumType
   );
 
   return (
@@ -502,7 +564,8 @@ export const toESModulesBrowserCode = (code: Code): string => {
                 argument: []
               }
             ],
-            []
+            [],
+            exposedConstEnumType
           ),
           0,
           namedExpr.CodeType.JavaScript

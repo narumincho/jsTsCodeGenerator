@@ -90,6 +90,12 @@ export type Expr =
   | {
       _: Expr_.LocalVariable;
       name: string;
+    }
+  | {
+      _: Expr_.ConstEnumPattern;
+      typeName: string;
+      patternName: string;
+      patternIndex: number;
     };
 
 export const enum Expr_ {
@@ -112,7 +118,8 @@ export const enum Expr_ {
   Call,
   IfWithVoidReturn,
   New,
-  LocalVariable
+  LocalVariable,
+  ConstEnumPattern
 }
 
 type UnaryOperator = "-" | "~" | "!";
@@ -416,6 +423,14 @@ const exprToCodeAsString = (
 
     case Expr_.LocalVariable:
       return expr.name;
+
+    case Expr_.ConstEnumPattern:
+      switch (codeType) {
+        case CodeType.JavaScript:
+          return expr.patternIndex.toString();
+        case CodeType.TypeScript:
+          return expr.typeName + "." + expr.patternName;
+      }
   }
 };
 
@@ -526,6 +541,7 @@ const exprCombineStrength = (expr: Expr): number => {
     case Expr_.Get:
     case Expr_.Call:
     case Expr_.New:
+    case Expr_.ConstEnumPattern:
       return 20;
     case Expr_.UnaryOperator:
       return 17;

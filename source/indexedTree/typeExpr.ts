@@ -170,7 +170,7 @@ export const globalType = (name: string): TypeExpr => ({
  */
 export const scanGlobalVariableNameAndImportedPath = (
   typeExpr: TypeExpr,
-  scanData: scanType.NodeJsCodeScanData
+  scanData: scanType.ScanData
 ): void => {
   switch (typeExpr._) {
     case TypeExpr_.Number:
