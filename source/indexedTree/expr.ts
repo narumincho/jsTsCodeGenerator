@@ -631,9 +631,30 @@ const importedVariable = (path: string, name: string): Expr => ({
 
 /**
  * グローバル空間にある変数
+ * ```ts
+ * globalVariableList(["location", "console"] as const).console
+ * ```
+ * @param variableList 変数名の一覧
+ */
+export const globalVariableList = <variableList extends ReadonlyArray<string>>(
+  variableList: variableList
+): { [name in ValueOf<variableList> & string]: Expr } => {
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: Expr;
+  };
+  for (const variableName of variableList) {
+    variableListObject[
+      variableName as ValueOf<variableList> & string
+    ] = globalVariable(variableName);
+  }
+  return variableListObject;
+};
+
+/**
+ * グローバル空間にある変数
  * @param name 変数名
  */
-export const globalVariable = (name: string): Expr => ({
+const globalVariable = (name: string): Expr => ({
   _: Expr_.GlobalVariable,
   name
 });
