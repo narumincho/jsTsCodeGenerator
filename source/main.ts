@@ -422,7 +422,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
         exportTypeAlias =>
           "/**\n * " +
           exportTypeAlias.document.split("\n").join("\n * ") +
-          " */export type " +
+          "\n */\nexport type " +
           exportTypeAlias.name +
           " = " +
           namedTypeExpr.typeExprToString(exportTypeAlias.typeExpr)
@@ -451,8 +451,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
           exportFunction.parameterList
             .map(p => " * @param " + p.name + " " + p.document)
             .join("\n") +
-          "\n" +
-          " */\nexport const " +
+          "\n */\nexport const " +
           exportFunction.name +
           " = (" +
           exportFunction.parameterList
