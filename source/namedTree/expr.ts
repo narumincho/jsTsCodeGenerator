@@ -282,23 +282,25 @@ const exprToCodeAsString = (
         "[" +
         expr.exprList
           .map(element => exprToCodeAsString(element, indent, codeType))
-          .join(codeType === CodeType.TypeScript ? ", " : ",") +
+          .join("," + codeTypeSpace(codeType)) +
         "]"
       );
 
     case Expr_.ObjectLiteral:
       return (
         "{" +
+        codeTypeSpace(codeType) +
         [...expr.memberList.entries()]
           .map(
             ([key, value]) =>
               (identifer.isIdentifer(key)
                 ? key
                 : stringLiteralValueToString(key)) +
-              ":" +
+              (":" + codeTypeSpace(codeType)) +
               exprToCodeAsString(value, indent, codeType)
           )
           .join(", ") +
+        codeTypeSpace(codeType) +
         "}"
       );
 
@@ -345,7 +347,7 @@ const exprToCodeAsString = (
         case CodeType.JavaScript:
           return (
             "(" +
-            expr.parameterList.map(o => o.name).join(", ") +
+            expr.parameterList.map(o => o.name).join(",") +
             ")=>" +
             lambdaBodyToString(expr.statementList, indent, codeType)
           );
@@ -397,7 +399,7 @@ const exprToCodeAsString = (
         "(" +
         expr.parameterList
           .map(e => exprToCodeAsString(e, indent, codeType))
-          .join(", ") +
+          .join("," + codeTypeSpace(codeType)) +
         ")"
       );
 
@@ -408,7 +410,7 @@ const exprToCodeAsString = (
         "(" +
         expr.parameterList
           .map(e => exprToCodeAsString(e, indent, codeType))
-          .join(", ") +
+          .join("," + codeTypeSpace(codeType)) +
         ")"
       );
 
@@ -416,6 +418,9 @@ const exprToCodeAsString = (
       return expr.name;
   }
 };
+
+const codeTypeSpace = (codeType: CodeType): string =>
+  codeType === CodeType.TypeScript ? " " : "";
 
 const stringLiteralValueToString = (value: string): string => {
   return (
@@ -577,7 +582,7 @@ export const statementListToString = (
   "{\n" +
   statementList
     .map(statement =>
-      statementToTypeScriptCodeAsString(statement, indent, codeType)
+      statementToTypeScriptCodeAsString(statement, indent + 1, codeType)
     )
     .join("\n") +
   "\n" +
@@ -623,7 +628,7 @@ const statementToTypeScriptCodeAsString = (
         "if (" +
         exprToCodeAsString(statement.condition, indent, codeType) +
         ") " +
-        statementListToString(statement.thenStatementList, indent + 1, codeType)
+        statementListToString(statement.thenStatementList, indent, codeType)
       );
 
     case Statement_.ThrowError:
@@ -692,7 +697,7 @@ const statementToTypeScriptCodeAsString = (
             "): " +
             typeExpr.typeExprToString(statement.returnType) +
             "=>" +
-            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
           );
         case CodeType.JavaScript:
@@ -700,10 +705,10 @@ const statementToTypeScriptCodeAsString = (
             indentString +
             "const " +
             statement.name +
-            " = (" +
+            "=(" +
             statement.parameterList.map(parameter => parameter.name).join(",") +
             ")=>" +
-            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
           );
       }
@@ -725,17 +730,17 @@ const statementToTypeScriptCodeAsString = (
               )
               .join(", ") +
             "): void =>" +
-            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
           );
         case CodeType.JavaScript:
           return (
             "const " +
             statement.name +
-            " = (" +
+            "=(" +
             statement.parameterList.map(parameter => parameter.name).join(",") +
             ")=>" +
-            lambdaBodyToString(statement.statementList, indent + 1, codeType) +
+            lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
           );
       }
@@ -752,13 +757,13 @@ const statementToTypeScriptCodeAsString = (
         ";" +
         statement.counterVariableName +
         "+= 1)" +
-        statementListToString(statement.statementList, indent + 1, codeType)
+        statementListToString(statement.statementList, indent, codeType)
       );
 
     case Statement_.WhileTrue:
       return (
         "while (true) " +
-        statementListToString(statement.statementList, indent + 1, codeType)
+        statementListToString(statement.statementList, indent, codeType)
       );
 
     case Statement_.Break:

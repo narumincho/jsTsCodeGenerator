@@ -377,8 +377,8 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
     namedExportTypeAliasList
       .map(
         exportTypeAlias =>
-          "/** " +
-          exportTypeAlias.document +
+          "/**\n * " +
+          exportTypeAlias.document.split("\n").join("\n * ") +
           " */export type " +
           exportTypeAlias.name +
           " = " +
@@ -389,7 +389,7 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
     namedExportFunctionList
       .map(
         (exportFunction): string =>
-          "/** \n * " +
+          "/**\n * " +
           exportFunction.document.split("\n").join("\n * ") +
           "\n" +
           exportFunction.parameterList
@@ -420,23 +420,25 @@ export const toNodeJsCodeAsTypeScript = (code: Code): string => {
       )
       .join("\n\n") +
     "\n" +
-    namedExpr.statementListToString(
-      indexedExpr.toNamedStatementList(
-        code.statementList,
-        globalNameSet,
-        importedModuleNameMap,
-        nextIdentiferIndex,
-        [
-          {
-            variable: code.exportFunctionList.map(func => func.name),
-            argument: []
-          }
-        ],
-        []
-      ),
-      1,
-      namedExpr.CodeType.TypeScript
-    )
+    (code.statementList.length === 0
+      ? ""
+      : namedExpr.statementListToString(
+          indexedExpr.toNamedStatementList(
+            code.statementList,
+            globalNameSet,
+            importedModuleNameMap,
+            nextIdentiferIndex,
+            [
+              {
+                variable: code.exportFunctionList.map(func => func.name),
+                argument: []
+              }
+            ],
+            []
+          ),
+          0,
+          namedExpr.CodeType.TypeScript
+        ))
   );
 };
 
@@ -486,22 +488,24 @@ export const toESModulesBrowserCode = (code: Code): string => {
       )
       .join("\n\n") +
     "\n" +
-    namedExpr.statementListToString(
-      indexedExpr.toNamedStatementList(
-        code.statementList,
-        globalNameSet,
-        importedModuleNameMap,
-        nextIdentiferIndex,
-        [
-          {
-            variable: code.exportFunctionList.map(func => func.name),
-            argument: []
-          }
-        ],
-        []
-      ),
-      1,
-      namedExpr.CodeType.JavaScript
-    )
+    (code.statementList.length === 0
+      ? ""
+      : namedExpr.statementListToString(
+          indexedExpr.toNamedStatementList(
+            code.statementList,
+            globalNameSet,
+            importedModuleNameMap,
+            nextIdentiferIndex,
+            [
+              {
+                variable: code.exportFunctionList.map(func => func.name),
+                argument: []
+              }
+            ],
+            []
+          ),
+          0,
+          namedExpr.CodeType.JavaScript
+        ))
   );
 };
