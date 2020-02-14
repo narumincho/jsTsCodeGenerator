@@ -1,6 +1,6 @@
 {
   "name": "js-ts-code-generator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "TypeScript And JavaScript Code Generator",
   "main": "distribution/main.js",
   "scripts": {
