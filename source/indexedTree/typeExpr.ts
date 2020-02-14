@@ -1,6 +1,7 @@
 import * as scanType from "../scanType";
 import * as named from "../namedTree/typeExpr";
 import * as identifer from "../identifer";
+import { ValueOf } from "../valueOf";
 
 /**
  * 型を表現する式
@@ -144,11 +145,36 @@ export const withTypeParameter = (
 });
 
 /**
+ * 外部のモジュールの型
+ * ```ts
+ * importedTypeList("express", ["Request", "Response"] as const).Response
+ * ```
+ *
+ * @param path モジュール名かパス
+ * @param typeList 型の名前の一覧
+ */
+export const importedTypeList = <typeList extends ReadonlyArray<string>>(
+  path: string,
+  typeList: typeList
+): { [name in ValueOf<typeList> & string]: TypeExpr } => {
+  const typeListObject = {} as {
+    [name in ValueOf<typeList> & string]: TypeExpr;
+  };
+  for (const typeName of typeList) {
+    typeListObject[typeName as ValueOf<typeList> & string] = importedType(
+      path,
+      typeName
+    );
+  }
+  return typeListObject;
+};
+
+/**
  * インポートされた外部の型
  * @param path インポートするモジュールのパス
  * @param name 型名
  */
-export const importedType = (path: string, name: string): TypeExpr => ({
+const importedType = (path: string, name: string): TypeExpr => ({
   _: TypeExpr_.ImportedType,
   path,
   name
