@@ -3,6 +3,7 @@ import * as scanType from "../scanType";
 import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
 import * as namedTypeExpr from "../namedTree/typeExpr";
+import { ValueOf } from "../valueOf";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -593,11 +594,36 @@ export const newExpr = (
 });
 
 /**
+ * 外部のモジュールの変数
+ * ```ts
+ * importedVariableList("crypto", ["randomBytes", "createHash"] as const).randomBytes
+ * ```
+ * @param path モジュールのパス
+ * @param variableList 変数名の一覧
+ */
+export const importedVariableList = <
+  variableList extends ReadonlyArray<string>
+>(
+  path: string,
+  variableList: variableList
+): { [name in ValueOf<variableList> & string]: Expr } => {
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: Expr;
+  };
+  for (const variableName of variableList) {
+    variableListObject[
+      variableName as ValueOf<variableList> & string
+    ] = importedVariable(path, variableName);
+  }
+  return variableListObject;
+};
+
+/**
  * インポートした変数
  * @param path モジュールのパス
  * @param name 変数名
  */
-export const importedVariable = (path: string, name: string): Expr => ({
+const importedVariable = (path: string, name: string): Expr => ({
   _: Expr_.ImportedVariable,
   name,
   path
@@ -605,9 +631,30 @@ export const importedVariable = (path: string, name: string): Expr => ({
 
 /**
  * グローバル空間にある変数
+ * ```ts
+ * globalVariableList(["location", "console"] as const).console
+ * ```
+ * @param variableList 変数名の一覧
+ */
+export const globalVariableList = <variableList extends ReadonlyArray<string>>(
+  variableList: variableList
+): { [name in ValueOf<variableList> & string]: Expr } => {
+  const variableListObject = {} as {
+    [name in ValueOf<variableList> & string]: Expr;
+  };
+  for (const variableName of variableList) {
+    variableListObject[
+      variableName as ValueOf<variableList> & string
+    ] = globalVariable(variableName);
+  }
+  return variableListObject;
+};
+
+/**
+ * グローバル空間にある変数
  * @param name 変数名
  */
-export const globalVariable = (name: string): Expr => ({
+const globalVariable = (name: string): Expr => ({
   _: Expr_.GlobalVariable,
   name
 });
