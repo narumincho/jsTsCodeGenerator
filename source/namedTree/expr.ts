@@ -35,6 +35,10 @@ export type Expr =
       elseExpr: Expr;
     }
   | {
+      _: Expr_.ArrayLiteral;
+      exprList: ReadonlyArray<Expr>;
+    }
+  | {
       _: Expr_.ObjectLiteral;
       memberList: Map<string, Expr>;
     }
@@ -94,6 +98,7 @@ export const enum Expr_ {
   BooleanLiteral,
   UndefinedLiteral,
   NullLiteral,
+  ArrayLiteral,
   ObjectLiteral,
   UnaryOperator,
   BinaryOperator,
@@ -271,6 +276,15 @@ const exprToCodeAsString = (
 
     case Expr_.NullLiteral:
       return "null";
+
+    case Expr_.ArrayLiteral:
+      return (
+        "[" +
+        expr.exprList
+          .map(element => exprToCodeAsString(element, indent, codeType))
+          .join(codeType === CodeType.TypeScript ? ", " : ",") +
+        "]"
+      );
 
     case Expr_.ObjectLiteral:
       return (
@@ -497,6 +511,7 @@ const exprCombineStrength = (expr: Expr): number => {
     case Expr_.BooleanLiteral:
     case Expr_.NullLiteral:
     case Expr_.UndefinedLiteral:
+    case Expr_.ArrayLiteral:
     case Expr_.ObjectLiteral:
     case Expr_.GlobalVariable:
     case Expr_.ImportedVariable:
