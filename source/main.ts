@@ -49,7 +49,7 @@ export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
   return data;
 };
 
-type ExportFunction = {
+export type ExportFunction = {
   readonly name: string;
   readonly document: string;
   readonly parameterList: ReadonlyArray<{
