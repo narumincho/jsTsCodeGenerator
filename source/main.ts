@@ -203,6 +203,20 @@ const scanCode = (code: Code): scanType.NodeJsCodeScanData => {
       scanData
     );
   }
+  for (const exportConstEnum of code.exportConstEnumList) {
+    identifer.checkIdentiferThrow(
+      "export const enum name",
+      "外部に公開する列挙型の名前",
+      exportConstEnum.name
+    );
+    for (const pattern of exportConstEnum.patternList) {
+      identifer.checkIdentiferThrow(
+        "const enum mamber",
+        "列挙型のパターン",
+        pattern
+      );
+    }
+  }
   for (const exportVariable of code.exportFunctionList) {
     identifer.checkIdentiferThrow(
       "export variable name",
@@ -392,13 +406,14 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
   );
 
   return (
-    [...importedModuleNameMap.entries()]
-      .map(
-        ([path, identifer]) =>
-          "import * as " + identifer + ' from "' + path + '"'
-      )
-      .join(";\n") +
-    ";\n" +
+    (importedModuleNameMap.size === 0
+      ? ""
+      : [...importedModuleNameMap.entries()]
+          .map(
+            ([path, identifer]) =>
+              "import * as " + identifer + ' from "' + path + '"'
+          )
+          .join(";\n") + ";\n") +
     namedExportTypeAliasList
       .map(
         exportTypeAlias =>
@@ -410,6 +425,19 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
           namedTypeExpr.typeExprToString(exportTypeAlias.typeExpr)
       )
       .join(";\n") +
+    "\n" +
+    code.exportConstEnumList
+      .map(
+        exportConstEnum =>
+          "export const enum " +
+          exportConstEnum.name +
+          " {\n" +
+          exportConstEnum.patternList
+            .map(pattern => "  " + pattern)
+            .join(",\n") +
+          "\n}"
+      )
+      .join("\n") +
     "\n" +
     namedExportFunctionList
       .map(
