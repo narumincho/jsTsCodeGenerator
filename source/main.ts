@@ -66,7 +66,7 @@ export const exportConstEnum = (data: ExportConstEnum): ExportConstEnum => {
   );
   for (const pattern of data.patternList) {
     identifer.checkIdentiferThrow(
-      "const enum mamber",
+      "const enum member",
       "列挙型のパターン",
       pattern
     );
