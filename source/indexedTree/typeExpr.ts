@@ -181,10 +181,31 @@ const importedType = (path: string, name: string): TypeExpr => ({
 });
 
 /**
+ * グローバル空間にある型
+ * ```ts
+ * globalVariableList(["Uint8Array", "URL"] as const).Uint8Array
+ * ```
+ * @param nameList 型の名前の一覧
+ */
+export const globalTypeList = <nameList extends ReadonlyArray<string>>(
+  nameList: nameList
+): { [name in ValueOf<nameList> & string]: TypeExpr } => {
+  const typeListObject = {} as {
+    [name in ValueOf<nameList> & string]: TypeExpr;
+  };
+  for (const variableName of nameList) {
+    typeListObject[variableName as ValueOf<nameList> & string] = globalType(
+      variableName
+    );
+  }
+  return typeListObject;
+};
+
+/**
  * グローバル空間の型
  * @param name 型名
  */
-export const globalType = (name: string): TypeExpr => ({
+const globalType = (name: string): TypeExpr => ({
   _: TypeExpr_.GlobalType,
   name
 });
