@@ -8,6 +8,9 @@ export const init: ScanData = {
   importedModulePath: new Set()
 };
 
-export type ExportConstEnumMap = ReadonlyMap<string, ExportConstEnum>;
+export type ExportConstEnumMap = ReadonlyMap<
+  string,
+  ExportConstEnumTagNameAndValueList
+>;
 
-export type ExportConstEnum = ReadonlyMap<string, number>;
+export type ExportConstEnumTagNameAndValueList = ReadonlyMap<string, number>;

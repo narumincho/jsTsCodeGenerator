@@ -56,8 +56,8 @@ export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
 
 export const exportConstEnum = ([name, tagNameAndValueList]: [
   string,
-  type.ExportConstEnum
-]): [string, type.ExportConstEnum] => {
+  type.ExportConstEnumTagNameAndValueList
+]): [string, type.ExportConstEnumTagNameAndValueList] => {
   identifer.checkIdentiferThrow(
     "export const enum name",
     "外部に公開する列挙型の名前",
