@@ -696,7 +696,7 @@ export type Statement =
   | {
       _: Statement_.Set;
       targetObject: Expr;
-      targetPropertyName: Expr;
+      operator: type.BinaryOperator | null;
       expr: Expr;
     }
   | {
@@ -775,19 +775,26 @@ export const evaluateExpr = (expr: Expr): Statement => ({
 });
 
 /**
- * プロパティの値を設定する。targetObject[targetPropertyName] = expr;
- * @param targetObject
- * @param targetPropertyName
- * @param expr
+ * ```ts
+ * targetObject[targetPropertyName] = expr;
+ * location.href = "https://narumincho.com";
+ * array[0] = 30;
+ * data = 50;
+ * i += 1;
+ * ```
+ * 代入やプロパティの値を設定する。
+ * @param targetObject 代入先の式
+ * @param operator 演算子
+ * @param expr 式
  */
-export const setByExpr = (
+export const set = (
   targetObject: Expr,
-  targetPropertyName: Expr,
+  operator: type.BinaryOperator | null,
   expr: Expr
 ): Statement => ({
   _: Statement_.Set,
   targetObject,
-  targetPropertyName,
+  operator,
   expr
 });
 
@@ -1051,10 +1058,6 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
     case Statement_.Set:
       scanGlobalVariableNameAndImportedPathInExpr(
         statement.targetObject,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.targetPropertyName,
         scanData
       );
       scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
@@ -1582,14 +1585,7 @@ export const toNamedStatement = (
             argumentAndLocalVariableNameList,
             exposedConstEnumMap
           ),
-          targetPropertyName: toNamedExpr(
-            statement.targetPropertyName,
-            reservedWord,
-            importedModuleNameMap,
-            identiferIndex,
-            argumentAndLocalVariableNameList,
-            exposedConstEnumMap
-          ),
+          operator: statement.operator,
           expr: toNamedExpr(
             statement.expr,
             reservedWord,

@@ -131,7 +131,7 @@ export type Statement =
   | {
       _: Statement_.Set;
       targetObject: Expr;
-      targetPropertyName: Expr;
+      operator: type.BinaryOperator | null;
       expr: Expr;
     }
   | {
@@ -609,13 +609,10 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         exprToCodeAsString(statement.targetObject, indent, codeType) +
-        (statement.targetPropertyName._ === Expr_.StringLiteral &&
-        identifer.isIdentifer(statement.targetPropertyName.value)
-          ? "." + statement.targetPropertyName.value
-          : "[" +
-            exprToCodeAsString(statement.targetPropertyName, indent, codeType) +
-            "]") +
-        " = " +
+        codeTypeSpace(codeType) +
+        (statement.operator ?? "") +
+        "=" +
+        codeTypeSpace(codeType) +
         exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );

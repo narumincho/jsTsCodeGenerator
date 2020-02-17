@@ -390,10 +390,12 @@ describe("test", () => {
       exportConstEnumMap: new Map(),
       exportFunctionList: [],
       statementList: [
-        expr.letVariableDefinition(typeExpr.typeNumber, expr.numberLiteral(10))
+        expr.letVariableDefinition(typeExpr.typeNumber, expr.numberLiteral(10)),
+        expr.set(expr.localVariable(0, 0), null, expr.numberLiteral(30)),
+        expr.set(expr.localVariable(0, 0), "+", expr.numberLiteral(1))
       ]
     });
     console.log(code);
-    expect(code).toMatch(/let.*=.*10/);
+    expect(code).toMatch(/let b: number = 10;[\n ]*b = 30;[\n ]*b \+= 1;/);
   });
 });
