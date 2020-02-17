@@ -332,7 +332,17 @@ describe("test", () => {
         patternList: ["Red", "Green", "Blue"]
       }
     ],
-    exportFunctionList: [],
+    exportFunctionList: [
+      {
+        name: "red",
+        document: "赤",
+        parameterList: [],
+        returnType: typeExpr.enumTagLiteral("Color", "Red"),
+        statementList: [
+          expr.returnStatement(expr.constEnumPattern("Color", "Red"))
+        ]
+      }
+    ],
     statementList: [expr.evaluateExpr(expr.constEnumPattern("Color", "Red"))]
   };
   it("export const enum in TypeScript", () => {

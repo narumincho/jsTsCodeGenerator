@@ -959,6 +959,7 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
     case Expr_.BooleanLiteral:
     case Expr_.UndefinedLiteral:
     case Expr_.NullLiteral:
+    case Expr_.ConstEnumPattern:
       return;
 
     case Expr_.ArrayLiteral:
