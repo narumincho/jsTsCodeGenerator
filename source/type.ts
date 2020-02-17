@@ -14,3 +14,25 @@ export type ExportConstEnumMap = ReadonlyMap<
 >;
 
 export type ExportConstEnumTagNameAndValueList = ReadonlyMap<string, number>;
+
+export type UnaryOperator = "-" | "~" | "!";
+
+export type BinaryOperator =
+  | "**"
+  | "*"
+  | "/"
+  | "%"
+  | "+"
+  | "-"
+  | "<<"
+  | ">>"
+  | ">>>"
+  | "<"
+  | "<="
+  | "==="
+  | "!=="
+  | "&"
+  | "^"
+  | "|"
+  | "&&"
+  | "||";

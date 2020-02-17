@@ -1,5 +1,6 @@
 import * as typeExpr from "./typeExpr";
 import * as identifer from "../identifer";
+import * as type from "../type";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -19,12 +20,12 @@ export type Expr =
     }
   | {
       _: Expr_.UnaryOperator;
-      operator: UnaryOperator;
+      operator: type.UnaryOperator;
       expr: Expr;
     }
   | {
       _: Expr_.BinaryOperator;
-      operator: BinaryOperator;
+      operator: type.BinaryOperator;
       left: Expr;
       right: Expr;
     }
@@ -121,28 +122,6 @@ export const enum Expr_ {
   LocalVariable,
   ConstEnumPattern
 }
-
-type UnaryOperator = "-" | "~" | "!";
-
-type BinaryOperator =
-  | "**"
-  | "*"
-  | "/"
-  | "%"
-  | "+"
-  | "-"
-  | "<<"
-  | ">>"
-  | ">>>"
-  | "<"
-  | "<="
-  | "==="
-  | "!=="
-  | "&"
-  | "^"
-  | "|"
-  | "&&"
-  | "||";
 
 export type Statement =
   | {
@@ -455,7 +434,7 @@ const enum Associativity {
 }
 
 const binaryOperatorAssociativity = (
-  binaryOperator: BinaryOperator
+  binaryOperator: type.BinaryOperator
 ): Associativity => {
   switch (binaryOperator) {
     case "**":
@@ -482,7 +461,7 @@ const binaryOperatorAssociativity = (
 };
 
 const binaryOperatorExprToString = (
-  operator: BinaryOperator,
+  operator: type.BinaryOperator,
   left: Expr,
   right: Expr,
   indent: number,
@@ -558,7 +537,7 @@ const exprCombineStrength = (expr: Expr): number => {
 };
 
 const binaryOperatorCombineStrength = (
-  binaryOperator: BinaryOperator
+  binaryOperator: type.BinaryOperator
 ): number => {
   switch (binaryOperator) {
     case "**":

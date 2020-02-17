@@ -23,12 +23,12 @@ export type Expr =
     }
   | {
       _: Expr_.UnaryOperator;
-      operator: UnaryOperator;
+      operator: type.UnaryOperator;
       expr: Expr;
     }
   | {
       _: Expr_.BinaryOperator;
-      operator: BinaryOperator;
+      operator: type.BinaryOperator;
       left: Expr;
       right: Expr;
     }
@@ -119,28 +119,6 @@ const enum Expr_ {
   LocalVariable,
   EnumTag
 }
-
-type UnaryOperator = "-" | "~" | "!";
-
-type BinaryOperator =
-  | "**"
-  | "*"
-  | "/"
-  | "%"
-  | "+"
-  | "-"
-  | "<<"
-  | ">>"
-  | ">>>"
-  | "<"
-  | "<="
-  | "==="
-  | "!=="
-  | "&"
-  | "^"
-  | "|"
-  | "&&"
-  | "||";
 
 type Literal =
   | number
