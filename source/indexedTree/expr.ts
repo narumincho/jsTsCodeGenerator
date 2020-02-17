@@ -744,6 +744,7 @@ export type Statement =
       _: Statement_.VariableDefinition;
       expr: Expr;
       typeExpr: typeExpr.TypeExpr;
+      isConst: boolean;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
@@ -861,7 +862,7 @@ export const continueStatement = (): Statement => ({
 });
 
 /**
- * const a: typeExpr = expr
+ * `const a: typeExpr = expr`
  * ローカル変数の定義。変数名は自動で決まる
  * @param typeExpr 型
  * @param expr 式
@@ -872,11 +873,28 @@ export const variableDefinition = (
 ): Statement => ({
   _: Statement_.VariableDefinition,
   expr,
-  typeExpr
+  typeExpr,
+  isConst: true
 });
 
 /**
- * const a = (parameterList): returnType => { statementList }
+ * `let a: typeExpr = expr`
+ * 上書きできる変数を定義する
+ * @param typeExpr 型
+ * @param expr 式
+ */
+export const letVariableDefinition = (
+  typeExpr: typeExpr.TypeExpr,
+  expr: Expr
+): Statement => ({
+  _: Statement_.VariableDefinition,
+  expr,
+  typeExpr,
+  isConst: false
+});
+
+/**
+ * `const a = (parameterList): returnType => { statementList }`
  * ローカル関数の定義。変数名は自動で決まる
  * @param parameterList パラメータ
  * @param returnType 戻り値の型
@@ -1688,7 +1706,8 @@ export const toNamedStatement = (
             statement.typeExpr,
             reservedWord,
             importedModuleNameMap
-          )
+          ),
+          isConst: statement.isConst
         },
         index: variableDefinitionIndex + 1
       };

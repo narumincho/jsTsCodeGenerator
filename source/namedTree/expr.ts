@@ -179,6 +179,7 @@ export type Statement =
       name: string;
       expr: Expr;
       typeExpr: typeExpr.TypeExpr;
+      isConst: boolean;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
@@ -676,7 +677,8 @@ const statementToTypeScriptCodeAsString = (
         case CodeType.TypeScript:
           return (
             indentString +
-            "const " +
+            (statement.isConst ? "const" : "let") +
+            " " +
             statement.name +
             ": " +
             typeExpr.typeExprToString(statement.typeExpr) +
@@ -687,7 +689,8 @@ const statementToTypeScriptCodeAsString = (
         case CodeType.JavaScript:
           return (
             indentString +
-            "const " +
+            (statement.isConst ? "const" : "let") +
+            " " +
             statement.name +
             "=" +
             exprToCodeAsString(statement.expr, indent, codeType) +

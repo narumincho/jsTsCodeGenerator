@@ -384,4 +384,16 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch(/\(\{.*\}\)/);
   });
+  it("let variable", () => {
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
+      exportTypeAliasList: [],
+      exportConstEnumMap: new Map(),
+      exportFunctionList: [],
+      statementList: [
+        expr.letVariableDefinition(typeExpr.typeNumber, expr.numberLiteral(10))
+      ]
+    });
+    console.log(code);
+    expect(code).toMatch(/let.*=.*10/);
+  });
 });
