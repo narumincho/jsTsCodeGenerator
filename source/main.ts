@@ -257,16 +257,6 @@ const toNamedExportFunctionList = (
 ): ReadonlyArray<NamedExportFunction> => {
   const namedList: Array<NamedExportFunction> = [];
 
-  const rootFunctionListAsRootLocalVariable: ReadonlyArray<{
-    argument: ReadonlyArray<string>;
-    variable: ReadonlyArray<string>;
-  }> = [
-    {
-      variable: exportFunctionList.map(func => func.name),
-      argument: []
-    }
-  ];
-
   // 外部に公開する関数を名前付けした構造にする
   for (const exportFunction of exportFunctionList) {
     namedList.push({
@@ -294,7 +284,7 @@ const toNamedExportFunctionList = (
         globalNameSet,
         importedModuleNameIdentiferMap,
         identiferIndexOnCreatedImportIdentifer,
-        rootFunctionListAsRootLocalVariable,
+        [],
         exportFunction.parameterList.map(parameter => parameter.name),
         exposedConstEnumType
       )
@@ -483,12 +473,7 @@ export const toESModulesBrowserCode = (code: Code): string => {
             globalNameSet,
             importedModuleNameMap,
             nextIdentiferIndex,
-            [
-              {
-                variable: code.exportFunctionList.map(func => func.name),
-                argument: []
-              }
-            ],
+            [],
             [],
             exposedConstEnumType
           ),
