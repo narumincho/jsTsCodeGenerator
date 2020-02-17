@@ -359,4 +359,29 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch(/0/u);
   });
+  it("object literal return need parenthesis", () => {
+    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
+      exportTypeAliasList: [],
+      exportConstEnumMap: new Map(),
+      exportFunctionList: [
+        {
+          name: "returnObject",
+          document: "",
+          parameterList: [],
+          returnType: typeExpr.object(
+            new Map([
+              ["name", { typeExpr: typeExpr.typeString, document: "" }],
+              ["age", { typeExpr: typeExpr.typeNumber, document: "" }]
+            ])
+          ),
+          statementList: [
+            expr.returnStatement(expr.literal({ name: "mac", age: 10 }))
+          ]
+        }
+      ],
+      statementList: []
+    });
+    console.log(code);
+    expect(code).toMatch(/\(\{.*\}\)/);
+  });
 });

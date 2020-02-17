@@ -532,11 +532,15 @@ const exprCombineStrength = (expr: Expr): number => {
     case Expr_.NullLiteral:
     case Expr_.UndefinedLiteral:
     case Expr_.ArrayLiteral:
-    case Expr_.ObjectLiteral:
     case Expr_.GlobalVariable:
     case Expr_.ImportedVariable:
     case Expr_.Argument:
     case Expr_.LocalVariable:
+      return 23;
+    case Expr_.LambdaWithReturn:
+    case Expr_.LambdaReturnVoid:
+      return 22;
+    case Expr_.ObjectLiteral:
       return 21;
     case Expr_.Get:
     case Expr_.Call:
@@ -548,8 +552,6 @@ const exprCombineStrength = (expr: Expr): number => {
     case Expr_.BinaryOperator:
       return binaryOperatorCombineStrength(expr.operator);
     case Expr_.ConditionalOperator:
-    case Expr_.LambdaWithReturn:
-    case Expr_.LambdaReturnVoid:
       return 4;
   }
 };
