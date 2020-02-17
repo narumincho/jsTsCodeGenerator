@@ -1,12 +1,13 @@
 import * as indexedTypeExpr from "./indexedTree/typeExpr";
 import * as indexedExpr from "./indexedTree/expr";
-import * as scanType from "./scanType";
+import * as type from "./type";
 import * as identifer from "./identifer";
 import * as namedExpr from "./namedTree/expr";
 import * as namedTypeExpr from "./namedTree/typeExpr";
 
 export { indexedTypeExpr as typeExpr };
 export { indexedExpr as expr };
+export { type };
 
 /**
  * TypeScriptやJavaScriptのコードを表現する。
@@ -20,7 +21,7 @@ export type Code = {
   /**
    * 外部に公開する列挙型
    */
-  readonly exportConstEnumList: ReadonlyArray<ExportConstEnum>;
+  readonly exportConstEnumMap: type.ExportConstEnumMap;
   /**
    * 外部に公開する関数
    */
@@ -53,25 +54,23 @@ export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
   return data;
 };
 
-export type ExportConstEnum = {
-  readonly name: string;
-  readonly patternList: ReadonlyArray<string>;
-};
-
-export const exportConstEnum = (data: ExportConstEnum): ExportConstEnum => {
+export const exportConstEnum = ([name, tagNameAndValueList]: [
+  string,
+  type.ExportConstEnum
+]): [string, type.ExportConstEnum] => {
   identifer.checkIdentiferThrow(
     "export const enum name",
     "外部に公開する列挙型の名前",
-    data.name
+    name
   );
-  for (const pattern of data.patternList) {
+  for (const tagName of tagNameAndValueList.keys()) {
     identifer.checkIdentiferThrow(
       "const enum member",
       "列挙型のパターン",
-      pattern
+      tagName
     );
   }
-  return data;
+  return [name, tagNameAndValueList];
 };
 
 export type ExportFunction = {
@@ -112,8 +111,8 @@ export const exportFunction = (data: ExportFunction): ExportFunction => {
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-const scanCode = (code: Code): scanType.ScanData => {
-  const scanData: scanType.ScanData = scanType.init;
+const scanCode = (code: Code): type.ScanData => {
+  const scanData: type.ScanData = type.init;
   for (const exportTypeAlias of code.exportTypeAliasList) {
     identifer.checkIdentiferThrow(
       "export type name",
@@ -126,17 +125,17 @@ const scanCode = (code: Code): scanType.ScanData => {
       scanData
     );
   }
-  for (const exportConstEnum of code.exportConstEnumList) {
+  for (const [name, tagNameAndValueList] of code.exportConstEnumMap) {
     identifer.checkIdentiferThrow(
       "export const enum name",
       "外部に公開する列挙型の名前",
-      exportConstEnum.name
+      name
     );
-    for (const pattern of exportConstEnum.patternList) {
+    for (const tagName of tagNameAndValueList.keys()) {
       identifer.checkIdentiferThrow(
-        "const enum mamber",
+        "const enum member",
         "列挙型のパターン",
-        pattern
+        tagName
       );
     }
   }
@@ -253,7 +252,7 @@ const toNamedExportFunctionList = (
   globalNameSet: ReadonlySet<string>,
   importedModuleNameIdentiferMap: ReadonlyMap<string, string>,
   identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex,
-  exposedConstEnumType: ReadonlyMap<string, ReadonlyArray<string>>
+  exposedConstEnumType: type.ExportConstEnumMap
 ): ReadonlyArray<NamedExportFunction> => {
   const namedList: Array<NamedExportFunction> = [];
 
@@ -296,10 +295,6 @@ const toNamedExportFunctionList = (
 export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
-  const exposedConstEnumType: ReadonlyMap<
-    string,
-    ReadonlyArray<string>
-  > = new Map(code.exportConstEnumList.map(e => [e.name, e.patternList]));
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
     importedModuleNameMap,
@@ -321,7 +316,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
     globalNameSet,
     importedModuleNameMap,
     nextIdentiferIndex,
-    exposedConstEnumType
+    code.exportConstEnumMap
   );
 
   return (
@@ -345,14 +340,16 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
       )
       .join(";\n") +
     "\n" +
-    code.exportConstEnumList
+    [...code.exportConstEnumMap]
       .map(
-        exportConstEnum =>
+        ([name, tagNameAndValueList]) =>
           "export const enum " +
-          exportConstEnum.name +
+          name +
           " {\n" +
-          exportConstEnum.patternList
-            .map(pattern => "  " + pattern)
+          [...tagNameAndValueList]
+            .map(
+              ([tagName, value]) => "  " + tagName + " = " + value.toString()
+            )
             .join(",\n") +
           "\n}"
       )
@@ -406,7 +403,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
               }
             ],
             [],
-            exposedConstEnumType
+            code.exportConstEnumMap
           ),
           0,
           namedExpr.CodeType.TypeScript
@@ -417,10 +414,6 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
 export const toESModulesBrowserCode = (code: Code): string => {
   // グローバル空間にある名前とimportしたESモジュールのURLを集める
   const { globalNameSet, importedModulePath } = scanCode(code);
-  const exposedConstEnumType: ReadonlyMap<
-    string,
-    ReadonlyArray<string>
-  > = new Map(code.exportConstEnumList.map(e => [e.name, e.patternList]));
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
@@ -437,16 +430,18 @@ export const toESModulesBrowserCode = (code: Code): string => {
     globalNameSet,
     importedModuleNameMap,
     nextIdentiferIndex,
-    exposedConstEnumType
+    code.exportConstEnumMap
   );
 
   return (
-    [...importedModuleNameMap.entries()]
-      .map(
-        ([url, identifer]) => "import * as " + identifer + ' from "' + url + '"'
-      )
-      .join(";\n") +
-    ";\n" +
+    (importedModuleNameMap.size === 0
+      ? ""
+      : [...importedModuleNameMap.entries()]
+          .map(
+            ([url, identifer]) =>
+              "import * as " + identifer + ' from "' + url + '"'
+          )
+          .join(";\n") + ";\n") +
     namedExportFunctionList
       .map(
         (exportFunction): string =>
@@ -475,7 +470,7 @@ export const toESModulesBrowserCode = (code: Code): string => {
             nextIdentiferIndex,
             [],
             [],
-            exposedConstEnumType
+            code.exportConstEnumMap
           ),
           0,
           namedExpr.CodeType.JavaScript

@@ -27,6 +27,11 @@ export type TypeExpr =
       }>;
     }
   | {
+      _: TypeExpr_.EnumTagLiteral;
+      typeName: string;
+      tagName: string;
+    }
+  | {
       _: TypeExpr_.Union;
       types: ReadonlyArray<TypeExpr>;
     }
@@ -51,6 +56,7 @@ export const enum TypeExpr_ {
   Object,
   FunctionWithReturn,
   FunctionReturnVoid,
+  EnumTagLiteral,
   Union,
   WithTypeParameter,
   ImportedType,
@@ -115,6 +121,9 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
 
     case TypeExpr_.FunctionReturnVoid:
       return parameterAndReturnToString(typeExpr.parameterList, null);
+
+    case TypeExpr_.EnumTagLiteral:
+      return typeExpr.tagName + "." + typeExpr.tagName;
 
     case TypeExpr_.Union:
       return typeExpr.types

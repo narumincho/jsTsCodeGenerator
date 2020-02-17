@@ -1,4 +1,4 @@
-import * as scanType from "../scanType";
+import * as type from "../type";
 import * as named from "../namedTree/typeExpr";
 import * as identifer from "../identifer";
 import { ValueOf } from "../valueOf";
@@ -31,6 +31,11 @@ export type TypeExpr =
       typeParameterList: ReadonlyArray<TypeExpr>;
     }
   | {
+      _: TypeExpr_.EnumTagLiteral;
+      typeName: string;
+      tagName: string;
+    }
+  | {
       _: TypeExpr_.Union;
       types: ReadonlyArray<TypeExpr>;
     }
@@ -50,6 +55,7 @@ const enum TypeExpr_ {
   Object,
   FunctionWithReturn,
   FunctionReturnVoid,
+  EnumTagLiteral,
   Union,
   WithTypeParameter,
   ImportedType,
@@ -123,6 +129,19 @@ export const functionReturnVoid = (
   parameterList: parameter
 });
 
+/**
+ * Enumのリテラル型 `Color.Red`
+ * @param typeName 型の名前 `Color`
+ * @param tagName タグの名前 `Red`
+ */
+export const enumTagLiteral = (
+  typeName: string,
+  tagName: string
+): TypeExpr => ({
+  _: TypeExpr_.EnumTagLiteral,
+  typeName,
+  tagName: tagName
+});
 /**
  * ユニオン型 `a | b`
  * @param types 型のリスト
@@ -217,7 +236,7 @@ export const globalType = (name: string): TypeExpr => ({
  */
 export const scanGlobalVariableNameAndImportedPath = (
   typeExpr: TypeExpr,
-  scanData: scanType.ScanData
+  scanData: type.ScanData
 ): void => {
   switch (typeExpr._) {
     case TypeExpr_.Number:
@@ -225,6 +244,7 @@ export const scanGlobalVariableNameAndImportedPath = (
     case TypeExpr_.Boolean:
     case TypeExpr_.Null:
     case TypeExpr_.Undefined:
+    case TypeExpr_.EnumTagLiteral:
       return;
 
     case TypeExpr_.Object:
@@ -356,6 +376,12 @@ export const toNamed = (
         parameterList: parameterList
       };
     }
+    case TypeExpr_.EnumTagLiteral:
+      return {
+        _: named.TypeExpr_.EnumTagLiteral,
+        typeName: typeExpr.typeName,
+        tagName: typeExpr.tagName
+      };
 
     case TypeExpr_.Union:
       return {
