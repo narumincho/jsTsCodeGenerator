@@ -1,5 +1,6 @@
 import * as typeExpr from "./typeExpr";
 import * as identifer from "../identifer";
+import * as type from "../type";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -19,12 +20,12 @@ export type Expr =
     }
   | {
       _: Expr_.UnaryOperator;
-      operator: UnaryOperator;
+      operator: type.UnaryOperator;
       expr: Expr;
     }
   | {
       _: Expr_.BinaryOperator;
-      operator: BinaryOperator;
+      operator: type.BinaryOperator;
       left: Expr;
       right: Expr;
     }
@@ -122,28 +123,6 @@ export const enum Expr_ {
   ConstEnumPattern
 }
 
-type UnaryOperator = "-" | "~" | "!";
-
-type BinaryOperator =
-  | "**"
-  | "*"
-  | "/"
-  | "%"
-  | "+"
-  | "-"
-  | "<<"
-  | ">>"
-  | ">>>"
-  | "<"
-  | "<="
-  | "==="
-  | "!=="
-  | "&"
-  | "^"
-  | "|"
-  | "&&"
-  | "||";
-
 export type Statement =
   | {
       _: Statement_.EvaluateExpr;
@@ -152,7 +131,7 @@ export type Statement =
   | {
       _: Statement_.Set;
       targetObject: Expr;
-      targetPropertyName: Expr;
+      operator: type.BinaryOperator | null;
       expr: Expr;
     }
   | {
@@ -179,6 +158,7 @@ export type Statement =
       name: string;
       expr: Expr;
       typeExpr: typeExpr.TypeExpr;
+      isConst: boolean;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
@@ -454,7 +434,7 @@ const enum Associativity {
 }
 
 const binaryOperatorAssociativity = (
-  binaryOperator: BinaryOperator
+  binaryOperator: type.BinaryOperator
 ): Associativity => {
   switch (binaryOperator) {
     case "**":
@@ -481,7 +461,7 @@ const binaryOperatorAssociativity = (
 };
 
 const binaryOperatorExprToString = (
-  operator: BinaryOperator,
+  operator: type.BinaryOperator,
   left: Expr,
   right: Expr,
   indent: number,
@@ -557,7 +537,7 @@ const exprCombineStrength = (expr: Expr): number => {
 };
 
 const binaryOperatorCombineStrength = (
-  binaryOperator: BinaryOperator
+  binaryOperator: type.BinaryOperator
 ): number => {
   switch (binaryOperator) {
     case "**":
@@ -629,13 +609,10 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         exprToCodeAsString(statement.targetObject, indent, codeType) +
-        (statement.targetPropertyName._ === Expr_.StringLiteral &&
-        identifer.isIdentifer(statement.targetPropertyName.value)
-          ? "." + statement.targetPropertyName.value
-          : "[" +
-            exprToCodeAsString(statement.targetPropertyName, indent, codeType) +
-            "]") +
-        " = " +
+        codeTypeSpace(codeType) +
+        (statement.operator ?? "") +
+        "=" +
+        codeTypeSpace(codeType) +
         exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
@@ -676,7 +653,8 @@ const statementToTypeScriptCodeAsString = (
         case CodeType.TypeScript:
           return (
             indentString +
-            "const " +
+            (statement.isConst ? "const" : "let") +
+            " " +
             statement.name +
             ": " +
             typeExpr.typeExprToString(statement.typeExpr) +
@@ -687,7 +665,8 @@ const statementToTypeScriptCodeAsString = (
         case CodeType.JavaScript:
           return (
             indentString +
-            "const " +
+            (statement.isConst ? "const" : "let") +
+            " " +
             statement.name +
             "=" +
             exprToCodeAsString(statement.expr, indent, codeType) +

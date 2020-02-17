@@ -23,12 +23,12 @@ export type Expr =
     }
   | {
       _: Expr_.UnaryOperator;
-      operator: UnaryOperator;
+      operator: type.UnaryOperator;
       expr: Expr;
     }
   | {
       _: Expr_.BinaryOperator;
-      operator: BinaryOperator;
+      operator: type.BinaryOperator;
       left: Expr;
       right: Expr;
     }
@@ -119,28 +119,6 @@ const enum Expr_ {
   LocalVariable,
   EnumTag
 }
-
-type UnaryOperator = "-" | "~" | "!";
-
-type BinaryOperator =
-  | "**"
-  | "*"
-  | "/"
-  | "%"
-  | "+"
-  | "-"
-  | "<<"
-  | ">>"
-  | ">>>"
-  | "<"
-  | "<="
-  | "==="
-  | "!=="
-  | "&"
-  | "^"
-  | "|"
-  | "&&"
-  | "||";
 
 type Literal =
   | number
@@ -718,7 +696,7 @@ export type Statement =
   | {
       _: Statement_.Set;
       targetObject: Expr;
-      targetPropertyName: Expr;
+      operator: type.BinaryOperator | null;
       expr: Expr;
     }
   | {
@@ -744,6 +722,7 @@ export type Statement =
       _: Statement_.VariableDefinition;
       expr: Expr;
       typeExpr: typeExpr.TypeExpr;
+      isConst: boolean;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
@@ -796,19 +775,26 @@ export const evaluateExpr = (expr: Expr): Statement => ({
 });
 
 /**
- * プロパティの値を設定する。targetObject[targetPropertyName] = expr;
- * @param targetObject
- * @param targetPropertyName
- * @param expr
+ * ```ts
+ * targetObject[targetPropertyName] = expr;
+ * location.href = "https://narumincho.com";
+ * array[0] = 30;
+ * data = 50;
+ * i += 1;
+ * ```
+ * 代入やプロパティの値を設定する。
+ * @param targetObject 代入先の式
+ * @param operator 演算子
+ * @param expr 式
  */
-export const setByExpr = (
+export const set = (
   targetObject: Expr,
-  targetPropertyName: Expr,
+  operator: type.BinaryOperator | null,
   expr: Expr
 ): Statement => ({
   _: Statement_.Set,
   targetObject,
-  targetPropertyName,
+  operator,
   expr
 });
 
@@ -861,7 +847,7 @@ export const continueStatement = (): Statement => ({
 });
 
 /**
- * const a: typeExpr = expr
+ * `const a: typeExpr = expr`
  * ローカル変数の定義。変数名は自動で決まる
  * @param typeExpr 型
  * @param expr 式
@@ -872,11 +858,28 @@ export const variableDefinition = (
 ): Statement => ({
   _: Statement_.VariableDefinition,
   expr,
-  typeExpr
+  typeExpr,
+  isConst: true
 });
 
 /**
- * const a = (parameterList): returnType => { statementList }
+ * `let a: typeExpr = expr`
+ * 上書きできる変数を定義する
+ * @param typeExpr 型
+ * @param expr 式
+ */
+export const letVariableDefinition = (
+  typeExpr: typeExpr.TypeExpr,
+  expr: Expr
+): Statement => ({
+  _: Statement_.VariableDefinition,
+  expr,
+  typeExpr,
+  isConst: false
+});
+
+/**
+ * `const a = (parameterList): returnType => { statementList }`
  * ローカル関数の定義。変数名は自動で決まる
  * @param parameterList パラメータ
  * @param returnType 戻り値の型
@@ -1055,10 +1058,6 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
     case Statement_.Set:
       scanGlobalVariableNameAndImportedPathInExpr(
         statement.targetObject,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.targetPropertyName,
         scanData
       );
       scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
@@ -1586,14 +1585,7 @@ export const toNamedStatement = (
             argumentAndLocalVariableNameList,
             exposedConstEnumMap
           ),
-          targetPropertyName: toNamedExpr(
-            statement.targetPropertyName,
-            reservedWord,
-            importedModuleNameMap,
-            identiferIndex,
-            argumentAndLocalVariableNameList,
-            exposedConstEnumMap
-          ),
+          operator: statement.operator,
           expr: toNamedExpr(
             statement.expr,
             reservedWord,
@@ -1688,7 +1680,8 @@ export const toNamedStatement = (
             statement.typeExpr,
             reservedWord,
             importedModuleNameMap
-          )
+          ),
+          isConst: statement.isConst
         },
         index: variableDefinitionIndex + 1
       };
