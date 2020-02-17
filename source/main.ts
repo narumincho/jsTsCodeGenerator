@@ -434,12 +434,14 @@ export const toESModulesBrowserCode = (code: Code): string => {
   );
 
   return (
-    [...importedModuleNameMap.entries()]
-      .map(
-        ([url, identifer]) => "import * as " + identifer + ' from "' + url + '"'
-      )
-      .join(";\n") +
-    ";\n" +
+    (importedModuleNameMap.size === 0
+      ? ""
+      : [...importedModuleNameMap.entries()]
+          .map(
+            ([url, identifer]) =>
+              "import * as " + identifer + ' from "' + url + '"'
+          )
+          .join(";\n") + ";\n") +
     namedExportFunctionList
       .map(
         (exportFunction): string =>
