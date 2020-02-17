@@ -676,7 +676,7 @@ const statementToTypeScriptCodeAsString = (
             indentString +
             "const " +
             statement.name +
-            ":" +
+            ": " +
             typeExpr.typeExprToString(statement.typeExpr) +
             " = " +
             exprToCodeAsString(statement.expr, indent, codeType) +
@@ -706,7 +706,7 @@ const statementToTypeScriptCodeAsString = (
               .map(
                 parameter =>
                   parameter.name +
-                  ":" +
+                  ": " +
                   typeExpr.typeExprToString(parameter.typeExpr)
               )
               .join(", ") +
