@@ -623,7 +623,7 @@ export const importedVariableList = <
  * @param path モジュールのパス
  * @param name 変数名
  */
-const importedVariable = (path: string, name: string): Expr => ({
+export const importedVariable = (path: string, name: string): Expr => ({
   _: Expr_.ImportedVariable,
   name,
   path
@@ -654,7 +654,7 @@ export const globalVariableList = <variableList extends ReadonlyArray<string>>(
  * グローバル空間にある変数
  * @param name 変数名
  */
-const globalVariable = (name: string): Expr => ({
+export const globalVariable = (name: string): Expr => ({
   _: Expr_.GlobalVariable,
   name
 });

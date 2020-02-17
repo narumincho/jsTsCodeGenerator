@@ -174,7 +174,7 @@ export const importedTypeList = <typeList extends ReadonlyArray<string>>(
  * @param path インポートするモジュールのパス
  * @param name 型名
  */
-const importedType = (path: string, name: string): TypeExpr => ({
+export const importedType = (path: string, name: string): TypeExpr => ({
   _: TypeExpr_.ImportedType,
   path,
   name
@@ -205,7 +205,7 @@ export const globalTypeList = <nameList extends ReadonlyArray<string>>(
  * グローバル空間の型
  * @param name 型名
  */
-const globalType = (name: string): TypeExpr => ({
+export const globalType = (name: string): TypeExpr => ({
   _: TypeExpr_.GlobalType,
   name
 });
