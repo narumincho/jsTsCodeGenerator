@@ -338,12 +338,10 @@ describe("test", () => {
         document: "赤",
         parameterList: [],
         returnType: typeExpr.enumTagLiteral("Color", "Red"),
-        statementList: [
-          expr.returnStatement(expr.constEnumPattern("Color", "Red"))
-        ]
+        statementList: [expr.returnStatement(expr.enumTag("Color", "Red"))]
       }
     ],
-    statementList: [expr.evaluateExpr(expr.constEnumPattern("Color", "Red"))]
+    statementList: [expr.evaluateExpr(expr.enumTag("Color", "Red"))]
   };
   it("export const enum in TypeScript", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript(constEnumCode);
