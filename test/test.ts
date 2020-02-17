@@ -11,7 +11,7 @@ describe("test", () => {
 
   const sampleCode: generator.Code = {
     exportTypeAliasList: [],
-    exportConstEnumList: [],
+    exportConstEnumMap: new Map(),
     exportFunctionList: [
       generator.exportFunction({
         name: "middleware",
@@ -57,7 +57,7 @@ describe("test", () => {
     expect(() => {
       generator.toNodeJsOrBrowserCodeAsTypeScript({
         exportTypeAliasList: [],
-        exportConstEnumList: [],
+        exportConstEnumMap: new Map(),
         exportFunctionList: [
           generator.exportFunction({
             name: "new",
@@ -75,7 +75,7 @@ describe("test", () => {
     expect(() => {
       generator.toNodeJsOrBrowserCodeAsTypeScript({
         exportTypeAliasList: [],
-        exportConstEnumList: [],
+        exportConstEnumMap: new Map(),
         exportFunctionList: [
           generator.exportFunction({
             name: "0name",
@@ -110,7 +110,7 @@ describe("test", () => {
   it("escape string literal", () => {
     const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
-      exportConstEnumList: [],
+      exportConstEnumMap: new Map(),
       exportFunctionList: [
         generator.exportFunction({
           name: "stringValue",
@@ -145,7 +145,7 @@ describe("test", () => {
     ] as const);
     const nodeJsCode: generator.Code = {
       exportTypeAliasList: [],
-      exportConstEnumList: [],
+      exportConstEnumMap: new Map(),
       exportFunctionList: [
         generator.exportFunction({
           name: "middleware",
@@ -198,7 +198,7 @@ describe("test", () => {
 
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportTypeAliasList: [],
-      exportConstEnumList: [],
+      exportConstEnumMap: new Map(),
       exportFunctionList: [
         generator.exportFunction({
           name: "getZeroIndexElement",
@@ -228,7 +228,7 @@ describe("test", () => {
   const scopedCode = generator.toESModulesBrowserCode({
     exportTypeAliasList: [],
     exportFunctionList: [],
-    exportConstEnumList: [],
+    exportConstEnumMap: new Map(),
     statementList: [
       expr.variableDefinition(
         typeExpr.typeString,
@@ -264,7 +264,7 @@ describe("test", () => {
         }
       ],
       exportTypeAliasList: [],
-      exportConstEnumList: [],
+      exportConstEnumMap: new Map(),
       statementList: []
     });
     console.log(code);
@@ -274,7 +274,7 @@ describe("test", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportFunctionList: [],
       exportTypeAliasList: [],
-      exportConstEnumList: [],
+      exportConstEnumMap: new Map(),
       statementList: [
         expr.evaluateExpr(
           expr.objectLiteral(
@@ -293,7 +293,7 @@ describe("test", () => {
     const code = generator.toESModulesBrowserCode({
       exportFunctionList: [],
       exportTypeAliasList: [],
-      exportConstEnumList: [],
+      exportConstEnumMap: new Map(),
       statementList: [
         expr.evaluateExpr(
           expr.equal(
@@ -326,12 +326,16 @@ describe("test", () => {
   });
   const constEnumCode: generator.Code = {
     exportTypeAliasList: [],
-    exportConstEnumList: [
-      {
-        name: "Color",
-        patternList: ["Red", "Green", "Blue"]
-      }
-    ],
+    exportConstEnumMap: new Map([
+      [
+        "Color",
+        new Map([
+          ["Red", 0],
+          ["Green", 1],
+          ["Blue", 2]
+        ])
+      ]
+    ]),
     exportFunctionList: [
       {
         name: "red",

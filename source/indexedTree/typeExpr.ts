@@ -1,4 +1,4 @@
-import * as scanType from "../scanType";
+import * as type from "../type";
 import * as named from "../namedTree/typeExpr";
 import * as identifer from "../identifer";
 import { ValueOf } from "../valueOf";
@@ -236,7 +236,7 @@ export const globalType = (name: string): TypeExpr => ({
  */
 export const scanGlobalVariableNameAndImportedPath = (
   typeExpr: TypeExpr,
-  scanData: scanType.ScanData
+  scanData: type.ScanData
 ): void => {
   switch (typeExpr._) {
     case TypeExpr_.Number:
