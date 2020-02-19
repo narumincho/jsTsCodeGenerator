@@ -15,6 +15,88 @@
 - Node.js でもブラウザでも動く
 - 入力のコードにはある程度の制限がかかる (全てには対応しない)
 
+## sample code サンプルコード
+
+```ts
+const expressType = typeExpr.importedTypeList("express", [
+  "Request",
+  "Response"
+] as const);
+const code: generator.Code = {
+  exportTypeAliasList: [],
+  exportConstEnumMap: new Map(),
+  exportFunctionList: [
+    generator.exportFunction({
+      name: "middleware",
+      document: "ミドルウェア",
+      parameterList: [
+        {
+          name: "request",
+          document: "リクエスト",
+          typeExpr: expressType.Request
+        },
+        {
+          name: "response",
+          document: "レスポンス",
+          typeExpr: expressType.Response
+        }
+      ],
+      returnType: null,
+      statementList: [
+        expr.variableDefinition(
+          ["accept"],
+          typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
+          expr.get(
+            expr.get(expr.localVariable(["request"]), "headers"),
+            "accept"
+          )
+        ),
+        expr.ifStatement(
+          expr.logicalAnd(
+            expr.notEqual(
+              expr.localVariable(["accept"]),
+              expr.undefinedLiteral
+            ),
+            expr.callMethod(expr.localVariable(["accept"]), "includes", [
+              expr.stringLiteral("text/html")
+            ])
+          ),
+          [
+            expr.evaluateExpr(
+              expr.callMethod(expr.localVariable(["response"]), "setHeader", [
+                expr.stringLiteral("content-type"),
+                expr.stringLiteral("text/html")
+              ])
+            )
+          ]
+        )
+      ]
+    })
+  ],
+  statementList: []
+};
+const code = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
+console.log(code);
+```
+
+### 出力 output
+
+```ts
+import * as a from "express";
+
+/**
+ * ミドルウェア
+ * @param request リクエスト
+ * @param response レスポンス
+ */
+export const middleware = (request: a.Request, response: a.Response): void => {
+  const b: string | undefined = request.headers.accept;
+  if (b !== undefined && b.includes("text/html")) {
+    response.setHeader("content-type", "text/html");
+  }
+};
+```
+
 ## どのレベルまでやるか処理
 
 - 内部の(変数名、引数名)を自動で名前を決める
