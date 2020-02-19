@@ -487,7 +487,10 @@ export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
  * @param statementList 本体
  */
 export const lambdaWithReturn = (
-  parameterList: ReadonlyArray<{ name: ReadonlyArray<string>; typeExpr: typeExpr.TypeExpr }>,
+  parameterList: ReadonlyArray<{
+    name: ReadonlyArray<string>;
+    typeExpr: typeExpr.TypeExpr;
+  }>,
   returnType: typeExpr.TypeExpr,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
@@ -1057,7 +1060,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 
     case Statement_.FunctionWithReturnValueVariableDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(parameter.typeExpr, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          parameter.typeExpr,
+          scanData
+        );
       }
       typeExpr.scanGlobalVariableNameAndImportedPath(
         statement.returnType,
@@ -1071,7 +1077,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 
     case Statement_.ReturnVoidFunctionVariableDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(parameter.typeExpr, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          parameter.typeExpr,
+          scanData
+        );
       }
       scanGlobalVariableNameAndImportedPathInStatementList(
         statement.statementList,
@@ -1237,7 +1246,7 @@ export const toNamedExpr = (
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterNameMap.push({
-          oldName: parameter.name,
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndNextIndex.identifer,
           typeExpr: typeExpr.toNamed(
             parameter.typeExpr,
@@ -1284,7 +1293,7 @@ export const toNamedExpr = (
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
-          oldName: parameter.name,
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndNextIndex.identifer,
           typeExpr: typeExpr.toNamed(
             parameter.typeExpr,
@@ -1654,10 +1663,10 @@ export const toNamedStatement = (
           reservedWord
         );
         namedParameterList.push({
-          oldName: parameter;
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndIndex.identifer,
           typeExpr: typeExpr.toNamed(
-            parameter,
+            parameter.typeExpr,
             reservedWord,
             importedModuleNameMap
           )
@@ -1667,9 +1676,7 @@ export const toNamedStatement = (
       return {
         statement: {
           _: namedExpr.Statement_.FunctionWithReturnValueVariableDefinition,
-          name: getElementByLastIndex(variableNameMapList, 0).variable[
-            variableDefinitionIndex
-          ],
+          name: searchName(variableNameMapList, statement.name),
           parameterList: namedParameterList,
           returnType: typeExpr.toNamed(
             statement.returnType,
@@ -1682,7 +1689,12 @@ export const toNamedStatement = (
             importedModuleNameMap,
             identiferIndex,
             variableNameMapList,
-            namedParameterList.map(parameter => parameter.name),
+            new Map(
+              namedParameterList.map(parameter => [
+                parameter.oldName,
+                parameter.name
+              ])
+            ),
             exposedConstEnumMap
           )
         },
@@ -1691,6 +1703,7 @@ export const toNamedStatement = (
     }
     case Statement_.ReturnVoidFunctionVariableDefinition: {
       const namedParameterList: Array<{
+        oldName: string;
         name: string;
         typeExpr: namedTypeExpr.TypeExpr;
       }> = [];
@@ -1700,9 +1713,10 @@ export const toNamedStatement = (
           reservedWord
         );
         namedParameterList.push({
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndIndex.identifer,
           typeExpr: typeExpr.toNamed(
-            parameter,
+            parameter.typeExpr,
             reservedWord,
             importedModuleNameMap
           )
@@ -1712,9 +1726,7 @@ export const toNamedStatement = (
       return {
         statement: {
           _: namedExpr.Statement_.ReturnVoidFunctionVariableDefinition,
-          name: getElementByLastIndex(variableNameMapList, 0).variable[
-            variableDefinitionIndex
-          ],
+          name: searchName(variableNameMapList, statement.name),
           parameterList: namedParameterList,
           statementList: toNamedStatementList(
             statement.statementList,
@@ -1722,7 +1734,12 @@ export const toNamedStatement = (
             importedModuleNameMap,
             identiferIndex,
             variableNameMapList,
-            namedParameterList.map(parameter => parameter.name),
+            new Map(
+              namedParameterList.map(parameter => [
+                parameter.oldName,
+                parameter.name
+              ])
+            ),
             exposedConstEnumMap
           )
         },
@@ -1744,7 +1761,12 @@ export const toNamedStatement = (
             importedModuleNameMap,
             counterVariableNameAndIndex.nextIdentiferIndex,
             variableNameMapList,
-            [counterVariableNameAndIndex.identifer],
+            new Map([
+              [
+                variableNameListToMapKey(statement.counterVariableName),
+                counterVariableNameAndIndex.identifer
+              ]
+            ]),
             exposedConstEnumMap
           ),
           untilExpr: toNamedExpr(
@@ -1769,7 +1791,7 @@ export const toNamedStatement = (
             importedModuleNameMap,
             identiferIndex,
             variableNameMapList,
-            [],
+            new Map(),
             exposedConstEnumMap
           )
         },
@@ -1786,20 +1808,7 @@ export const toNamedStatement = (
 };
 
 /**
- * 配列の要素を最後のインデックスから取得する
- * @param array 配列
- * @param index 0から始まるindex
+ * JSのMapのキーに配列を使った場合、参照でしか等しいか計算しないため、文字列に変換している
  */
-const getElementByLastIndex = <T>(
-  array: ReadonlyArray<T>,
-  index: number
-): T => {
-  const element = array[array.length - 1 - index];
-  if (element === undefined) {
-    throw new Error("index error");
-  }
-  return element;
-};
-
 const variableNameListToMapKey = (nameList: ReadonlyArray<string>): string =>
   nameList.join("!");

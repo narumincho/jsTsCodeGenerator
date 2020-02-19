@@ -165,22 +165,33 @@ describe("test", () => {
           returnType: null,
           statementList: [
             expr.variableDefinition(
+              ["accept"],
               typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
-              expr.get(expr.get(expr.argument(0, 0), "headers"), "accept")
+              expr.get(
+                expr.get(expr.localVariable(["request"]), "headers"),
+                "accept"
+              )
             ),
             expr.ifStatement(
               expr.logicalAnd(
-                expr.notEqual(expr.localVariable(0, 0), expr.undefinedLiteral),
-                expr.callMethod(expr.localVariable(0, 0), "includes", [
+                expr.notEqual(
+                  expr.localVariable(["accept"]),
+                  expr.undefinedLiteral
+                ),
+                expr.callMethod(expr.localVariable(["accept"]), "includes", [
                   expr.stringLiteral("text/html")
                 ])
               ),
               [
                 expr.evaluateExpr(
-                  expr.callMethod(expr.argument(1, 1), "setHeader", [
-                    expr.stringLiteral("content-type"),
-                    expr.stringLiteral("text/html")
-                  ])
+                  expr.callMethod(
+                    expr.localVariable(["response"]),
+                    "setHeader",
+                    [
+                      expr.stringLiteral("content-type"),
+                      expr.stringLiteral("text/html")
+                    ]
+                  )
                 )
               ]
             )
@@ -213,7 +224,7 @@ describe("test", () => {
           returnType: typeExpr.typeNumber,
           statementList: [
             expr.returnStatement(
-              expr.getByExpr(expr.argument(0, 0), expr.literal(0))
+              expr.getByExpr(expr.localVariable(["array"]), expr.literal(0))
             )
           ]
         })
@@ -223,20 +234,19 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("[0]");
   });
-  const globalVariable = expr.globalVariableList(["console"] as const);
-
   const scopedCode = generator.toESModulesBrowserCode({
     exportTypeAliasList: [],
     exportFunctionList: [],
     exportConstEnumMap: new Map(),
     statementList: [
       expr.variableDefinition(
+        ["sorena"],
         typeExpr.typeString,
         expr.stringLiteral("それな")
       ),
       expr.evaluateExpr(
-        expr.callMethod(globalVariable.console, "log", [
-          expr.localVariable(0, 0)
+        expr.callMethod(expr.globalVariable("console"), "log", [
+          expr.localVariable(["sorena"])
         ])
       )
     ]
@@ -390,9 +400,13 @@ describe("test", () => {
       exportConstEnumMap: new Map(),
       exportFunctionList: [],
       statementList: [
-        expr.letVariableDefinition(typeExpr.typeNumber, expr.numberLiteral(10)),
-        expr.set(expr.localVariable(0, 0), null, expr.numberLiteral(30)),
-        expr.set(expr.localVariable(0, 0), "+", expr.numberLiteral(1))
+        expr.letVariableDefinition(
+          ["v"],
+          typeExpr.typeNumber,
+          expr.numberLiteral(10)
+        ),
+        expr.set(expr.localVariable(["v"]), null, expr.numberLiteral(30)),
+        expr.set(expr.localVariable(["v"]), "+", expr.numberLiteral(1))
       ]
     });
     console.log(code);

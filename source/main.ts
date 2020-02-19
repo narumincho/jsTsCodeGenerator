@@ -284,7 +284,12 @@ const toNamedExportFunctionList = (
         importedModuleNameIdentiferMap,
         identiferIndexOnCreatedImportIdentifer,
         [],
-        exportFunction.parameterList.map(parameter => parameter.name),
+        new Map(
+          exportFunction.parameterList.map(parameter => [
+            parameter.name,
+            parameter.name
+          ])
+        ),
         exposedConstEnumType
       )
     });
@@ -396,13 +401,8 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
             globalNameSet,
             importedModuleNameMap,
             nextIdentiferIndex,
-            [
-              {
-                variable: code.exportFunctionList.map(func => func.name),
-                argument: []
-              }
-            ],
             [],
+            new Map(),
             code.exportConstEnumMap
           ),
           0,
@@ -469,7 +469,7 @@ export const toESModulesBrowserCode = (code: Code): string => {
             importedModuleNameMap,
             nextIdentiferIndex,
             [],
-            [],
+            new Map(),
             code.exportConstEnumMap
           ),
           0,
