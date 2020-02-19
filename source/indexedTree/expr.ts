@@ -48,13 +48,19 @@ export type Expr =
     }
   | {
       _: Expr_.LambdaWithReturn;
-      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      parameterList: ReadonlyArray<{
+        name: ReadonlyArray<string>;
+        typeExpr: typeExpr.TypeExpr;
+      }>;
       returnType: typeExpr.TypeExpr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Expr_.LambdaReturnVoid;
-      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      parameterList: ReadonlyArray<{
+        name: ReadonlyArray<string>;
+        typeExpr: typeExpr.TypeExpr;
+      }>;
       statementList: ReadonlyArray<Statement>;
     }
   | {
@@ -65,11 +71,6 @@ export type Expr =
       _: Expr_.ImportedVariable;
       path: string;
       name: string;
-    }
-  | {
-      _: Expr_.Argument;
-      index: number;
-      depth: number;
     }
   | {
       _: Expr_.Get;
@@ -88,8 +89,7 @@ export type Expr =
     }
   | {
       _: Expr_.LocalVariable;
-      index: number;
-      depth: number;
+      name: ReadonlyArray<string>;
     }
   | {
       _: Expr_.EnumTag;
@@ -112,7 +112,6 @@ const enum Expr_ {
   LambdaReturnVoid,
   GlobalVariable,
   ImportedVariable,
-  Argument,
   Get,
   Call,
   New,
@@ -488,7 +487,10 @@ export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
  * @param statementList 本体
  */
 export const lambdaWithReturn = (
-  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  parameterList: ReadonlyArray<{
+    name: ReadonlyArray<string>;
+    typeExpr: typeExpr.TypeExpr;
+  }>,
   returnType: typeExpr.TypeExpr,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
@@ -504,7 +506,10 @@ export const lambdaWithReturn = (
  * @param statementList 本体
  */
 export const lambdaReturnVoid = (
-  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  parameterList: ReadonlyArray<{
+    name: ReadonlyArray<string>;
+    typeExpr: typeExpr.TypeExpr;
+  }>,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
   _: Expr_.LambdaReturnVoid,
@@ -572,31 +577,6 @@ export const newExpr = (
 });
 
 /**
- * 外部のモジュールの変数
- * ```ts
- * importedVariableList("crypto", ["randomBytes", "createHash"] as const).randomBytes
- * ```
- * @param path モジュールのパス
- * @param variableList 変数名の一覧
- */
-export const importedVariableList = <
-  variableList extends ReadonlyArray<string>
->(
-  path: string,
-  variableList: variableList
-): { [name in ValueOf<variableList> & string]: Expr } => {
-  const variableListObject = {} as {
-    [name in ValueOf<variableList> & string]: Expr;
-  };
-  for (const variableName of variableList) {
-    variableListObject[
-      variableName as ValueOf<variableList> & string
-    ] = importedVariable(path, variableName);
-  }
-  return variableListObject;
-};
-
-/**
  * インポートした変数
  * @param path モジュールのパス
  * @param name 変数名
@@ -609,27 +589,6 @@ export const importedVariable = (path: string, name: string): Expr => ({
 
 /**
  * グローバル空間にある変数
- * ```ts
- * globalVariableList(["location", "console"] as const).console
- * ```
- * @param variableList 変数名の一覧
- */
-export const globalVariableList = <variableList extends ReadonlyArray<string>>(
-  variableList: variableList
-): { [name in ValueOf<variableList> & string]: Expr } => {
-  const variableListObject = {} as {
-    [name in ValueOf<variableList> & string]: Expr;
-  };
-  for (const variableName of variableList) {
-    variableListObject[
-      variableName as ValueOf<variableList> & string
-    ] = globalVariable(variableName);
-  }
-  return variableListObject;
-};
-
-/**
- * グローバル空間にある変数
  * @param name 変数名
  */
 export const globalVariable = (name: string): Expr => ({
@@ -639,22 +598,12 @@ export const globalVariable = (name: string): Expr => ({
 
 /**
  * ローカル変数
- * @param depth 何個スコープの外側のものか
- * @param index 何個目変数か
+ * @param name 名前 (出力時には短い名前に変換される)
  */
-export const localVariable = (depth: number, index: number): Expr => {
-  if (depth < 0) {
-    throw new Error("localVariable depth < 0");
-  }
-  if (index < 0) {
-    throw new Error("localVariable index < 0");
-  }
-  return {
-    _: Expr_.LocalVariable,
-    depth,
-    index
-  };
-};
+export const localVariable = (name: ReadonlyArray<string>): Expr => ({
+  _: Expr_.LocalVariable,
+  name
+});
 
 /**
  * 列挙型の値を取得する。`Color.Red`
@@ -666,24 +615,6 @@ export const enumTag = (typeName: string, tagName: string): Expr => ({
   typeName,
   tagName: tagName
 });
-/**
- * ラムダ式などの引数
- * @param depth 何個スコープの外側のものか
- * @param index 何個目の引数か
- */
-export const argument = (depth: number, index: number): Expr => {
-  if (depth < 0) {
-    throw new Error("argument depth < 0");
-  }
-  if (index < 0) {
-    throw new Error("argument index < 0");
-  }
-  return {
-    _: Expr_.Argument,
-    depth,
-    index
-  };
-};
 
 /**
  * 文
@@ -720,23 +651,33 @@ export type Statement =
     }
   | {
       _: Statement_.VariableDefinition;
+      name: ReadonlyArray<string>;
       expr: Expr;
       typeExpr: typeExpr.TypeExpr;
       isConst: boolean;
     }
   | {
       _: Statement_.FunctionWithReturnValueVariableDefinition;
-      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      name: ReadonlyArray<string>;
+      parameterList: ReadonlyArray<{
+        name: ReadonlyArray<string>;
+        typeExpr: typeExpr.TypeExpr;
+      }>;
       returnType: typeExpr.TypeExpr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.ReturnVoidFunctionVariableDefinition;
-      parameterList: ReadonlyArray<typeExpr.TypeExpr>;
+      name: ReadonlyArray<string>;
+      parameterList: ReadonlyArray<{
+        name: ReadonlyArray<string>;
+        typeExpr: typeExpr.TypeExpr;
+      }>;
       statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.For;
+      counterVariableName: ReadonlyArray<string>;
       untilExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
@@ -849,14 +790,17 @@ export const continueStatement = (): Statement => ({
 /**
  * `const a: typeExpr = expr`
  * ローカル変数の定義。変数名は自動で決まる
+ * @param name 名前 (出力時には短い名前に変換される。この名前には`!`を使えない)
  * @param typeExpr 型
  * @param expr 式
  */
 export const variableDefinition = (
+  name: ReadonlyArray<string>,
   typeExpr: typeExpr.TypeExpr,
   expr: Expr
 ): Statement => ({
   _: Statement_.VariableDefinition,
+  name,
   expr,
   typeExpr,
   isConst: true
@@ -865,14 +809,17 @@ export const variableDefinition = (
 /**
  * `let a: typeExpr = expr`
  * 上書きできる変数を定義する
+ * @param name 名前
  * @param typeExpr 型
  * @param expr 式
  */
 export const letVariableDefinition = (
+  name: ReadonlyArray<string>,
   typeExpr: typeExpr.TypeExpr,
   expr: Expr
 ): Statement => ({
   _: Statement_.VariableDefinition,
+  name,
   expr,
   typeExpr,
   isConst: false
@@ -880,17 +827,23 @@ export const letVariableDefinition = (
 
 /**
  * `const a = (parameterList): returnType => { statementList }`
- * ローカル関数の定義。変数名は自動で決まる
+ * ローカル関数の定義
+ * @param name 名前 (出力時には短い名前に変換される。この名前には`!`を使えない)
  * @param parameterList パラメータ
  * @param returnType 戻り値の型
  * @param statementList 関数本体
  */
 export const functionWithReturnValueVariableDefinition = (
-  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  name: ReadonlyArray<string>,
+  parameterList: ReadonlyArray<{
+    name: ReadonlyArray<string>;
+    typeExpr: typeExpr.TypeExpr;
+  }>,
   returnType: typeExpr.TypeExpr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
   _: Statement_.FunctionWithReturnValueVariableDefinition,
+  name,
   parameterList,
   returnType,
   statementList
@@ -898,30 +851,37 @@ export const functionWithReturnValueVariableDefinition = (
 
 /**
  * const a = (parameterList): void => { statementList }
- * 戻り値がないローカル関数の定義。変数名は自動で決まる
+ * 戻り値がないローカル関数の定義
+ * @param name 名前(出力時には短い名前に変換される)
  * @param parameterList パラメータ
  * @param statementList 関数本体
  */
 export const returnVoidFunctionVariableDefinition = (
-  parameterList: ReadonlyArray<typeExpr.TypeExpr>,
+  name: ReadonlyArray<string>,
+  parameterList: ReadonlyArray<{
+    name: ReadonlyArray<string>;
+    typeExpr: typeExpr.TypeExpr;
+  }>,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
   _: Statement_.ReturnVoidFunctionVariableDefinition,
+  name,
   parameterList,
   statementList
 });
 
 /**
  * for (let a = 0; a < untilExpr; a+=1) { statementList }
- * for文。繰り返し。カウンタ変数へのアクセスは `argument` で行う
  * @param untilExpr 繰り返す数 + 1
  * @param statementList 繰り返す内容
  */
 export const forStatement = (
+  counterVariableName: ReadonlyArray<string>,
   untilExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
   _: Statement_.For,
+  counterVariableName,
   statementList,
   untilExpr
 });
@@ -976,7 +936,10 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.LambdaWithReturn:
       for (const oneParameter of expr.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          oneParameter.typeExpr,
+          scanData
+        );
       }
       typeExpr.scanGlobalVariableNameAndImportedPath(expr.returnType, scanData);
       scanGlobalVariableNameAndImportedPathInStatementList(
@@ -987,7 +950,10 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.LambdaReturnVoid:
       for (const oneParameter of expr.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(oneParameter, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          oneParameter.typeExpr,
+          scanData
+        );
       }
       scanGlobalVariableNameAndImportedPathInStatementList(
         expr.statementList,
@@ -1011,9 +977,6 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
         expr.name
       );
       scanData.importedModulePath.add(expr.path);
-      return;
-
-    case Expr_.Argument:
       return;
 
     case Expr_.Get:
@@ -1097,7 +1060,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 
     case Statement_.FunctionWithReturnValueVariableDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(parameter, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          parameter.typeExpr,
+          scanData
+        );
       }
       typeExpr.scanGlobalVariableNameAndImportedPath(
         statement.returnType,
@@ -1111,7 +1077,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
 
     case Statement_.ReturnVoidFunctionVariableDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(parameter, scanData);
+        typeExpr.scanGlobalVariableNameAndImportedPath(
+          parameter.typeExpr,
+          scanData
+        );
       }
       scanGlobalVariableNameAndImportedPathInStatementList(
         statement.statementList,
@@ -1143,10 +1112,7 @@ export const toNamedExpr = (
   reservedWord: ReadonlySet<string>,
   importModuleMap: ReadonlyMap<string, string>,
   identiferIndex: identifer.IdentiferIndex,
-  argumentAndLocalVariableNameList: ReadonlyArray<{
-    argument: ReadonlyArray<string>;
-    variable: ReadonlyArray<string>;
-  }>,
+  localVariableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
   exposedConstEnumMap: type.ExportConstEnumMap
 ): namedExpr.Expr => {
   switch (expr._) {
@@ -1182,7 +1148,7 @@ export const toNamedExpr = (
             reservedWord,
             importModuleMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            localVariableNameMapList,
             exposedConstEnumMap
           )
         )
@@ -1198,7 +1164,7 @@ export const toNamedExpr = (
               reservedWord,
               importModuleMap,
               identiferIndex,
-              argumentAndLocalVariableNameList,
+              localVariableNameMapList,
               exposedConstEnumMap
             )
           ])
@@ -1212,7 +1178,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         operator: expr.operator
@@ -1225,7 +1191,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         right: toNamedExpr(
@@ -1233,7 +1199,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         operator: expr.operator
@@ -1246,7 +1212,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         elseExpr: toNamedExpr(
@@ -1254,7 +1220,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         thenExpr: toNamedExpr(
@@ -1262,26 +1228,28 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         )
       };
     case Expr_.LambdaWithReturn: {
-      const parameterList: Array<{
+      const parameterNameMap: Array<{
+        oldName: string;
         name: string;
         typeExpr: namedTypeExpr.TypeExpr;
       }> = [];
       let identiferIndex = identifer.initialIdentiferIndex;
-      for (const parameterType of expr.parameterList) {
+      for (const parameter of expr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
           reservedWord
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
-        parameterList.push({
+        parameterNameMap.push({
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndNextIndex.identifer,
           typeExpr: typeExpr.toNamed(
-            parameterType,
+            parameter.typeExpr,
             reservedWord,
             importModuleMap
           )
@@ -1289,7 +1257,7 @@ export const toNamedExpr = (
       }
       return {
         _: namedExpr.Expr_.LambdaWithReturn,
-        parameterList,
+        parameterList: parameterNameMap,
         returnType: typeExpr.toNamed(
           expr.returnType,
           reservedWord,
@@ -1300,28 +1268,35 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
-          parameterList.map(parameter => parameter.name),
+          localVariableNameMapList,
+          new Map(
+            parameterNameMap.map(parameter => [
+              parameter.oldName,
+              parameter.name
+            ])
+          ),
           exposedConstEnumMap
         )
       };
     }
     case Expr_.LambdaReturnVoid: {
       const parameterList: Array<{
+        oldName: string;
         name: string;
         typeExpr: namedTypeExpr.TypeExpr;
       }> = [];
       let identiferIndex = identifer.initialIdentiferIndex;
-      for (const parameterType of expr.parameterList) {
+      for (const parameter of expr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
           reservedWord
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndNextIndex.identifer,
           typeExpr: typeExpr.toNamed(
-            parameterType,
+            parameter.typeExpr,
             reservedWord,
             importModuleMap
           )
@@ -1335,8 +1310,10 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
-          parameterList.map(parameter => parameter.name),
+          localVariableNameMapList,
+          new Map(
+            parameterList.map(parameter => [parameter.oldName, parameter.name])
+          ),
           exposedConstEnumMap
         )
       };
@@ -1364,21 +1341,6 @@ export const toNamedExpr = (
       };
     }
 
-    case Expr_.Argument: {
-      const name = getElementByLastIndex(
-        argumentAndLocalVariableNameList,
-        expr.depth
-      ).argument[expr.index];
-      if (name === undefined) {
-        throw Error(
-          "範囲外の引数を指定されました index=" + expr.index.toString()
-        );
-      }
-      return {
-        _: namedExpr.Expr_.Argument,
-        name
-      };
-    }
     case Expr_.Get:
       return {
         _: namedExpr.Expr_.Get,
@@ -1387,7 +1349,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         propertyName: toNamedExpr(
@@ -1395,7 +1357,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         )
       };
@@ -1408,7 +1370,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         parameterList: expr.parameterList.map(parameter =>
@@ -1417,7 +1379,7 @@ export const toNamedExpr = (
             reservedWord,
             importModuleMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            localVariableNameMapList,
             exposedConstEnumMap
           )
         )
@@ -1430,7 +1392,7 @@ export const toNamedExpr = (
           reservedWord,
           importModuleMap,
           identiferIndex,
-          argumentAndLocalVariableNameList,
+          localVariableNameMapList,
           exposedConstEnumMap
         ),
         parameterList: expr.parameterList.map(parameter =>
@@ -1439,24 +1401,15 @@ export const toNamedExpr = (
             reservedWord,
             importModuleMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            localVariableNameMapList,
             exposedConstEnumMap
           )
         )
       };
     case Expr_.LocalVariable: {
-      const name = getElementByLastIndex(
-        argumentAndLocalVariableNameList,
-        expr.depth
-      ).variable[expr.index];
-      if (name === undefined) {
-        throw new Error(
-          "範囲外のローカル変数を指定されました index=" + expr.index.toString()
-        );
-      }
       return {
         _: namedExpr.Expr_.LocalVariable,
-        name
+        name: searchName(localVariableNameMapList, expr.name)
       };
     }
 
@@ -1491,19 +1444,33 @@ export const toNamedExpr = (
   }
 };
 
+const searchName = (
+  localVariableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
+  oldName: ReadonlyArray<string>
+): string => {
+  for (let i = 0; i < localVariableNameMapList.length; i++) {
+    const variable = localVariableNameMapList[
+      localVariableNameMapList.length - 1 - i
+    ].get(variableNameListToMapKey(oldName));
+    if (variable !== undefined) {
+      return variable;
+    }
+  }
+  throw new Error(
+    "存在しない変数を指定されました name=" + variableNameListToMapKey(oldName)
+  );
+};
+
 export const toNamedStatementList = (
   statementList: ReadonlyArray<Statement>,
   reservedWord: ReadonlySet<string>,
   importedModuleNameMap: ReadonlyMap<string, string>,
   identiferIndex: identifer.IdentiferIndex,
-  argumentAndLocalVariableNameList: ReadonlyArray<{
-    argument: ReadonlyArray<string>;
-    variable: ReadonlyArray<string>;
-  }>,
-  argumentNameList: ReadonlyArray<string>,
+  localVariableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
+  argumentNameMap: ReadonlyMap<string, string>,
   exposedConstEnumMap: type.ExportConstEnumMap
 ): ReadonlyArray<namedExpr.Statement> => {
-  const variableNameInScopeList: Array<string> = [];
+  const variableNameInScopeList: Map<string, string> = new Map();
 
   // スコープ内にある変数定義を見て、変数名を決める
   for (const statement of statementList) {
@@ -1515,17 +1482,20 @@ export const toNamedStatementList = (
           identiferIndex,
           reservedWord
         );
-        variableNameInScopeList.push(identiferAndIndex.identifer);
+        variableNameInScopeList.set(
+          variableNameListToMapKey(statement.name),
+          identiferAndIndex.identifer
+        );
         identiferIndex = identiferAndIndex.nextIdentiferIndex;
       }
     }
   }
-  const newArgumentAndLocalVariableNameList: ReadonlyArray<{
-    argument: ReadonlyArray<string>;
-    variable: ReadonlyArray<string>;
-  }> = [
-    ...argumentAndLocalVariableNameList,
-    { argument: argumentNameList, variable: variableNameInScopeList }
+  const newArgumentVariableNameMapList: ReadonlyArray<ReadonlyMap<
+    string,
+    string
+  >> = [
+    ...localVariableNameMapList,
+    new Map([...argumentNameMap, ...variableNameInScopeList])
   ];
   const namedStatementList: Array<namedExpr.Statement> = [];
   let variableDefinitionIndex = 0;
@@ -1535,7 +1505,7 @@ export const toNamedStatementList = (
       reservedWord,
       importedModuleNameMap,
       identiferIndex,
-      newArgumentAndLocalVariableNameList,
+      newArgumentVariableNameMapList,
       variableDefinitionIndex,
       exposedConstEnumMap
     );
@@ -1550,10 +1520,7 @@ export const toNamedStatement = (
   reservedWord: ReadonlySet<string>,
   importedModuleNameMap: ReadonlyMap<string, string>,
   identiferIndex: identifer.IdentiferIndex,
-  argumentAndLocalVariableNameList: ReadonlyArray<{
-    argument: ReadonlyArray<string>;
-    variable: ReadonlyArray<string>;
-  }>,
+  variableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
   variableDefinitionIndex: number,
   exposedConstEnumMap: type.ExportConstEnumMap
 ): { statement: namedExpr.Statement; index: number } => {
@@ -1567,7 +1534,7 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           )
         },
@@ -1582,7 +1549,7 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           ),
           operator: statement.operator,
@@ -1591,7 +1558,7 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           )
         },
@@ -1607,7 +1574,7 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           ),
           thenStatementList: toNamedStatementList(
@@ -1615,8 +1582,8 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
-            [],
+            variableNameMapList,
+            new Map(),
             exposedConstEnumMap
           )
         },
@@ -1640,7 +1607,7 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           )
         },
@@ -1671,11 +1638,10 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           ),
-          name: getElementByLastIndex(argumentAndLocalVariableNameList, 0)
-            .variable[variableDefinitionIndex],
+          name: searchName(variableNameMapList, statement.name),
           typeExpr: typeExpr.toNamed(
             statement.typeExpr,
             reservedWord,
@@ -1687,6 +1653,7 @@ export const toNamedStatement = (
       };
     case Statement_.FunctionWithReturnValueVariableDefinition: {
       const namedParameterList: Array<{
+        oldName: string;
         name: string;
         typeExpr: namedTypeExpr.TypeExpr;
       }> = [];
@@ -1696,9 +1663,10 @@ export const toNamedStatement = (
           reservedWord
         );
         namedParameterList.push({
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndIndex.identifer,
           typeExpr: typeExpr.toNamed(
-            parameter,
+            parameter.typeExpr,
             reservedWord,
             importedModuleNameMap
           )
@@ -1708,8 +1676,7 @@ export const toNamedStatement = (
       return {
         statement: {
           _: namedExpr.Statement_.FunctionWithReturnValueVariableDefinition,
-          name: getElementByLastIndex(argumentAndLocalVariableNameList, 0)
-            .variable[variableDefinitionIndex],
+          name: searchName(variableNameMapList, statement.name),
           parameterList: namedParameterList,
           returnType: typeExpr.toNamed(
             statement.returnType,
@@ -1721,8 +1688,13 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
-            namedParameterList.map(parameter => parameter.name),
+            variableNameMapList,
+            new Map(
+              namedParameterList.map(parameter => [
+                parameter.oldName,
+                parameter.name
+              ])
+            ),
             exposedConstEnumMap
           )
         },
@@ -1731,6 +1703,7 @@ export const toNamedStatement = (
     }
     case Statement_.ReturnVoidFunctionVariableDefinition: {
       const namedParameterList: Array<{
+        oldName: string;
         name: string;
         typeExpr: namedTypeExpr.TypeExpr;
       }> = [];
@@ -1740,9 +1713,10 @@ export const toNamedStatement = (
           reservedWord
         );
         namedParameterList.push({
+          oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndIndex.identifer,
           typeExpr: typeExpr.toNamed(
-            parameter,
+            parameter.typeExpr,
             reservedWord,
             importedModuleNameMap
           )
@@ -1752,16 +1726,20 @@ export const toNamedStatement = (
       return {
         statement: {
           _: namedExpr.Statement_.ReturnVoidFunctionVariableDefinition,
-          name: getElementByLastIndex(argumentAndLocalVariableNameList, 0)
-            .variable[variableDefinitionIndex],
+          name: searchName(variableNameMapList, statement.name),
           parameterList: namedParameterList,
           statementList: toNamedStatementList(
             statement.statementList,
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
-            namedParameterList.map(parameter => parameter.name),
+            variableNameMapList,
+            new Map(
+              namedParameterList.map(parameter => [
+                parameter.oldName,
+                parameter.name
+              ])
+            ),
             exposedConstEnumMap
           )
         },
@@ -1782,8 +1760,13 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             counterVariableNameAndIndex.nextIdentiferIndex,
-            argumentAndLocalVariableNameList,
-            [counterVariableNameAndIndex.identifer],
+            variableNameMapList,
+            new Map([
+              [
+                variableNameListToMapKey(statement.counterVariableName),
+                counterVariableNameAndIndex.identifer
+              ]
+            ]),
             exposedConstEnumMap
           ),
           untilExpr: toNamedExpr(
@@ -1791,7 +1774,7 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
+            variableNameMapList,
             exposedConstEnumMap
           )
         },
@@ -1807,8 +1790,8 @@ export const toNamedStatement = (
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
-            argumentAndLocalVariableNameList,
-            [],
+            variableNameMapList,
+            new Map(),
             exposedConstEnumMap
           )
         },
@@ -1825,17 +1808,7 @@ export const toNamedStatement = (
 };
 
 /**
- * 配列の要素を最後のインデックスから取得する
- * @param array 配列
- * @param index 0から始まるindex
+ * JSのMapのキーに配列を使った場合、参照でしか等しいか計算しないため、文字列に変換している
  */
-const getElementByLastIndex = <T>(
-  array: ReadonlyArray<T>,
-  index: number
-): T => {
-  const element = array[array.length - 1 - index];
-  if (element === undefined) {
-    throw new Error("index error");
-  }
-  return element;
-};
+const variableNameListToMapKey = (nameList: ReadonlyArray<string>): string =>
+  nameList.join("!");
