@@ -462,6 +462,23 @@ export const logicalOr = (left: Expr, right: Expr): Expr => ({
 });
 
 /**
+ * 条件演算子 `a ? b : c`
+ * @param condition a
+ * @param thenExpr b
+ * @param elseExpr c
+ */
+export const conditionalOperator = (
+  condition: Expr,
+  thenExpr: Expr,
+  elseExpr: Expr
+): Expr => ({
+  _: Expr_.ConditionalOperator,
+  condition,
+  thenExpr,
+  elseExpr
+});
+
+/**
  * 配列リテラル `[1, 2, 3]`
  */
 export const arrayLiteral = (exprList: ReadonlyArray<Expr>): Expr => ({
