@@ -391,7 +391,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
             namedExpr.CodeType.TypeScript
           )
       )
-      .join("\n\n") +
+      .join(";\n\n") +
     "\n" +
     (code.statementList.length === 0
       ? ""
@@ -458,7 +458,7 @@ export const toESModulesBrowserCode = (code: Code): string => {
             namedExpr.CodeType.JavaScript
           )
       )
-      .join("\n\n") +
+      .join(";\n\n") +
     "\n" +
     (code.statementList.length === 0
       ? ""

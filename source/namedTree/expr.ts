@@ -637,7 +637,7 @@ const statementToTypeScriptCodeAsString = (
     case Statement_.Return:
       return (
         indentString +
-        "return" +
+        "return " +
         exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
