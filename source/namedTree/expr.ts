@@ -610,7 +610,7 @@ const statementToTypeScriptCodeAsString = (
         indentString +
         exprToCodeAsString(statement.targetObject, indent, codeType) +
         codeTypeSpace(codeType) +
-        (statement.operator ?? "") +
+        (statement.operator === null ? "" : statement.operator) +
         "=" +
         codeTypeSpace(codeType) +
         exprToCodeAsString(statement.expr, indent, codeType) +
