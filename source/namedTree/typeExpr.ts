@@ -103,14 +103,14 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
 
     case TypeExpr_.Object:
       return (
-        "{" +
+        "{ " +
         [...typeExpr.memberList.entries()]
           .map(
             ([name, typeAndDocument]) =>
               name + ": " + typeExprToString(typeAndDocument.typeExpr)
           )
           .join(", ") +
-        "}"
+        " }"
       );
 
     case TypeExpr_.FunctionWithReturn:
