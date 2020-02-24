@@ -10,28 +10,30 @@ describe("test", () => {
   ] as const);
 
   const sampleCode: generator.Code = {
-    exportTypeAliasList: [],
+    exportTypeAliasMap: new Map(),
     exportConstEnumMap: new Map(),
-    exportFunctionList: [
-      generator.exportFunction({
-        name: "middleware",
-        document: "ミドルウェア",
-        statementList: [],
-        parameterList: [
-          {
-            name: "request",
-            document: "expressのリクエスト",
-            typeExpr: expressType.Request
-          },
-          {
-            name: "response",
-            document: "expressのレスポンス",
-            typeExpr: expressType.Response
-          }
-        ],
-        returnType: null
-      })
-    ],
+    exportFunctionMap: new Map([
+      [
+        "middleware",
+        {
+          document: "ミドルウェア",
+          statementList: [],
+          parameterList: [
+            {
+              name: "request",
+              document: "expressのリクエスト",
+              typeExpr: expressType.Request
+            },
+            {
+              name: "response",
+              document: "expressのレスポンス",
+              typeExpr: expressType.Response
+            }
+          ],
+          returnType: null
+        }
+      ]
+    ]),
     statementList: []
   };
   const start = performance.now();
@@ -56,17 +58,20 @@ describe("test", () => {
   it("not include revered word", () => {
     expect(() => {
       generator.toNodeJsOrBrowserCodeAsTypeScript({
-        exportTypeAliasList: [],
+        exportTypeAliasMap: new Map(),
         exportConstEnumMap: new Map(),
-        exportFunctionList: [
-          generator.exportFunction({
-            name: "new",
-            document: "newという名前の関数",
-            parameterList: [],
-            returnType: null,
-            statementList: []
-          })
-        ],
+        exportFunctionMap: new Map([
+          [
+            "new",
+            {
+              name: "new",
+              document: "newという名前の関数",
+              parameterList: [],
+              returnType: null,
+              statementList: []
+            }
+          ]
+        ]),
         statementList: []
       });
     }).toThrow();
@@ -74,17 +79,19 @@ describe("test", () => {
   it("識別子として使えない文字はエラー", () => {
     expect(() => {
       generator.toNodeJsOrBrowserCodeAsTypeScript({
-        exportTypeAliasList: [],
+        exportTypeAliasMap: new Map(),
         exportConstEnumMap: new Map(),
-        exportFunctionList: [
-          generator.exportFunction({
-            name: "0name",
-            document: "0から始まる識別子",
-            parameterList: [],
-            returnType: null,
-            statementList: []
-          })
-        ],
+        exportFunctionMap: new Map([
+          [
+            "0name",
+            {
+              document: "0から始まる識別子",
+              parameterList: [],
+              returnType: null,
+              statementList: []
+            }
+          ]
+        ]),
         statementList: []
       });
     }).toThrow();
@@ -109,25 +116,28 @@ describe("test", () => {
   });
   it("escape string literal", () => {
     const nodeJsCode: generator.Code = {
-      exportTypeAliasList: [],
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
-      exportFunctionList: [
-        generator.exportFunction({
-          name: "stringValue",
-          document: "文字列リテラルでエスケープしているか調べる",
-          parameterList: [],
-          returnType: generator.typeExpr.typeString,
-          statementList: [
-            expr.returnStatement(
-              expr.stringLiteral(`
+      exportFunctionMap: new Map([
+        [
+          "stringValue",
+          {
+            name: "stringValue",
+            document: "文字列リテラルでエスケープしているか調べる",
+            parameterList: [],
+            returnType: generator.typeExpr.typeString,
+            statementList: [
+              expr.returnStatement(
+                expr.stringLiteral(`
 
               改行
               "ダブルクオーテーション"
       `)
-            )
-          ]
-        })
-      ],
+              )
+            ]
+          }
+        ]
+      ]),
       statementList: []
     };
     const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
@@ -144,60 +154,62 @@ describe("test", () => {
       "Response"
     ] as const);
     const nodeJsCode: generator.Code = {
-      exportTypeAliasList: [],
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
-      exportFunctionList: [
-        generator.exportFunction({
-          name: "middleware",
-          document: "ミドルウェア",
-          parameterList: [
-            {
-              name: "request",
-              document: "リクエスト",
-              typeExpr: expressType.Request
-            },
-            {
-              name: "response",
-              document: "レスポンス",
-              typeExpr: expressType.Response
-            }
-          ],
-          returnType: null,
-          statementList: [
-            expr.variableDefinition(
-              ["accept"],
-              typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
-              expr.get(
-                expr.get(expr.localVariable(["request"]), "headers"),
-                "accept"
-              )
-            ),
-            expr.ifStatement(
-              expr.logicalAnd(
-                expr.notEqual(
-                  expr.localVariable(["accept"]),
-                  expr.undefinedLiteral
-                ),
-                expr.callMethod(expr.localVariable(["accept"]), "includes", [
-                  expr.stringLiteral("text/html")
-                ])
-              ),
-              [
-                expr.evaluateExpr(
-                  expr.callMethod(
-                    expr.localVariable(["response"]),
-                    "setHeader",
-                    [
-                      expr.stringLiteral("content-type"),
-                      expr.stringLiteral("text/html")
-                    ]
-                  )
+      exportFunctionMap: new Map([
+        [
+          "middleware",
+          {
+            document: "ミドルウェア",
+            parameterList: [
+              {
+                name: "request",
+                document: "リクエスト",
+                typeExpr: expressType.Request
+              },
+              {
+                name: "response",
+                document: "レスポンス",
+                typeExpr: expressType.Response
+              }
+            ],
+            returnType: null,
+            statementList: [
+              expr.variableDefinition(
+                ["accept"],
+                typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
+                expr.get(
+                  expr.get(expr.localVariable(["request"]), "headers"),
+                  "accept"
                 )
-              ]
-            )
-          ]
-        })
-      ],
+              ),
+              expr.ifStatement(
+                expr.logicalAnd(
+                  expr.notEqual(
+                    expr.localVariable(["accept"]),
+                    expr.undefinedLiteral
+                  ),
+                  expr.callMethod(expr.localVariable(["accept"]), "includes", [
+                    expr.stringLiteral("text/html")
+                  ])
+                ),
+                [
+                  expr.evaluateExpr(
+                    expr.callMethod(
+                      expr.localVariable(["response"]),
+                      "setHeader",
+                      [
+                        expr.stringLiteral("content-type"),
+                        expr.stringLiteral("text/html")
+                      ]
+                    )
+                  )
+                ]
+              )
+            ]
+          }
+        ]
+      ]),
       statementList: []
     };
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript(nodeJsCode);
@@ -208,35 +220,37 @@ describe("test", () => {
     const globalType = typeExpr.globalTypeList(["Uint8Array"] as const);
 
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasList: [],
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
-      exportFunctionList: [
-        generator.exportFunction({
-          name: "getZeroIndexElement",
-          document: "Uint8Arrayの0番目の要素を取得する",
-          parameterList: [
-            {
-              name: "array",
-              document: "Uint8Array",
-              typeExpr: globalType.Uint8Array
-            }
-          ],
-          returnType: typeExpr.typeNumber,
-          statementList: [
-            expr.returnStatement(
-              expr.getByExpr(expr.localVariable(["array"]), expr.literal(0))
-            )
-          ]
-        })
-      ],
+      exportFunctionMap: new Map([
+        [
+          "getZeroIndexElement",
+          {
+            document: "Uint8Arrayの0番目の要素を取得する",
+            parameterList: [
+              {
+                name: "array",
+                document: "Uint8Array",
+                typeExpr: globalType.Uint8Array
+              }
+            ],
+            returnType: typeExpr.typeNumber,
+            statementList: [
+              expr.returnStatement(
+                expr.getByExpr(expr.localVariable(["array"]), expr.literal(0))
+              )
+            ]
+          }
+        ]
+      ]),
       statementList: []
     });
     console.log(code);
     expect(code).toMatch("[0]");
   });
   const scopedCode = generator.toESModulesBrowserCode({
-    exportTypeAliasList: [],
-    exportFunctionList: [],
+    exportTypeAliasMap: new Map(),
+    exportFunctionMap: new Map(),
     exportConstEnumMap: new Map(),
     statementList: [
       expr.variableDefinition(
@@ -262,18 +276,20 @@ describe("test", () => {
   it("type parameter", () => {
     const globalType = typeExpr.globalTypeList(["Promise"] as const);
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportFunctionList: [
-        {
-          name: "sample",
-          document: "",
-          parameterList: [],
-          returnType: typeExpr.withTypeParameter(globalType.Promise, [
-            typeExpr.typeString
-          ]),
-          statementList: []
-        }
-      ],
-      exportTypeAliasList: [],
+      exportFunctionMap: new Map([
+        [
+          "sample",
+          {
+            document: "",
+            parameterList: [],
+            returnType: typeExpr.withTypeParameter(globalType.Promise, [
+              typeExpr.typeString
+            ]),
+            statementList: []
+          }
+        ]
+      ]),
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
       statementList: []
     });
@@ -282,8 +298,8 @@ describe("test", () => {
   });
   it("object literal key is escaped", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportFunctionList: [],
-      exportTypeAliasList: [],
+      exportFunctionMap: new Map(),
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
       statementList: [
         expr.evaluateExpr(
@@ -301,8 +317,8 @@ describe("test", () => {
   });
   it("binary operator combine", () => {
     const code = generator.toESModulesBrowserCode({
-      exportFunctionList: [],
-      exportTypeAliasList: [],
+      exportFunctionMap: new Map(),
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
       statementList: [
         expr.evaluateExpr(
@@ -335,7 +351,7 @@ describe("test", () => {
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
   });
   const constEnumCode: generator.Code = {
-    exportTypeAliasList: [],
+    exportTypeAliasMap: new Map(),
     exportConstEnumMap: new Map([
       [
         "Color",
@@ -346,15 +362,17 @@ describe("test", () => {
         ])
       ]
     ]),
-    exportFunctionList: [
-      {
-        name: "red",
-        document: "赤",
-        parameterList: [],
-        returnType: typeExpr.enumTagLiteral("Color", "Red"),
-        statementList: [expr.returnStatement(expr.enumTag("Color", "Red"))]
-      }
-    ],
+    exportFunctionMap: new Map([
+      [
+        "red",
+        {
+          document: "赤",
+          parameterList: [],
+          returnType: typeExpr.enumTagLiteral("Color", "Red"),
+          statementList: [expr.returnStatement(expr.enumTag("Color", "Red"))]
+        }
+      ]
+    ]),
     statementList: [expr.evaluateExpr(expr.enumTag("Color", "Red"))]
   };
   it("export const enum in TypeScript", () => {
@@ -371,24 +389,26 @@ describe("test", () => {
   });
   it("object literal return need parenthesis", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasList: [],
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
-      exportFunctionList: [
-        {
-          name: "returnObject",
-          document: "",
-          parameterList: [],
-          returnType: typeExpr.object(
-            new Map([
-              ["name", { typeExpr: typeExpr.typeString, document: "" }],
-              ["age", { typeExpr: typeExpr.typeNumber, document: "" }]
-            ])
-          ),
-          statementList: [
-            expr.returnStatement(expr.literal({ name: "mac", age: 10 }))
-          ]
-        }
-      ],
+      exportFunctionMap: new Map([
+        [
+          "returnObject",
+          {
+            document: "",
+            parameterList: [],
+            returnType: typeExpr.object(
+              new Map([
+                ["name", { typeExpr: typeExpr.typeString, document: "" }],
+                ["age", { typeExpr: typeExpr.typeNumber, document: "" }]
+              ])
+            ),
+            statementList: [
+              expr.returnStatement(expr.literal({ name: "mac", age: 10 }))
+            ]
+          }
+        ]
+      ]),
       statementList: []
     });
     console.log(code);
@@ -396,9 +416,9 @@ describe("test", () => {
   });
   it("let variable", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasList: [],
+      exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
-      exportFunctionList: [],
+      exportFunctionMap: new Map(),
       statementList: [
         expr.letVariableDefinition(
           ["v"],

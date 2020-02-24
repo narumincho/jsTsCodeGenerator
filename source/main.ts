@@ -18,7 +18,7 @@ export type Code = {
   /**
    * 外部に公開する型定義
    */
-  readonly exportTypeAliasList: ReadonlyArray<ExportTypeAlias>;
+  readonly exportTypeAliasMap: ReadonlyMap<string, ExportTypeAlias>;
   /**
    * 外部に公開する列挙型
    */
@@ -26,7 +26,7 @@ export type Code = {
   /**
    * 外部に公開する関数
    */
-  readonly exportFunctionList: ReadonlyArray<ExportFunction>;
+  readonly exportFunctionMap: ReadonlyMap<string, ExportFunction>;
   /**
    * 公開する関数を定義した後に実行するコード
    */
@@ -34,48 +34,13 @@ export type Code = {
 };
 
 export type ExportTypeAlias = {
-  readonly name: string;
+  /** ドキュメント */
   readonly document: string;
+  /** 式 */
   readonly typeExpr: indexedTypeExpr.TypeExpr;
 };
 
-/**
- * 外部に公開する型定義
- * @param name 型定義名
- * @param document ドキュメント
- * @param typeExpr 式
- * @throws 使えない名前だった
- */
-export const exportTypeAlias = (data: ExportTypeAlias): ExportTypeAlias => {
-  identifer.checkIdentiferThrow(
-    "export type alias name",
-    "外部に公開する型定義の名前",
-    data.name
-  );
-  return data;
-};
-
-export const exportConstEnum = ([name, tagNameAndValueList]: [
-  string,
-  type.ExportConstEnumTagNameAndValueList
-]): [string, type.ExportConstEnumTagNameAndValueList] => {
-  identifer.checkIdentiferThrow(
-    "export const enum name",
-    "外部に公開する列挙型の名前",
-    name
-  );
-  for (const tagName of tagNameAndValueList.keys()) {
-    identifer.checkIdentiferThrow(
-      "const enum member",
-      "列挙型のパターン",
-      tagName
-    );
-  }
-  return [name, tagNameAndValueList];
-};
-
 export type ExportFunction = {
-  readonly name: string;
   readonly document: string;
   readonly parameterList: ReadonlyArray<{
     readonly name: string;
@@ -86,25 +51,6 @@ export type ExportFunction = {
   readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
-/**
- * 外部に公開する関数
- * @throws 使えない名前が含まれている
- */
-export const exportFunction = (data: ExportFunction): ExportFunction => {
-  identifer.checkIdentiferThrow(
-    "export function parameter name",
-    "外部に公開する変数名",
-    data.name
-  );
-  for (const parameter of data.parameterList) {
-    identifer.checkIdentiferThrow(
-      "export function parameter name",
-      "外部に公開する関数の引数名",
-      parameter.name
-    );
-  }
-  return data;
-};
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
@@ -114,13 +60,13 @@ export const exportFunction = (data: ExportFunction): ExportFunction => {
  */
 const scanCode = (code: Code): type.ScanData => {
   const scanData: type.ScanData = type.init;
-  for (const exportTypeAlias of code.exportTypeAliasList) {
+  for (const [name, exportTypeAlias] of code.exportTypeAliasMap) {
     identifer.checkIdentiferThrow(
       "export type name",
       "外部に公開する型の名前",
-      exportTypeAlias.name
+      name
     );
-    scanData.globalNameSet.add(exportTypeAlias.name);
+    scanData.globalNameSet.add(name);
     indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
       exportTypeAlias.typeExpr,
       scanData
@@ -140,13 +86,13 @@ const scanCode = (code: Code): type.ScanData => {
       );
     }
   }
-  for (const exportVariable of code.exportFunctionList) {
+  for (const [name, exportVariable] of code.exportFunctionMap) {
     identifer.checkIdentiferThrow(
       "export variable name",
       "外部に公開する変数名",
-      exportVariable.name
+      name
     );
-    scanData.globalNameSet.add(exportVariable.name);
+    scanData.globalNameSet.add(name);
     for (const parameter of exportVariable.parameterList) {
       identifer.checkIdentiferThrow(
         "export function parameter name",
@@ -205,7 +151,6 @@ const createImportedModuleName = (
 };
 
 type NamedExportFunction = {
-  readonly name: string;
   readonly document: string;
   readonly parameterList: ReadonlyArray<{
     readonly name: string;
@@ -218,22 +163,25 @@ type NamedExportFunction = {
 
 /** 外部に公開する型定義に名前をつける */
 const toNamedExportTypeAliasList = (
-  exportTypeAliasList: ReadonlyArray<ExportTypeAlias>,
+  exportTypeAliasList: ReadonlyMap<string, ExportTypeAlias>,
   globalNameSet: ReadonlySet<string>,
   importedModuleNameIdentiferMap: ReadonlyMap<string, string>
-): ReadonlyArray<{
-  readonly name: string;
-  readonly document: string;
-  readonly typeExpr: namedTypeExpr.TypeExpr;
-}> => {
-  const namedList: Array<{
-    readonly name: string;
+): ReadonlyMap<
+  string,
+  {
     readonly document: string;
     readonly typeExpr: namedTypeExpr.TypeExpr;
-  }> = [];
-  for (const exportTypeAlias of exportTypeAliasList) {
-    namedList.push({
-      name: exportTypeAlias.name,
+  }
+> => {
+  const namedMap: Map<
+    string,
+    {
+      readonly document: string;
+      readonly typeExpr: namedTypeExpr.TypeExpr;
+    }
+  > = new Map();
+  for (const [name, exportTypeAlias] of exportTypeAliasList) {
+    namedMap.set(name, {
       document: exportTypeAlias.document,
       typeExpr: indexedTypeExpr.toNamed(
         exportTypeAlias.typeExpr,
@@ -242,25 +190,24 @@ const toNamedExportTypeAliasList = (
       )
     });
   }
-  return namedList;
+  return namedMap;
 };
 
 /**
  * 外部に公開する関数に名前をつける
  */
 const toNamedExportFunctionList = (
-  exportFunctionList: ReadonlyArray<ExportFunction>,
+  exportFunctionList: ReadonlyMap<string, ExportFunction>,
   globalNameSet: ReadonlySet<string>,
   importedModuleNameIdentiferMap: ReadonlyMap<string, string>,
   identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex,
   exposedConstEnumType: type.ExportConstEnumMap
-): ReadonlyArray<NamedExportFunction> => {
-  const namedList: Array<NamedExportFunction> = [];
+): ReadonlyMap<string, NamedExportFunction> => {
+  const namedMap: Map<string, NamedExportFunction> = new Map();
 
   // 外部に公開する関数を名前付けした構造にする
-  for (const exportFunction of exportFunctionList) {
-    namedList.push({
-      name: exportFunction.name,
+  for (const [name, exportFunction] of exportFunctionList) {
+    namedMap.set(name, {
       document: exportFunction.document,
       parameterList: exportFunction.parameterList.map(parameter => ({
         name: parameter.name,
@@ -295,7 +242,7 @@ const toNamedExportFunctionList = (
       )
     });
   }
-  return namedList;
+  return namedMap;
 };
 
 export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
@@ -311,14 +258,14 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
     globalNameSet
   );
 
-  const namedExportTypeAliasList = toNamedExportTypeAliasList(
-    code.exportTypeAliasList,
+  const namedExportTypeAliasMap = toNamedExportTypeAliasList(
+    code.exportTypeAliasMap,
     globalNameSet,
     importedModuleNameMap
   );
 
-  const namedExportFunctionList = toNamedExportFunctionList(
-    code.exportFunctionList,
+  const namedExportFunctionMap = toNamedExportFunctionList(
+    code.exportFunctionMap,
     globalNameSet,
     importedModuleNameMap,
     nextIdentiferIndex,
@@ -334,13 +281,13 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
               "import * as " + identifer + ' from "' + path + '"'
           )
           .join(";\n") + ";\n") +
-    namedExportTypeAliasList
+    [...namedExportTypeAliasMap]
       .map(
-        exportTypeAlias =>
+        ([name, exportTypeAlias]): string =>
           "/**\n * " +
           exportTypeAlias.document.split("\n").join("\n * ") +
           "\n */\nexport type " +
-          exportTypeAlias.name +
+          name +
           " = " +
           namedTypeExpr.typeExprToString(exportTypeAlias.typeExpr)
       )
@@ -348,7 +295,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
     "\n" +
     [...code.exportConstEnumMap]
       .map(
-        ([name, tagNameAndValueList]) =>
+        ([name, tagNameAndValueList]): string =>
           "export const enum " +
           name +
           " {\n" +
@@ -361,9 +308,9 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
       )
       .join("\n") +
     "\n" +
-    namedExportFunctionList
+    [...namedExportFunctionMap]
       .map(
-        (exportFunction): string =>
+        ([name, exportFunction]): string =>
           "/**\n * " +
           exportFunction.document.split("\n").join("\n * ") +
           "\n" +
@@ -371,7 +318,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
             .map(p => " * @param " + p.name + " " + p.document)
             .join("\n") +
           "\n */\nexport const " +
-          exportFunction.name +
+          name +
           " = (" +
           exportFunction.parameterList
             .map(
@@ -426,8 +373,8 @@ export const toESModulesBrowserCode = (code: Code): string => {
     globalNameSet
   );
 
-  const namedExportFunctionList = toNamedExportFunctionList(
-    code.exportFunctionList,
+  const namedExportFunctionMap = toNamedExportFunctionList(
+    code.exportFunctionMap,
     globalNameSet,
     importedModuleNameMap,
     nextIdentiferIndex,
@@ -443,11 +390,11 @@ export const toESModulesBrowserCode = (code: Code): string => {
               "import * as " + identifer + ' from "' + url + '"'
           )
           .join(";\n") + ";\n") +
-    namedExportFunctionList
+    [...namedExportFunctionMap]
       .map(
-        (exportFunction): string =>
+        ([name, exportFunction]): string =>
           "export const " +
-          exportFunction.name +
+          name +
           "=(" +
           exportFunction.parameterList
             .map(parameter => parameter.name)
