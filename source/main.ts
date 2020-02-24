@@ -8,6 +8,7 @@ import * as namedTypeExpr from "./namedTree/typeExpr";
 export { indexedTypeExpr as typeExpr };
 export { indexedExpr as expr };
 export { type };
+export { identifer };
 
 /**
  * TypeScriptやJavaScriptのコードを表現する。
