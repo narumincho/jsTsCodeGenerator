@@ -40,25 +40,6 @@ export type ExportTypeAlias = {
   readonly typeExpr: indexedTypeExpr.TypeExpr;
 };
 
-export const exportConstEnum = ([name, tagNameAndValueList]: [
-  string,
-  type.ExportConstEnumTagNameAndValueList
-]): [string, type.ExportConstEnumTagNameAndValueList] => {
-  identifer.checkIdentiferThrow(
-    "export const enum name",
-    "外部に公開する列挙型の名前",
-    name
-  );
-  for (const tagName of tagNameAndValueList.keys()) {
-    identifer.checkIdentiferThrow(
-      "const enum member",
-      "列挙型のパターン",
-      tagName
-    );
-  }
-  return [name, tagNameAndValueList];
-};
-
 export type ExportFunction = {
   readonly document: string;
   readonly parameterList: ReadonlyArray<{
@@ -70,20 +51,6 @@ export type ExportFunction = {
   readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
-/**
- * 外部に公開する関数
- * @throws 使えない名前が含まれている
- */
-export const exportFunction = (data: ExportFunction): ExportFunction => {
-  for (const parameter of data.parameterList) {
-    identifer.checkIdentiferThrow(
-      "export function parameter name",
-      "外部に公開する関数の引数名",
-      parameter.name
-    );
-  }
-  return data;
-};
 /* ======================================================================================
  *                                      Module
  * ====================================================================================== */
