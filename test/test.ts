@@ -432,4 +432,21 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch(/let b: number = 10;[\n ]*b = 30;[\n ]*b \+= 1;/);
   });
+  it("enumTagLiteral", () => {
+    const code: generator.Code = {
+      exportConstEnumMap: new Map([["A", new Map([["B", 0]])]]),
+      exportFunctionMap: new Map(),
+      exportTypeAliasMap: new Map(),
+      statementList: [
+        generator.expr.variableDefinition(
+          ["a"],
+          generator.typeExpr.enumTagLiteral("A", "B"),
+          generator.expr.enumTag("A", "B")
+        )
+      ]
+    };
+    const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/A\.B/);
+  });
 });

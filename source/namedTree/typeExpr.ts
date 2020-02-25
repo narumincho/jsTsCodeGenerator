@@ -123,7 +123,7 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
       return parameterAndReturnToString(typeExpr.parameterList, null);
 
     case TypeExpr_.EnumTagLiteral:
-      return typeExpr.tagName + "." + typeExpr.tagName;
+      return typeExpr.typeName + "." + typeExpr.tagName;
 
     case TypeExpr_.Union:
       return typeExpr.types
