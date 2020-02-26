@@ -967,6 +967,93 @@ export const breakStatement = (): Statement => ({ _: Statement_.Break });
    =======================================================
 */
 
+/**
+ * ```ts
+ * Object.entries(parameter)
+ * Object.keys(parameter)
+ * ```
+ */
+export const callObjectMethod = (
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr =>
+  callMethod(
+    builtInVariable(builtIn.Variable.Object),
+    methodName,
+    parameterList
+  );
+
+/**
+ * ```ts
+ * Number.parseInt(parameter)
+ * Number.isNaN(parameter)
+ * ```
+ */
+export const callNumberMethod = (
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr =>
+  callMethod(
+    builtInVariable(builtIn.Variable.Number),
+    methodName,
+    parameterList
+  );
+
+/**
+ * ```ts
+ * Math.floor(parameter)
+ * Math.sqrt(parameter)
+ * ```
+ */
+export const callMathMethod = (
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr =>
+  callMethod(
+    builtInVariable(builtIn.Variable.Number),
+    methodName,
+    parameterList
+  );
+
+/**
+ * ```ts
+ * new Date()
+ * ```
+ */
+export const newDate: Expr = newExpr(
+  builtInVariable(builtIn.Variable.Date),
+  []
+);
+
+/**
+ * ```ts
+ * new Uint8Array(lengthOrIterable)
+ * ```
+ */
+export const newUint8Array = (lengthOrIterable: Expr): Expr =>
+  newExpr(builtInVariable(builtIn.Variable.Uint8Array), [lengthOrIterable]);
+
+/**
+ * ```ts
+ * new Map(initKeyValueList)
+ * ```
+ */
+export const newMap = (initKeyValueList: Expr): Expr =>
+  newExpr(builtInVariable(builtIn.Variable.Map), [initKeyValueList]);
+
+/**
+ * ```ts
+ * new Set(initValueList)
+ * ```
+ */
+export const newSet = (initValueList: Expr): Expr =>
+  newExpr(builtInVariable(builtIn.Variable.Map), [initValueList]);
+
+/**
+ * ```ts
+ * console.log(expr)
+ * ```
+ */
 export const consoleLog = (expr: Expr): Statement =>
   evaluateExpr(
     callMethod(builtInVariable(builtIn.Variable.console), "log", [expr])

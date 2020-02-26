@@ -1,6 +1,5 @@
 export const enum Variable {
   Object,
-  Error,
   Number,
   Math,
   Date,
