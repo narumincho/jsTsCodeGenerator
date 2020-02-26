@@ -715,6 +715,7 @@ const statementToTypeScriptCodeAsString = (
       switch (codeType) {
         case CodeType.TypeScript:
           return (
+            indentString +
             "const " +
             statement.name +
             " = (" +
@@ -726,12 +727,13 @@ const statementToTypeScriptCodeAsString = (
                   typeExpr.typeExprToString(parameter.typeExpr)
               )
               .join(", ") +
-            "): void =>" +
+            "): void => " +
             lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
           );
         case CodeType.JavaScript:
           return (
+            indentString +
             "const " +
             statement.name +
             "=(" +
@@ -745,6 +747,7 @@ const statementToTypeScriptCodeAsString = (
 
     case Statement_.For:
       return (
+        indentString +
         "for (let " +
         statement.counterVariableName +
         " = 0; " +
@@ -759,11 +762,12 @@ const statementToTypeScriptCodeAsString = (
 
     case Statement_.WhileTrue:
       return (
+        indentString +
         "while (true) " +
         statementListToString(statement.statementList, indent, codeType)
       );
 
     case Statement_.Break:
-      return "break;";
+      return indentString + "break;";
   }
 };
