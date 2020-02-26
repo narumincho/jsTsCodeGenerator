@@ -251,6 +251,58 @@ export const arrayType = (elementType: TypeExpr): TypeExpr =>
   withTypeParameter(builtInType(builtIn.Type.Array), [elementType]);
 
 /**
+ * `ReadonlyArray<elementType>`
+ */
+export const readonlyArrayType = (elementType: TypeExpr): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.ReadonlyArray), [elementType]);
+
+/**
+ * `Uint8Array`
+ */
+export const uint8ArrayType: TypeExpr = builtInType(builtIn.Type.Uint8Array);
+
+/**
+ * `Promise<returnType>`
+ */
+export const promiseType = (returnType: TypeExpr): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.Promise), [returnType]);
+
+/**
+ * `Date`
+ */
+export const dateType: TypeExpr = builtInType(builtIn.Type.Date);
+
+/**
+ * `Map<keyType, valueType>`
+ */
+export const mapType = (keyType: TypeExpr, valueType: TypeExpr): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.Map), [keyType, valueType]);
+
+/**
+ * `ReadonlyMap<keyType, valueType>`
+ */
+export const readonlyMapType = (
+  keyType: TypeExpr,
+  valueType: TypeExpr
+): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.ReadonlyMap), [
+    keyType,
+    valueType
+  ]);
+
+/**
+ * `Set<elementType>`
+ */
+export const setType = (elementType: TypeExpr): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.Set), [elementType]);
+
+/**
+ * `ReadonlySet<elementType>`
+ */
+export const readonlySetType = (elementType: TypeExpr): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.ReadonlySet), [elementType]);
+
+/**
  * グローバル空間(グローバル変数、直下の関数の引数名)に出ている型の名前を集める
  * @param typeExpr 型の式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
