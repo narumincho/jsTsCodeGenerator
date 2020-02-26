@@ -4,11 +4,13 @@ import * as type from "./type";
 import * as identifer from "./identifer";
 import * as namedExpr from "./namedTree/expr";
 import * as namedTypeExpr from "./namedTree/typeExpr";
+import * as builtIn from "./builtIn";
 
 export { indexedTypeExpr as typeExpr };
 export { indexedExpr as expr };
 export { type };
 export { identifer };
+export { builtIn };
 
 /**
  * TypeScriptやJavaScriptのコードを表現する。

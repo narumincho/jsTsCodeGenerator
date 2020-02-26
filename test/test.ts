@@ -258,11 +258,7 @@ describe("test", () => {
         typeExpr.typeString,
         expr.stringLiteral("それな")
       ),
-      expr.evaluateExpr(
-        expr.callMethod(expr.globalVariable("console"), "log", [
-          expr.localVariable(["sorena"])
-        ])
-      )
+      expr.consoleLog(expr.localVariable(["sorena"]))
     ]
   });
 
@@ -462,13 +458,7 @@ describe("test", () => {
             expr.numberLiteral(2),
             expr.numberLiteral(3)
           ]),
-          [
-            expr.evaluateExpr(
-              expr.callMethod(expr.globalVariable("console"), "log", [
-                expr.localVariable(["element"])
-              ])
-            )
-          ]
+          [expr.consoleLog(expr.localVariable(["element"]))]
         )
       ]
     };

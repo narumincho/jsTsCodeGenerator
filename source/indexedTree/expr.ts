@@ -639,6 +639,14 @@ export const enumTag = (typeName: string, tagName: string): Expr => ({
 });
 
 /**
+ * 標準に入っている変数
+ */
+export const builtInVariable = (builtIn: builtIn.Variable): Expr => ({
+  _: Expr_.BuiltIn,
+  builtIn
+});
+
+/**
  * 文
  */
 export type Statement =
@@ -953,6 +961,16 @@ export const whileTrue = (
  * whileのループから抜ける
  */
 export const breakStatement = (): Statement => ({ _: Statement_.Break });
+
+/* =======================================================
+                      util
+   =======================================================
+*/
+
+export const consoleLog = (expr: Expr): Statement =>
+  evaluateExpr(
+    callMethod(builtInVariable(builtIn.Variable.console), "log", [expr])
+  );
 
 /**
  * 名前をつけたり、するために式を走査する
