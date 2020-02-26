@@ -1009,11 +1009,7 @@ export const callMathMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
 ): Expr =>
-  callMethod(
-    builtInVariable(builtIn.Variable.Number),
-    methodName,
-    parameterList
-  );
+  callMethod(builtInVariable(builtIn.Variable.Math), methodName, parameterList);
 
 /**
  * ```ts
