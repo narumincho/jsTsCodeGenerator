@@ -144,6 +144,7 @@ const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
   "top",
   "closed",
   "window"
+  "self",
 ]);
 
 /**
