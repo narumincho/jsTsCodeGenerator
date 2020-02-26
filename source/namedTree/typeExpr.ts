@@ -113,7 +113,7 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
             ([name, typeAndDocument]) =>
               name + ": " + typeExprToString(typeAndDocument.typeExpr)
           )
-          .join(", ") +
+          .join("; ") +
         " }"
       );
 
