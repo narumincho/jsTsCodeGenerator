@@ -449,4 +449,31 @@ describe("test", () => {
     console.log(codeAsString);
     expect(codeAsString).toMatch(/A\.B/);
   });
+  it("for of", () => {
+    const code: generator.Code = {
+      exportConstEnumMap: new Map(),
+      exportFunctionMap: new Map(),
+      exportTypeAliasMap: new Map(),
+      statementList: [
+        expr.forOfStatement(
+          ["element"],
+          expr.arrayLiteral([
+            expr.numberLiteral(1),
+            expr.numberLiteral(2),
+            expr.numberLiteral(3)
+          ]),
+          [
+            expr.evaluateExpr(
+              expr.callMethod(expr.globalVariable("console"), "log", [
+                expr.localVariable(["element"])
+              ])
+            )
+          ]
+        )
+      ]
+    };
+    const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/for .* of \[1, 2, 3\]/);
+  });
 });

@@ -3,7 +3,6 @@ import * as type from "../type";
 import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
 import * as namedTypeExpr from "../namedTree/typeExpr";
-import { ValueOf } from "../valueOf";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -699,6 +698,12 @@ export type Statement =
       statementList: ReadonlyArray<Statement>;
     }
   | {
+      _: Statement_.ForOf;
+      elementVariableName: ReadonlyArray<string>;
+      iterableExpr: Expr;
+      statementList: ReadonlyArray<Statement>;
+    }
+  | {
       _: Statement_.WhileTrue;
       statementList: ReadonlyArray<Statement>;
     }
@@ -718,6 +723,7 @@ const enum Statement_ {
   FunctionWithReturnValueVariableDefinition,
   ReturnVoidFunctionVariableDefinition,
   For,
+  ForOf,
   WhileTrue,
   Break
 }
@@ -888,7 +894,11 @@ export const returnVoidFunctionVariableDefinition = (
 });
 
 /**
- * for (let a = 0; a < untilExpr; a+=1) { statementList }
+ * ```ts
+ * for (let counterVariableName = 0; counterVariableName < untilExpr; counterVariableName += 1) {
+ *  statementList
+ * }
+ * ```
  * @param untilExpr 繰り返す数 + 1
  * @param statementList 繰り返す内容
  */
@@ -901,6 +911,24 @@ export const forStatement = (
   counterVariableName,
   statementList,
   untilExpr
+});
+
+/**
+ * ```ts
+ * for (const elementVariableName of iterableExpr) {
+ *  statementList
+ * }
+ * ```
+ */
+export const forOfStatement = (
+  elementVariableName: ReadonlyArray<string>,
+  iterableExpr: Expr,
+  statementList: ReadonlyArray<Statement>
+): Statement => ({
+  _: Statement_.ForOf,
+  elementVariableName,
+  iterableExpr,
+  statementList
 });
 
 /**
@@ -1108,6 +1136,17 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
     case Statement_.For:
       scanGlobalVariableNameAndImportedPathInExpr(
         statement.untilExpr,
+        scanData
+      );
+      scanGlobalVariableNameAndImportedPathInStatementList(
+        statement.statementList,
+        scanData
+      );
+      return;
+
+    case Statement_.ForOf:
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.iterableExpr,
         scanData
       );
       scanGlobalVariableNameAndImportedPathInStatementList(
@@ -1788,6 +1827,41 @@ export const toNamedStatement = (
           ),
           untilExpr: toNamedExpr(
             statement.untilExpr,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            variableNameMapList,
+            exposedConstEnumMap
+          )
+        },
+        index: variableDefinitionIndex
+      };
+    }
+    case Statement_.ForOf: {
+      const elementVariableNameAndIndex = identifer.createIdentifer(
+        identiferIndex,
+        reservedWord
+      );
+      return {
+        statement: {
+          _: namedExpr.Statement_.ForOf,
+          elementVariableName: elementVariableNameAndIndex.identifer,
+          statementList: toNamedStatementList(
+            statement.statementList,
+            reservedWord,
+            importedModuleNameMap,
+            elementVariableNameAndIndex.nextIdentiferIndex,
+            variableNameMapList,
+            new Map([
+              [
+                variableNameListToMapKey(statement.elementVariableName),
+                elementVariableNameAndIndex.identifer
+              ]
+            ]),
+            exposedConstEnumMap
+          ),
+          iterableExpr: toNamedExpr(
+            statement.iterableExpr,
             reservedWord,
             importedModuleNameMap,
             identiferIndex,
