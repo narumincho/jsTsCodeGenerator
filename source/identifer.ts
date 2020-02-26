@@ -143,7 +143,17 @@ const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
   "undefined",
   "top",
   "closed",
-  "window"
+  "self",
+  "window",
+  "Object",
+  "Error",
+  "Number",
+  "Math",
+  "Date",
+  "Uint8Array",
+  "Map",
+  "Set",
+  "console"
 ]);
 
 /**

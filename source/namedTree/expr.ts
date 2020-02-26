@@ -1,6 +1,7 @@
 import * as typeExpr from "./typeExpr";
 import * as identifer from "../identifer";
 import * as type from "../type";
+import * as builtIn from "../builtIn";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -97,6 +98,10 @@ export type Expr =
       typeName: string;
       tagName: string;
       value: number;
+    }
+  | {
+      _: Expr_.BuiltIn;
+      builtIn: builtIn.Variable;
     };
 
 export const enum Expr_ {
@@ -120,7 +125,8 @@ export const enum Expr_ {
   IfWithVoidReturn,
   New,
   LocalVariable,
-  ConstEnumPattern
+  ConstEnumPattern,
+  BuiltIn
 }
 
 export type Statement =
@@ -141,7 +147,7 @@ export type Statement =
     }
   | {
       _: Statement_.ThrowError;
-      errorMessage: string;
+      errorMessage: Expr;
     }
   | {
       _: Statement_.Return;
@@ -418,6 +424,10 @@ const exprToCodeAsString = (
         case CodeType.TypeScript:
           return expr.typeName + "." + expr.tagName;
       }
+      break;
+
+    case Expr_.BuiltIn:
+      return builtInToString(expr.builtIn);
   }
 };
 
@@ -523,6 +533,7 @@ const exprCombineStrength = (expr: Expr): number => {
     case Expr_.ImportedVariable:
     case Expr_.Argument:
     case Expr_.LocalVariable:
+    case Expr_.BuiltIn:
       return 23;
     case Expr_.LambdaWithReturn:
     case Expr_.LambdaReturnVoid:
@@ -637,7 +648,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "throw new Error(" +
-        stringLiteralValueToString(statement.errorMessage) +
+        exprToCodeAsString(statement.errorMessage, indent, codeType) +
         ");"
       );
 
@@ -787,5 +798,33 @@ const statementToTypeScriptCodeAsString = (
 
     case Statement_.Break:
       return indentString + "break;";
+  }
+};
+
+export const builtInToString = (builtInObjects: builtIn.Variable): string => {
+  switch (builtInObjects) {
+    case builtIn.Variable.Object:
+      return "Object";
+
+    case builtIn.Variable.Number:
+      return "Number";
+
+    case builtIn.Variable.Math:
+      return "Math";
+
+    case builtIn.Variable.Date:
+      return "Date";
+
+    case builtIn.Variable.Uint8Array:
+      return "Uint8Array";
+
+    case builtIn.Variable.Map:
+      return "Map";
+
+    case builtIn.Variable.Set:
+      return "Set";
+
+    case builtIn.Variable.console:
+      return "console";
   }
 };

@@ -3,6 +3,7 @@ import * as type from "../type";
 import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
 import * as namedTypeExpr from "../namedTree/typeExpr";
+import * as builtIn from "../builtIn";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -94,6 +95,10 @@ export type Expr =
       _: Expr_.EnumTag;
       typeName: string;
       tagName: string;
+    }
+  | {
+      _: Expr_.BuiltIn;
+      builtIn: builtIn.Variable;
     };
 
 const enum Expr_ {
@@ -115,7 +120,8 @@ const enum Expr_ {
   Call,
   New,
   LocalVariable,
-  EnumTag
+  EnumTag,
+  BuiltIn
 }
 
 type Literal =
@@ -633,6 +639,14 @@ export const enumTag = (typeName: string, tagName: string): Expr => ({
 });
 
 /**
+ * 標準に入っている変数
+ */
+export const builtInVariable = (builtIn: builtIn.Variable): Expr => ({
+  _: Expr_.BuiltIn,
+  builtIn
+});
+
+/**
  * 文
  */
 export type Statement =
@@ -653,7 +667,7 @@ export type Statement =
     }
   | {
       _: Statement_.ThrowError;
-      errorMessage: string;
+      errorMessage: Expr;
     }
   | {
       _: Statement_.Return;
@@ -780,7 +794,7 @@ export const ifStatement = (
  * throw new Error("エラーメッセージ");
  * @param errorMessage エラーメッセージ
  */
-export const throwError = (errorMessage: string): Statement => ({
+export const throwError = (errorMessage: Expr): Statement => ({
   _: Statement_.ThrowError,
   errorMessage
 });
@@ -948,6 +962,103 @@ export const whileTrue = (
  */
 export const breakStatement = (): Statement => ({ _: Statement_.Break });
 
+/* =======================================================
+                      util
+   =======================================================
+*/
+
+/**
+ * ```ts
+ * Object.entries(parameter)
+ * Object.keys(parameter)
+ * ```
+ */
+export const callObjectMethod = (
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr =>
+  callMethod(
+    builtInVariable(builtIn.Variable.Object),
+    methodName,
+    parameterList
+  );
+
+/**
+ * ```ts
+ * Number.parseInt(parameter)
+ * Number.isNaN(parameter)
+ * ```
+ */
+export const callNumberMethod = (
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr =>
+  callMethod(
+    builtInVariable(builtIn.Variable.Number),
+    methodName,
+    parameterList
+  );
+
+/**
+ * ```ts
+ * Math.floor(parameter)
+ * Math.sqrt(parameter)
+ * ```
+ */
+export const callMathMethod = (
+  methodName: string,
+  parameterList: ReadonlyArray<Expr>
+): Expr =>
+  callMethod(
+    builtInVariable(builtIn.Variable.Number),
+    methodName,
+    parameterList
+  );
+
+/**
+ * ```ts
+ * new Date()
+ * ```
+ */
+export const newDate: Expr = newExpr(
+  builtInVariable(builtIn.Variable.Date),
+  []
+);
+
+/**
+ * ```ts
+ * new Uint8Array(lengthOrIterable)
+ * ```
+ */
+export const newUint8Array = (lengthOrIterable: Expr): Expr =>
+  newExpr(builtInVariable(builtIn.Variable.Uint8Array), [lengthOrIterable]);
+
+/**
+ * ```ts
+ * new Map(initKeyValueList)
+ * ```
+ */
+export const newMap = (initKeyValueList: Expr): Expr =>
+  newExpr(builtInVariable(builtIn.Variable.Map), [initKeyValueList]);
+
+/**
+ * ```ts
+ * new Set(initValueList)
+ * ```
+ */
+export const newSet = (initValueList: Expr): Expr =>
+  newExpr(builtInVariable(builtIn.Variable.Map), [initValueList]);
+
+/**
+ * ```ts
+ * console.log(expr)
+ * ```
+ */
+export const consoleLog = (expr: Expr): Statement =>
+  evaluateExpr(
+    callMethod(builtInVariable(builtIn.Variable.console), "log", [expr])
+  );
+
 /**
  * 名前をつけたり、するために式を走査する
  * @param expr 式
@@ -1083,6 +1194,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
       return;
 
     case Statement_.ThrowError:
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.errorMessage,
+        scanData
+      );
       return;
 
     case Statement_.Return:
@@ -1497,6 +1612,12 @@ export const toNamedExpr = (
         value: value
       };
     }
+
+    case Expr_.BuiltIn:
+      return {
+        _: namedExpr.Expr_.BuiltIn,
+        builtIn: expr.builtIn
+      };
   }
 };
 
@@ -1649,7 +1770,14 @@ export const toNamedStatement = (
       return {
         statement: {
           _: namedExpr.Statement_.ThrowError,
-          errorMessage: statement.errorMessage
+          errorMessage: toNamedExpr(
+            statement.errorMessage,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            variableNameMapList,
+            exposedConstEnumMap
+          )
         },
         index: variableDefinitionIndex
       };

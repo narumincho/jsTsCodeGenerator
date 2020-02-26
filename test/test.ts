@@ -217,8 +217,6 @@ describe("test", () => {
     expect(code).toMatch("request");
   });
   it("get array index", () => {
-    const globalType = typeExpr.globalTypeList(["Uint8Array"] as const);
-
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportTypeAliasMap: new Map(),
       exportConstEnumMap: new Map(),
@@ -231,7 +229,7 @@ describe("test", () => {
               {
                 name: "array",
                 document: "Uint8Array",
-                typeExpr: globalType.Uint8Array
+                typeExpr: typeExpr.uint8ArrayType
               }
             ],
             returnType: typeExpr.typeNumber,
@@ -258,11 +256,7 @@ describe("test", () => {
         typeExpr.typeString,
         expr.stringLiteral("それな")
       ),
-      expr.evaluateExpr(
-        expr.callMethod(expr.globalVariable("console"), "log", [
-          expr.localVariable(["sorena"])
-        ])
-      )
+      expr.consoleLog(expr.localVariable(["sorena"]))
     ]
   });
 
@@ -274,7 +268,6 @@ describe("test", () => {
     expect(scopedCode).not.toMatch("string");
   });
   it("type parameter", () => {
-    const globalType = typeExpr.globalTypeList(["Promise"] as const);
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportFunctionMap: new Map([
         [
@@ -282,9 +275,7 @@ describe("test", () => {
           {
             document: "",
             parameterList: [],
-            returnType: typeExpr.withTypeParameter(globalType.Promise, [
-              typeExpr.typeString
-            ]),
+            returnType: typeExpr.promiseType(typeExpr.typeString),
             statementList: []
           }
         ]
@@ -462,13 +453,7 @@ describe("test", () => {
             expr.numberLiteral(2),
             expr.numberLiteral(3)
           ]),
-          [
-            expr.evaluateExpr(
-              expr.callMethod(expr.globalVariable("console"), "log", [
-                expr.localVariable(["element"])
-              ])
-            )
-          ]
+          [expr.consoleLog(expr.localVariable(["element"]))]
         )
       ]
     };
