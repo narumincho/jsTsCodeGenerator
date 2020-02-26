@@ -186,6 +186,12 @@ export type Statement =
       statementList: ReadonlyArray<Statement>;
     }
   | {
+      _: Statement_.ForOf;
+      elementVariableName: string;
+      iterableExpr: Expr;
+      statementList: ReadonlyArray<Statement>;
+    }
+  | {
       _: Statement_.WhileTrue;
       statementList: ReadonlyArray<Statement>;
     }
@@ -205,6 +211,7 @@ export const enum Statement_ {
   FunctionWithReturnValueVariableDefinition,
   ReturnVoidFunctionVariableDefinition,
   For,
+  ForOf,
   WhileTrue,
   Break
 }
@@ -757,6 +764,17 @@ const statementToTypeScriptCodeAsString = (
         ";" +
         statement.counterVariableName +
         "+= 1)" +
+        statementListToString(statement.statementList, indent, codeType)
+      );
+
+    case Statement_.ForOf:
+      return (
+        indentString +
+        "for (const " +
+        statement.elementVariableName +
+        " of " +
+        exprToCodeAsString(statement.iterableExpr, indent, codeType) +
+        ")" +
         statementListToString(statement.statementList, indent, codeType)
       );
 
