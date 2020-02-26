@@ -3,6 +3,7 @@ import * as type from "../type";
 import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
 import * as namedTypeExpr from "../namedTree/typeExpr";
+import * as builtIn from "../builtIn";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -94,6 +95,10 @@ export type Expr =
       _: Expr_.EnumTag;
       typeName: string;
       tagName: string;
+    }
+  | {
+      _: Expr_.BuiltIn;
+      builtIn: builtIn.Variable;
     };
 
 const enum Expr_ {
@@ -115,7 +120,8 @@ const enum Expr_ {
   Call,
   New,
   LocalVariable,
-  EnumTag
+  EnumTag,
+  BuiltIn
 }
 
 type Literal =
@@ -1497,6 +1503,12 @@ export const toNamedExpr = (
         value: value
       };
     }
+
+    case Expr_.BuiltIn:
+      return {
+        _: namedExpr.Expr_.BuiltIn,
+        builtIn: expr.builtIn
+      };
   }
 };
 

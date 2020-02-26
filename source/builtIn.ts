@@ -1,4 +1,4 @@
-export const enum BuiltInVariable {
+export const enum Variable {
   Object,
   Error,
   Number,
