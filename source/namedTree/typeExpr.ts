@@ -1,3 +1,5 @@
+import * as builtIn from "../builtIn";
+
 /**
  * 型を表現する式
  */
@@ -45,7 +47,8 @@ export type TypeExpr =
       nameSpaceIdentifer: string;
       name: string;
     }
-  | { _: TypeExpr_.GlobalType; name: string };
+  | { _: TypeExpr_.GlobalType; name: string }
+  | { _: TypeExpr_.BuiltIn; builtIn: builtIn.Type };
 
 export const enum TypeExpr_ {
   Number,
@@ -60,7 +63,8 @@ export const enum TypeExpr_ {
   Union,
   WithTypeParameter,
   ImportedType,
-  GlobalType
+  GlobalType,
+  BuiltIn
 }
 
 /** 関数の引数と戻り値の型を文字列にする */
@@ -141,8 +145,33 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
     case TypeExpr_.GlobalType:
       return typeExpr.name;
 
-    case TypeExpr_.ImportedType: {
+    case TypeExpr_.ImportedType:
       return typeExpr.nameSpaceIdentifer + "." + typeExpr.name;
-    }
+
+    case TypeExpr_.BuiltIn:
+      return builtInToString(typeExpr.builtIn);
+  }
+};
+
+const builtInToString = (builtInType: builtIn.Type): string => {
+  switch (builtInType) {
+    case builtIn.Type.Array:
+      return "Array";
+    case builtIn.Type.ReadonlyArray:
+      return "ReadonlyArray";
+    case builtIn.Type.Uint8Array:
+      return "Uint8Array";
+    case builtIn.Type.Promise:
+      return "Promise";
+    case builtIn.Type.Date:
+      return "Date";
+    case builtIn.Type.Map:
+      return "Map";
+    case builtIn.Type.ReadonlyMap:
+      return "ReadonlyMap";
+    case builtIn.Type.Set:
+      return "Set";
+    case builtIn.Type.ReadonlySet:
+      return "ReadonlySet";
   }
 };

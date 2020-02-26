@@ -9,3 +9,15 @@ export const enum Variable {
   Set,
   console
 }
+
+export const enum Type {
+  Array,
+  ReadonlyArray,
+  Uint8Array,
+  Promise,
+  Date,
+  Map,
+  ReadonlyMap,
+  Set,
+  ReadonlySet
+}

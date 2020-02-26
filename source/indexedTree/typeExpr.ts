@@ -2,6 +2,7 @@ import * as type from "../type";
 import * as named from "../namedTree/typeExpr";
 import * as identifer from "../identifer";
 import { ValueOf } from "../valueOf";
+import * as builtIn from "../builtIn";
 
 /**
  * 型を表現する式
@@ -44,7 +45,8 @@ export type TypeExpr =
       path: string;
       name: string;
     }
-  | { _: TypeExpr_.GlobalType; name: string };
+  | { _: TypeExpr_.GlobalType; name: string }
+  | { _: TypeExpr_.BuiltIn; builtIn: builtIn.Type };
 
 const enum TypeExpr_ {
   Number,
@@ -59,7 +61,8 @@ const enum TypeExpr_ {
   Union,
   WithTypeParameter,
   ImportedType,
-  GlobalType
+  GlobalType,
+  BuiltIn
 }
 
 /**
@@ -228,6 +231,24 @@ export const globalType = (name: string): TypeExpr => ({
   _: TypeExpr_.GlobalType,
   name
 });
+
+/**
+ * 標準に入っている型
+ */
+const builtInType = (builtIn: builtIn.Type): TypeExpr => ({
+  _: TypeExpr_.BuiltIn,
+  builtIn
+});
+/* =======================================================
+                      util
+   =======================================================
+*/
+
+/**
+ * `Array<elementType>`
+ */
+export const arrayType = (elementType: TypeExpr): TypeExpr =>
+  withTypeParameter(builtInType(builtIn.Type.Array), [elementType]);
 
 /**
  * グローバル空間(グローバル変数、直下の関数の引数名)に出ている型の名前を集める
@@ -417,6 +438,12 @@ export const toNamed = (
       return {
         _: named.TypeExpr_.GlobalType,
         name: typeExpr.name
+      };
+
+    case TypeExpr_.BuiltIn:
+      return {
+        _: named.TypeExpr_.BuiltIn,
+        builtIn: typeExpr.builtIn
       };
   }
 };
