@@ -147,7 +147,7 @@ export type Statement =
     }
   | {
       _: Statement_.ThrowError;
-      errorMessage: string;
+      errorMessage: Expr;
     }
   | {
       _: Statement_.Return;
@@ -648,7 +648,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "throw new Error(" +
-        stringLiteralValueToString(statement.errorMessage) +
+        exprToCodeAsString(statement.errorMessage, indent, codeType) +
         ");"
       );
 
@@ -805,9 +805,6 @@ export const builtInToString = (builtInObjects: builtIn.Variable): string => {
   switch (builtInObjects) {
     case builtIn.Variable.Object:
       return "Object";
-
-    case builtIn.Variable.Error:
-      return "Error";
 
     case builtIn.Variable.Number:
       return "Number";

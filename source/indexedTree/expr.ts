@@ -667,7 +667,7 @@ export type Statement =
     }
   | {
       _: Statement_.ThrowError;
-      errorMessage: string;
+      errorMessage: Expr;
     }
   | {
       _: Statement_.Return;
@@ -794,7 +794,7 @@ export const ifStatement = (
  * throw new Error("エラーメッセージ");
  * @param errorMessage エラーメッセージ
  */
-export const throwError = (errorMessage: string): Statement => ({
+export const throwError = (errorMessage: Expr): Statement => ({
   _: Statement_.ThrowError,
   errorMessage
 });
@@ -1194,6 +1194,10 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
       return;
 
     case Statement_.ThrowError:
+      scanGlobalVariableNameAndImportedPathInExpr(
+        statement.errorMessage,
+        scanData
+      );
       return;
 
     case Statement_.Return:
@@ -1766,7 +1770,14 @@ export const toNamedStatement = (
       return {
         statement: {
           _: namedExpr.Statement_.ThrowError,
-          errorMessage: statement.errorMessage
+          errorMessage: toNamedExpr(
+            statement.errorMessage,
+            reservedWord,
+            importedModuleNameMap,
+            identiferIndex,
+            variableNameMapList,
+            exposedConstEnumMap
+          )
         },
         index: variableDefinitionIndex
       };
