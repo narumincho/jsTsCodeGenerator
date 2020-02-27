@@ -1586,7 +1586,9 @@ export const toNamedExpr = (
       if (tagNameAndValueList === undefined) {
         throw new Error(
           "外部に公開していない列挙型のパターンを使おうとしている typeName=" +
-            expr.typeName
+            expr.typeName +
+            " 公開している列挙型" +
+            [...exposedConstEnumMap.entries()].map(([name]) => name).join(",")
         );
       }
       const value = tagNameAndValueList.get(expr.tagName);
