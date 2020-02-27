@@ -9,24 +9,19 @@ export type TypeExpr =
   | { _: TypeExpr_.Boolean }
   | { _: TypeExpr_.Undefined }
   | { _: TypeExpr_.Null }
+  | { _: TypeExpr_.Never }
+  | { _: TypeExpr_.Void }
   | {
       _: TypeExpr_.Object;
       memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
     }
   | {
-      _: TypeExpr_.FunctionWithReturn;
+      _: TypeExpr_.Function;
       parameterList: ReadonlyArray<{
         name: string;
         typeExpr: TypeExpr;
       }>;
       return: TypeExpr;
-    }
-  | {
-      _: TypeExpr_.FunctionReturnVoid;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: TypeExpr;
-      }>;
     }
   | {
       _: TypeExpr_.EnumTagLiteral;
@@ -56,8 +51,10 @@ export const enum TypeExpr_ {
   Boolean,
   Undefined,
   Null,
+  Never,
+  Void,
   Object,
-  FunctionWithReturn,
+  Function,
   FunctionReturnVoid,
   EnumTagLiteral,
   Union,
@@ -68,7 +65,7 @@ export const enum TypeExpr_ {
 }
 
 /** 関数の引数と戻り値の型を文字列にする */
-const parameterAndReturnToString = (
+const functionTypeToString = (
   parameterList: ReadonlyArray<{
     name: string;
     typeExpr: TypeExpr;
@@ -102,6 +99,12 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
     case TypeExpr_.Null:
       return "null";
 
+    case TypeExpr_.Never:
+      return "never";
+
+    case TypeExpr_.Void:
+      return "void";
+
     case TypeExpr_.Undefined:
       return "undefined";
 
@@ -117,14 +120,8 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
         " }"
       );
 
-    case TypeExpr_.FunctionWithReturn:
-      return parameterAndReturnToString(
-        typeExpr.parameterList,
-        typeExpr.return
-      );
-
-    case TypeExpr_.FunctionReturnVoid:
-      return parameterAndReturnToString(typeExpr.parameterList, null);
+    case TypeExpr_.Function:
+      return functionTypeToString(typeExpr.parameterList, typeExpr.return);
 
     case TypeExpr_.EnumTagLiteral:
       return typeExpr.typeName + "." + typeExpr.tagName;
