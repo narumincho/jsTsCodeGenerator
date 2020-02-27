@@ -7,37 +7,29 @@ const enum CheckIdentiferResult {
 
 /**
  * 識別子として使える文字かどうか調べ、使えなかったら例外を発生させる。日本語の識別子は使えないものとする
- * @param nameInEnglish 調べている場所 エラーメッセージのためのヒント 英語
- * @param nameInJapanese 調べている場所 エラーメッセージのためのヒント 日本語
+ * @param location 調べている場所 エラーメッセージのためのヒント
  * @param word 識別子として使えるかどうか調べるワード
  * @throws 予約語だった場合
  */
-export const checkIdentiferThrow = (
-  nameInEnglish: string,
-  nameInJapanese: string,
-  word: string
-): void => {
+export const checkIdentiferThrow = (location: string, word: string): void => {
   const result = checkIdentifer(word);
   if (result === null) {
     return;
   }
   switch (result) {
     case CheckIdentiferResult.IsEmpty:
-      throw new Error(`${nameInEnglish} is empty.
-${nameInJapanese}が空文字列で指定されています
-`);
+      throw new Error(`identifer is empty. at = ${location}`);
     case CheckIdentiferResult.FirstCharInvalid:
-      throw new Error(`${nameInEnglish} is use invalid char in first. word = ${word}
-${nameInJapanese}の先頭に識別子で使えない文字が使われています ワード = ${word}
-`);
+      throw new Error(
+        `identifer is use invalid char in first. word = ${word} at = ${location}`
+      );
     case CheckIdentiferResult.CharInvalid:
-      throw new Error(`${nameInEnglish} is use invalid char. word = ${word}
-${nameInJapanese}に識別子で使えない文字が含まれています ワード = ${word}
-`);
+      throw new Error(
+        `identifer is use invalid char. word = ${word} at = ${location}`
+      );
     case CheckIdentiferResult.Reserved:
       throw new Error(
-        `${nameInEnglish} is revered or names that cannot be used in context. word = ${word}
-    ${nameInJapanese}が予約語か文脈によって使えない名前になっています ワード = ${word}`
+        `identifer is revered or names that cannot be used in context. word = ${word} at = ${location}`
       );
   }
 };

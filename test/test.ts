@@ -9,8 +9,8 @@ describe("test", () => {
     "Response"
   ] as const);
 
-  const sampleCode: generator.Code = {
-    exportTypeAliasMap: new Map(),
+  const sampleCode: generator.type.Code = {
+    exportDefinition: new Map(),
     exportConstEnumMap: new Map(),
     exportFunctionMap: new Map([
       [
@@ -58,7 +58,7 @@ describe("test", () => {
   it("not include revered word", () => {
     expect(() => {
       generator.toNodeJsOrBrowserCodeAsTypeScript({
-        exportTypeAliasMap: new Map(),
+        exportDefinition: new Map(),
         exportConstEnumMap: new Map(),
         exportFunctionMap: new Map([
           [
@@ -79,7 +79,7 @@ describe("test", () => {
   it("識別子として使えない文字はエラー", () => {
     expect(() => {
       generator.toNodeJsOrBrowserCodeAsTypeScript({
-        exportTypeAliasMap: new Map(),
+        exportDefinition: new Map(),
         exportConstEnumMap: new Map(),
         exportFunctionMap: new Map([
           [
@@ -116,7 +116,7 @@ describe("test", () => {
   });
   it("escape string literal", () => {
     const nodeJsCode: generator.Code = {
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       exportFunctionMap: new Map([
         [
@@ -154,7 +154,7 @@ describe("test", () => {
       "Response"
     ] as const);
     const nodeJsCode: generator.Code = {
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       exportFunctionMap: new Map([
         [
@@ -218,7 +218,7 @@ describe("test", () => {
   });
   it("get array index", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       exportFunctionMap: new Map([
         [
@@ -247,7 +247,7 @@ describe("test", () => {
     expect(code).toMatch("[0]");
   });
   const scopedCode = generator.toESModulesBrowserCode({
-    exportTypeAliasMap: new Map(),
+    exportDefinition: new Map(),
     exportFunctionMap: new Map(),
     exportConstEnumMap: new Map(),
     statementList: [
@@ -280,7 +280,7 @@ describe("test", () => {
           }
         ]
       ]),
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       statementList: []
     });
@@ -290,7 +290,7 @@ describe("test", () => {
   it("object literal key is escaped", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
       exportFunctionMap: new Map(),
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       statementList: [
         expr.evaluateExpr(
@@ -309,7 +309,7 @@ describe("test", () => {
   it("binary operator combine", () => {
     const code = generator.toESModulesBrowserCode({
       exportFunctionMap: new Map(),
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       statementList: [
         expr.evaluateExpr(
@@ -342,7 +342,7 @@ describe("test", () => {
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
   });
   const constEnumCode: generator.Code = {
-    exportTypeAliasMap: new Map(),
+    exportDefinition: new Map(),
     exportConstEnumMap: new Map([
       [
         "Color",
@@ -380,7 +380,7 @@ describe("test", () => {
   });
   it("object literal return need parenthesis", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       exportFunctionMap: new Map([
         [
@@ -407,7 +407,7 @@ describe("test", () => {
   });
   it("let variable", () => {
     const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       exportConstEnumMap: new Map(),
       exportFunctionMap: new Map(),
       statementList: [
@@ -427,7 +427,7 @@ describe("test", () => {
     const code: generator.Code = {
       exportConstEnumMap: new Map([["A", new Map([["B", 0]])]]),
       exportFunctionMap: new Map(),
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       statementList: [
         generator.expr.variableDefinition(
           ["a"],
@@ -444,7 +444,7 @@ describe("test", () => {
     const code: generator.Code = {
       exportConstEnumMap: new Map(),
       exportFunctionMap: new Map(),
-      exportTypeAliasMap: new Map(),
+      exportDefinition: new Map(),
       statementList: [
         expr.forOfStatement(
           ["element"],

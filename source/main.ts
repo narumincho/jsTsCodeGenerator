@@ -18,39 +18,103 @@ export { builtIn };
  */
 export type Code = {
   /**
-   * 外部に公開する型定義
+   * 外部に公開する定義
    */
-  readonly exportTypeAliasMap: ReadonlyMap<string, ExportTypeAlias>;
+  readonly exportDefinition: ReadonlyArray<Definition>;
   /**
-   * 外部に公開する列挙型
-   */
-  readonly exportConstEnumMap: type.ExportConstEnumMap;
-  /**
-   * 外部に公開する関数
-   */
-  readonly exportFunctionMap: ReadonlyMap<string, ExportFunction>;
-  /**
-   * 公開する関数を定義した後に実行するコード
+   * 定義した後に実行するコード
    */
   readonly statementList: ReadonlyArray<indexedExpr.Statement>;
 };
 
-export type ExportTypeAlias = {
-  /** ドキュメント */
+type Definition =
+  | { _: Definition_.TypeAlias; typeAlias: TypeAlias }
+  | {
+      _: Definition_.Enum;
+      enum_: type.Enum;
+    }
+  | {
+      _: Definition_.Function;
+      function_: Function_;
+    }
+  | {
+      _: Definition_.Variable;
+      variable: Variable;
+    };
+
+const enum Definition_ {
+  TypeAlias,
+  Enum,
+  Function,
+  Variable
+}
+
+export type TypeAlias = {
+  readonly name: string;
   readonly document: string;
-  /** 式 */
   readonly typeExpr: indexedTypeExpr.TypeExpr;
 };
 
-export type ExportFunction = {
+export type Function_ = {
+  readonly name: string;
   readonly document: string;
-  readonly parameterList: ReadonlyArray<{
-    readonly name: string;
-    readonly document: string;
-    readonly typeExpr: indexedTypeExpr.TypeExpr;
-  }>;
-  readonly returnType: indexedTypeExpr.TypeExpr | null;
+  readonly parameterList: ReadonlyArray<Parameter>;
+  readonly returnType: indexedTypeExpr.TypeExpr;
   readonly statementList: ReadonlyArray<indexedExpr.Statement>;
+};
+
+export type Parameter = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: indexedTypeExpr.TypeExpr;
+};
+
+export type Variable = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: indexedTypeExpr.TypeExpr;
+  readonly expr: indexedExpr.Expr;
+};
+
+export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
+  _: Definition_.TypeAlias,
+  typeAlias
+});
+
+export const definitionEnum = (enum_: type.Enum): Definition => ({
+  _: Definition_.Enum,
+  enum_
+});
+
+export const definitionFunction = (function_: Function_): Definition => ({
+  _: Definition_.Function,
+  function_
+});
+
+export const definitionVariable = (variable: Variable): Definition => ({
+  _: Definition_.Variable,
+  variable
+});
+
+export type NamedTypeAlias = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: namedTypeExpr.TypeExpr;
+};
+
+export type NamedFunction_ = {
+  readonly name: string;
+  readonly document: string;
+  readonly parameterList: ReadonlyArray<Parameter>;
+  readonly returnType: namedTypeExpr.TypeExpr;
+  readonly statementList: ReadonlyArray<namedExpr.Statement>;
+};
+
+export type NamedVariable = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: namedTypeExpr.TypeExpr;
+  readonly expr: namedExpr.Expr;
 };
 
 /* ======================================================================================
@@ -60,70 +124,70 @@ export type ExportFunction = {
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-const scanCode = (code: Code): type.ScanData => {
-  const scanData: type.ScanData = type.init;
-  for (const [name, exportTypeAlias] of code.exportTypeAliasMap) {
-    identifer.checkIdentiferThrow(
-      "export type name",
-      "外部に公開する型の名前",
-      name
-    );
-    scanData.globalNameSet.add(name);
-    indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
-      exportTypeAlias.typeExpr,
-      scanData
-    );
+const scanCode = (code: Code): type.GlobalNameData => {
+  const scanData: type.GlobalNameData = type.init;
+  for (const definition of code.exportDefinition) {
+    scanDefinition(definition, scanData);
   }
-  for (const [name, tagNameAndValueList] of code.exportConstEnumMap) {
-    identifer.checkIdentiferThrow(
-      "export const enum name",
-      "外部に公開する列挙型の名前",
-      name
-    );
-    for (const tagName of tagNameAndValueList.keys()) {
-      identifer.checkIdentiferThrow(
-        "const enum member",
-        "列挙型のパターン",
-        tagName
-      );
-    }
-  }
-  for (const [name, exportVariable] of code.exportFunctionMap) {
-    identifer.checkIdentiferThrow(
-      "export variable name",
-      "外部に公開する変数名",
-      name
-    );
-    scanData.globalNameSet.add(name);
-    for (const parameter of exportVariable.parameterList) {
-      identifer.checkIdentiferThrow(
-        "export function parameter name",
-        "外部に公開する関数の引数名",
-        parameter.name
-      );
-      scanData.globalNameSet.add(parameter.name);
-      indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
-        parameter.typeExpr,
-        scanData
-      );
-    }
-
-    if (exportVariable.returnType !== null) {
-      indexedTypeExpr.scanGlobalVariableNameAndImportedPath(
-        exportVariable.returnType,
-        scanData
-      );
-    }
-    indexedExpr.scanGlobalVariableNameAndImportedPathInStatementList(
-      exportVariable.statementList,
-      scanData
-    );
-  }
-  indexedExpr.scanGlobalVariableNameAndImportedPathInStatementList(
-    code.statementList,
-    scanData
-  );
   return scanData;
+};
+
+const scanDefinition = (
+  definition: Definition,
+  scanData: type.GlobalNameData
+): void => {
+  switch (definition._) {
+    case Definition_.TypeAlias:
+      identifer.checkIdentiferThrow(
+        "export type name",
+        definition.typeAlias.name
+      );
+      scanData.globalNameSet.add(definition.typeAlias.name);
+      indexedTypeExpr.scan(definition.typeAlias.typeExpr, scanData);
+      return;
+
+    case Definition_.Enum:
+      identifer.checkIdentiferThrow("export enum name", definition.enum_.name);
+      for (const tagNameAndValue of definition.enum_.tagNameAndValueList) {
+        identifer.checkIdentiferThrow(
+          "enum member at " + definition.enum_.name,
+          tagNameAndValue.name
+        );
+      }
+      return;
+
+    case Definition_.Function:
+      identifer.checkIdentiferThrow(
+        "export function name",
+        definition.function_.name
+      );
+      scanData.globalNameSet.add(definition.function_.name);
+      for (const parameter of definition.function_.parameterList) {
+        identifer.checkIdentiferThrow(
+          "export function parameter name. functionName = " +
+            definition.function_.name,
+          parameter.name
+        );
+        scanData.globalNameSet.add(parameter.name);
+        indexedTypeExpr.scan(parameter.typeExpr, scanData);
+      }
+      indexedTypeExpr.scan(definition.function_.returnType, scanData);
+      indexedExpr.scanStatementList(
+        definition.function_.statementList,
+        scanData
+      );
+      return;
+
+    case Definition_.Variable:
+      identifer.checkIdentiferThrow(
+        "export variable name",
+        definition.variable.name
+      );
+      scanData.globalNameSet.add(definition.variable.name);
+      indexedTypeExpr.scan(definition.variable.typeExpr, scanData);
+      indexedExpr.scanExpr(definition.variable.expr, scanData);
+      return;
+  }
 };
 
 const createImportedModuleName = (
@@ -165,45 +229,31 @@ type NamedExportFunction = {
 
 /** 外部に公開する型定義に名前をつける */
 const toNamedExportTypeAliasList = (
-  exportTypeAliasList: ReadonlyMap<string, ExportTypeAlias>,
-  globalNameSet: ReadonlySet<string>,
-  importedModuleNameIdentiferMap: ReadonlyMap<string, string>
-): ReadonlyMap<
-  string,
-  {
-    readonly document: string;
-    readonly typeExpr: namedTypeExpr.TypeExpr;
-  }
-> => {
-  const namedMap: Map<
-    string,
-    {
-      readonly document: string;
-      readonly typeExpr: namedTypeExpr.TypeExpr;
-    }
-  > = new Map();
-  for (const [name, exportTypeAlias] of exportTypeAliasList) {
-    namedMap.set(name, {
-      document: exportTypeAlias.document,
+  typeAliasList: ReadonlyArray<TypeAlias>,
+  globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer
+): ReadonlyArray<NamedTypeAlias> => {
+  const namedList: Array<NamedTypeAlias> = [];
+  for (const typeAlias of typeAliasList) {
+    namedList.push({
+      name: typeAlias.name,
+      document: typeAlias.document,
       typeExpr: indexedTypeExpr.toNamed(
-        exportTypeAlias.typeExpr,
-        globalNameSet,
-        importedModuleNameIdentiferMap
+        typeAlias.typeExpr,
+        globalNameAndImportPathAndIdentifer
       )
     });
   }
-  return namedMap;
+  return namedList;
 };
 
 /**
  * 外部に公開する関数に名前をつける
  */
 const toNamedExportFunctionList = (
-  exportFunctionList: ReadonlyMap<string, ExportFunction>,
-  globalNameSet: ReadonlySet<string>,
-  importedModuleNameIdentiferMap: ReadonlyMap<string, string>,
+  exportFunctionList: ReadonlyMap<string, Function_>,
+  globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer,
   identiferIndexOnCreatedImportIdentifer: identifer.IdentiferIndex,
-  exposedConstEnumType: type.ExportConstEnumMap
+  exposedConstEnumType: ReadonlyArray<type.Enum>
 ): ReadonlyMap<string, NamedExportFunction> => {
   const namedMap: Map<string, NamedExportFunction> = new Map();
 
@@ -216,8 +266,7 @@ const toNamedExportFunctionList = (
         document: parameter.document,
         typeExpr: indexedTypeExpr.toNamed(
           parameter.typeExpr,
-          globalNameSet,
-          importedModuleNameIdentiferMap
+          globalNameAndImportPathAndIdentifer
         )
       })),
       returnType:
@@ -225,13 +274,11 @@ const toNamedExportFunctionList = (
           ? null
           : indexedTypeExpr.toNamed(
               exportFunction.returnType,
-              globalNameSet,
-              importedModuleNameIdentiferMap
+              globalNameAndImportPathAndIdentifer
             ),
       statementList: indexedExpr.toNamedStatementList(
         exportFunction.statementList,
-        globalNameSet,
-        importedModuleNameIdentiferMap,
+        globalNameAndImportPathAndIdentifer,
         identiferIndexOnCreatedImportIdentifer,
         [],
         new Map(
@@ -259,17 +306,19 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: Code): string => {
     identifer.initialIdentiferIndex,
     globalNameSet
   );
+  const globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer = {
+    globalNameSet: globalNameSet,
+    importedModuleNameIdentiferMap: importedModuleNameMap
+  };
 
   const namedExportTypeAliasMap = toNamedExportTypeAliasList(
-    code.exportTypeAliasMap,
-    globalNameSet,
-    importedModuleNameMap
+    code.exportDefinition,
+    globalNameAndImportPathAndIdentifer
   );
 
   const namedExportFunctionMap = toNamedExportFunctionList(
     code.exportFunctionMap,
-    globalNameSet,
-    importedModuleNameMap,
+    globalNameAndImportPathAndIdentifer,
     nextIdentiferIndex,
     code.exportConstEnumMap
   );

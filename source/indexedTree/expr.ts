@@ -1056,14 +1056,11 @@ export const consoleLog = (expr: Expr): Statement =>
   );
 
 /**
- * 名前をつけたり、するために式を走査する
+ * グローバルで使われているものを収集したり、インポートしているものを収集する
  * @param expr 式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-export const scanGlobalVariableNameAndImportedPathInExpr = (
-  expr: Expr,
-  scanData: type.ScanData
-): void => {
+export const scanExpr = (expr: Expr, scanData: type.GlobalNameData): void => {
   switch (expr._) {
     case Expr_.NumberLiteral:
     case Expr_.UnaryOperator:
@@ -1076,128 +1073,96 @@ export const scanGlobalVariableNameAndImportedPathInExpr = (
 
     case Expr_.ArrayLiteral:
       for (const exprElement of expr.exprList) {
-        scanGlobalVariableNameAndImportedPathInExpr(exprElement, scanData);
+        scanExpr(exprElement, scanData);
       }
       return;
 
     case Expr_.ObjectLiteral:
       for (const [, member] of expr.memberList) {
-        scanGlobalVariableNameAndImportedPathInExpr(member, scanData);
+        scanExpr(member, scanData);
       }
       return;
 
     case Expr_.LambdaWithReturn:
       for (const oneParameter of expr.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(
-          oneParameter.typeExpr,
-          scanData
-        );
+        typeExpr.scan(oneParameter.typeExpr, scanData);
       }
-      typeExpr.scanGlobalVariableNameAndImportedPath(expr.returnType, scanData);
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        expr.statementList,
-        scanData
-      );
+      typeExpr.scan(expr.returnType, scanData);
+      scanStatementList(expr.statementList, scanData);
       return;
 
     case Expr_.LambdaReturnVoid:
       for (const oneParameter of expr.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(
-          oneParameter.typeExpr,
-          scanData
-        );
+        typeExpr.scan(oneParameter.typeExpr, scanData);
       }
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        expr.statementList,
-        scanData
-      );
+      scanStatementList(expr.statementList, scanData);
       return;
 
     case Expr_.GlobalVariable:
-      identifer.checkIdentiferThrow(
-        "global variable name",
-        "グローバル空間の変数名",
-        expr.name
-      );
+      identifer.checkIdentiferThrow("global variable name", expr.name);
       scanData.globalNameSet.add(expr.name);
       return;
 
     case Expr_.ImportedVariable:
-      identifer.checkIdentiferThrow(
-        "imported variable name",
-        "インポートした変数名",
-        expr.name
-      );
+      identifer.checkIdentiferThrow("imported variable name", expr.name);
       scanData.importedModulePath.add(expr.path);
       return;
 
     case Expr_.Get:
-      scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
-      scanGlobalVariableNameAndImportedPathInExpr(expr.propertyName, scanData);
+      scanExpr(expr.expr, scanData);
+      scanExpr(expr.propertyName, scanData);
       return;
 
     case Expr_.Call:
-      scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
+      scanExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
-        scanGlobalVariableNameAndImportedPathInExpr(parameter, scanData);
+        scanExpr(parameter, scanData);
       }
       return;
 
     case Expr_.New:
-      scanGlobalVariableNameAndImportedPathInExpr(expr.expr, scanData);
+      scanExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
-        scanGlobalVariableNameAndImportedPathInExpr(parameter, scanData);
+        scanExpr(parameter, scanData);
       }
       return;
   }
 };
 
-export const scanGlobalVariableNameAndImportedPathInStatementList = (
+export const scanStatementList = (
   statementList: ReadonlyArray<Statement>,
-  scanData: type.ScanData
+  scanData: type.GlobalNameData
 ): void => {
   for (const statement of statementList) {
-    scanGlobalVariableNameAndImportedPathInStatement(statement, scanData);
+    scanStatement(statement, scanData);
   }
 };
 
-export const scanGlobalVariableNameAndImportedPathInStatement = (
+export const scanStatement = (
   statement: Statement,
-  scanData: type.ScanData
+  scanData: type.GlobalNameData
 ): void => {
   switch (statement._) {
     case Statement_.EvaluateExpr:
-      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      scanExpr(statement.expr, scanData);
       return;
 
     case Statement_.Set:
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.targetObject,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      scanExpr(statement.targetObject, scanData);
+      scanExpr(statement.expr, scanData);
       return;
 
     case Statement_.If:
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.condition,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        statement.thenStatementList,
-        scanData
-      );
+      scanExpr(statement.condition, scanData);
+      scanStatementList(statement.thenStatementList, scanData);
       return;
 
     case Statement_.ThrowError:
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.errorMessage,
-        scanData
-      );
+      scanExpr(statement.errorMessage, scanData);
       return;
 
     case Statement_.Return:
-      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
+      scanExpr(statement.expr, scanData);
       return;
 
     case Statement_.ReturnVoid:
@@ -1207,70 +1172,37 @@ export const scanGlobalVariableNameAndImportedPathInStatement = (
       return;
 
     case Statement_.VariableDefinition:
-      scanGlobalVariableNameAndImportedPathInExpr(statement.expr, scanData);
-      typeExpr.scanGlobalVariableNameAndImportedPath(
-        statement.typeExpr,
-        scanData
-      );
+      scanExpr(statement.expr, scanData);
+      typeExpr.scan(statement.typeExpr, scanData);
       return;
 
     case Statement_.FunctionWithReturnValueVariableDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(
-          parameter.typeExpr,
-          scanData
-        );
+        typeExpr.scan(parameter.typeExpr, scanData);
       }
-      typeExpr.scanGlobalVariableNameAndImportedPath(
-        statement.returnType,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        statement.statementList,
-        scanData
-      );
+      typeExpr.scan(statement.returnType, scanData);
+      scanStatementList(statement.statementList, scanData);
       return;
 
     case Statement_.ReturnVoidFunctionVariableDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scanGlobalVariableNameAndImportedPath(
-          parameter.typeExpr,
-          scanData
-        );
+        typeExpr.scan(parameter.typeExpr, scanData);
       }
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        statement.statementList,
-        scanData
-      );
+      scanStatementList(statement.statementList, scanData);
       return;
 
     case Statement_.For:
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.untilExpr,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        statement.statementList,
-        scanData
-      );
+      scanExpr(statement.untilExpr, scanData);
+      scanStatementList(statement.statementList, scanData);
       return;
 
     case Statement_.ForOf:
-      scanGlobalVariableNameAndImportedPathInExpr(
-        statement.iterableExpr,
-        scanData
-      );
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        statement.statementList,
-        scanData
-      );
+      scanExpr(statement.iterableExpr, scanData);
+      scanStatementList(statement.statementList, scanData);
       return;
 
     case Statement_.WhileTrue:
-      scanGlobalVariableNameAndImportedPathInStatementList(
-        statement.statementList,
-        scanData
-      );
+      scanStatementList(statement.statementList, scanData);
   }
 };
 
@@ -1638,8 +1570,7 @@ const searchName = (
 
 export const toNamedStatementList = (
   statementList: ReadonlyArray<Statement>,
-  reservedWord: ReadonlySet<string>,
-  importedModuleNameMap: ReadonlyMap<string, string>,
+  globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer,
   identiferIndex: identifer.IdentiferIndex,
   localVariableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
   argumentNameMap: ReadonlyMap<string, string>,

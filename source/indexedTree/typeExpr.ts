@@ -304,9 +304,9 @@ export const readonlySetType = (elementType: TypeExpr): TypeExpr =>
  * @param typeExpr 型の式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-export const scanGlobalVariableNameAndImportedPath = (
+export const scan = (
   typeExpr: TypeExpr,
-  scanData: type.ScanData
+  scanData: type.GlobalNameData
 ): void => {
   switch (typeExpr._) {
     case TypeExpr_.Number:
@@ -319,27 +319,27 @@ export const scanGlobalVariableNameAndImportedPath = (
 
     case TypeExpr_.Object:
       for (const [, value] of typeExpr.memberList) {
-        scanGlobalVariableNameAndImportedPath(value.typeExpr, scanData);
+        scan(value.typeExpr, scanData);
       }
       return;
 
     case TypeExpr_.Function:
       for (const parameter of typeExpr.parameterList) {
-        scanGlobalVariableNameAndImportedPath(parameter, scanData);
+        scan(parameter, scanData);
       }
-      scanGlobalVariableNameAndImportedPath(typeExpr.return, scanData);
+      scan(typeExpr.return, scanData);
       return;
 
     case TypeExpr_.Union:
       for (const oneType of typeExpr.types) {
-        scanGlobalVariableNameAndImportedPath(oneType, scanData);
+        scan(oneType, scanData);
       }
       return;
 
     case TypeExpr_.WithTypeParameter:
-      scanGlobalVariableNameAndImportedPath(typeExpr.typeExpr, scanData);
+      scan(typeExpr.typeExpr, scanData);
       for (const parameter of typeExpr.typeParameterList) {
-        scanGlobalVariableNameAndImportedPath(parameter, scanData);
+        scan(parameter, scanData);
       }
       return;
 
@@ -355,8 +355,7 @@ export const scanGlobalVariableNameAndImportedPath = (
 
 export const toNamed = (
   typeExpr: TypeExpr,
-  reservedWord: ReadonlySet<string>,
-  importModuleMap: ReadonlyMap<string, string>
+  globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer
 ): named.TypeExpr => {
   switch (typeExpr._) {
     case TypeExpr_.Number:
@@ -397,7 +396,10 @@ export const toNamed = (
           [...typeExpr.memberList].map(([memberName, member]) => [
             memberName,
             {
-              typeExpr: toNamed(member.typeExpr, reservedWord, importModuleMap),
+              typeExpr: toNamed(
+                member.typeExpr,
+                globalNameAndImportPathAndIdentifer
+              ),
               document: member.document
             }
           ])
@@ -413,18 +415,18 @@ export const toNamed = (
       for (const parameterType of typeExpr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
-          reservedWord
+          globalNameAndImportPathAndIdentifer.globalNameSet
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
           name: identiferAndNextIndex.identifer,
-          typeExpr: toNamed(parameterType, reservedWord, importModuleMap)
+          typeExpr: toNamed(parameterType, globalNameAndImportPathAndIdentifer)
         });
       }
       return {
         _: named.TypeExpr_.Function,
         parameterList: parameterList,
-        return: toNamed(typeExpr.return, reservedWord, importModuleMap)
+        return: toNamed(typeExpr.return, globalNameAndImportPathAndIdentifer)
       };
     }
 
@@ -439,20 +441,25 @@ export const toNamed = (
       return {
         _: named.TypeExpr_.Union,
         types: typeExpr.types.map(t =>
-          toNamed(t, reservedWord, importModuleMap)
+          toNamed(t, globalNameAndImportPathAndIdentifer)
         )
       };
     case TypeExpr_.WithTypeParameter:
       return {
         _: named.TypeExpr_.WithTypeParameter,
-        typeExpr: toNamed(typeExpr.typeExpr, reservedWord, importModuleMap),
+        typeExpr: toNamed(
+          typeExpr.typeExpr,
+          globalNameAndImportPathAndIdentifer
+        ),
         typeParameterList: typeExpr.typeParameterList.map(t =>
-          toNamed(t, reservedWord, importModuleMap)
+          toNamed(t, globalNameAndImportPathAndIdentifer)
         )
       };
 
     case TypeExpr_.ImportedType: {
-      const nameSpaceIdentifer = importModuleMap.get(typeExpr.path);
+      const nameSpaceIdentifer = globalNameAndImportPathAndIdentifer.importedModuleNameIdentiferMap.get(
+        typeExpr.path
+      );
       if (nameSpaceIdentifer === undefined) {
         throw new Error(
           `認識されていない外部モジュールの名前空間識別子を発見した in typeExpr (${typeExpr.path})`

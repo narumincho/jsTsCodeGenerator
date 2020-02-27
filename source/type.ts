@@ -1,19 +1,28 @@
-export type ScanData = {
-  globalNameSet: Set<string>;
-  importedModulePath: Set<string>;
+export type GlobalNameData = {
+  readonly globalNameSet: Set<string>;
+  readonly importedModulePath: Set<string>;
 };
 
-export const init: ScanData = {
+export type GlobalNameAndImportPathAndIdentifer = {
+  readonly globalNameSet: Set<string>;
+  readonly importedModuleNameIdentiferMap: ReadonlyMap<string, string>;
+};
+
+export const init: GlobalNameData = {
   globalNameSet: new Set(),
   importedModulePath: new Set()
 };
 
-export type ExportConstEnumMap = ReadonlyMap<
-  string,
-  ExportConstEnumTagNameAndValueList
->;
+export type Enum = {
+  readonly name: string;
+  readonly document: string;
+  readonly tagNameAndValueList: ReadonlyArray<TagNameAndValue>;
+};
 
-export type ExportConstEnumTagNameAndValueList = ReadonlyMap<string, number>;
+export type TagNameAndValue = {
+  readonly name: string;
+  readonly value: number;
+};
 
 export type UnaryOperator = "-" | "~" | "!";
 
