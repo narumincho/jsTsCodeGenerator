@@ -4,6 +4,8 @@ import * as typeExpr from "./typeExpr";
 import * as namedExpr from "../namedTree/expr";
 import * as namedTypeExpr from "../namedTree/typeExpr";
 import * as builtIn from "../builtIn";
+import * as util from "../util";
+import { expr } from "../main";
 
 export type Expr =
   | { _: Expr_.NumberLiteral; value: number }
@@ -1208,11 +1210,10 @@ export const scanStatement = (
 
 export const toNamedExpr = (
   expr: Expr,
-  reservedWord: ReadonlySet<string>,
-  importModuleMap: ReadonlyMap<string, string>,
+  globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer,
   identiferIndex: identifer.IdentiferIndex,
   localVariableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
-  exposedConstEnumMap: type.ExportConstEnumMap
+  enumList: ReadonlyArray<type.Enum>
 ): namedExpr.Expr => {
   switch (expr._) {
     case Expr_.NumberLiteral:
@@ -1244,11 +1245,10 @@ export const toNamedExpr = (
         exprList: expr.exprList.map(expr =>
           toNamedExpr(
             expr,
-            reservedWord,
-            importModuleMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             localVariableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         )
       };
@@ -1260,11 +1260,10 @@ export const toNamedExpr = (
             name,
             toNamedExpr(
               expr,
-              reservedWord,
-              importModuleMap,
+              globalNameAndImportPathAndIdentifer,
               identiferIndex,
               localVariableNameMapList,
-              exposedConstEnumMap
+              enumList
             )
           ])
         )
@@ -1274,11 +1273,10 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.UnaryOperator,
         expr: toNamedExpr(
           expr.expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         operator: expr.operator
       };
@@ -1287,19 +1285,17 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.BinaryOperator,
         left: toNamedExpr(
           expr.left,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         right: toNamedExpr(
           expr.right,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         operator: expr.operator
       };
@@ -1308,27 +1304,24 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.ConditionalOperator,
         condition: toNamedExpr(
           expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         elseExpr: toNamedExpr(
           expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         thenExpr: toNamedExpr(
           expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         )
       };
     case Expr_.LambdaWithReturn: {
@@ -1341,7 +1334,7 @@ export const toNamedExpr = (
       for (const parameter of expr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
-          reservedWord
+          globalNameAndImportPathAndIdentifer.globalNameSet
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterNameMap.push({
@@ -1349,8 +1342,7 @@ export const toNamedExpr = (
           name: identiferAndNextIndex.identifer,
           typeExpr: typeExpr.toNamed(
             parameter.typeExpr,
-            reservedWord,
-            importModuleMap
+            globalNameAndImportPathAndIdentifer
           )
         });
       }
@@ -1359,13 +1351,11 @@ export const toNamedExpr = (
         parameterList: parameterNameMap,
         returnType: typeExpr.toNamed(
           expr.returnType,
-          reservedWord,
-          importModuleMap
+          globalNameAndImportPathAndIdentifer
         ),
         statementList: toNamedStatementList(
           expr.statementList,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
           new Map(
@@ -1374,7 +1364,7 @@ export const toNamedExpr = (
               parameter.name
             ])
           ),
-          exposedConstEnumMap
+          enumList
         )
       };
     }
@@ -1388,7 +1378,7 @@ export const toNamedExpr = (
       for (const parameter of expr.parameterList) {
         const identiferAndNextIndex = identifer.createIdentifer(
           identiferIndex,
-          reservedWord
+          globalNameAndImportPathAndIdentifer.globalNameSet
         );
         identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
         parameterList.push({
@@ -1396,8 +1386,7 @@ export const toNamedExpr = (
           name: identiferAndNextIndex.identifer,
           typeExpr: typeExpr.toNamed(
             parameter.typeExpr,
-            reservedWord,
-            importModuleMap
+            globalNameAndImportPathAndIdentifer
           )
         });
       }
@@ -1406,14 +1395,13 @@ export const toNamedExpr = (
         parameterList,
         statementList: toNamedStatementList(
           expr.statementList,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
           new Map(
             parameterList.map(parameter => [parameter.oldName, parameter.name])
           ),
-          exposedConstEnumMap
+          enumList
         )
       };
     }
@@ -1425,7 +1413,7 @@ export const toNamedExpr = (
       };
 
     case Expr_.ImportedVariable: {
-      const nameSpaceIdentifer: string | undefined = importModuleMap.get(
+      const nameSpaceIdentifer = globalNameAndImportPathAndIdentifer.importedModuleNameIdentiferMap.get(
         expr.path
       );
       if (nameSpaceIdentifer === undefined) {
@@ -1445,19 +1433,17 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.Get,
         expr: toNamedExpr(
           expr.expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         propertyName: toNamedExpr(
           expr.propertyName,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         )
       };
 
@@ -1466,20 +1452,18 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.Call,
         expr: toNamedExpr(
           expr.expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         parameterList: expr.parameterList.map(parameter =>
           toNamedExpr(
             parameter,
-            reservedWord,
-            importModuleMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             localVariableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         )
       };
@@ -1488,20 +1472,18 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.New,
         expr: toNamedExpr(
           expr.expr,
-          reservedWord,
-          importModuleMap,
+          globalNameAndImportPathAndIdentifer,
           identiferIndex,
           localVariableNameMapList,
-          exposedConstEnumMap
+          enumList
         ),
         parameterList: expr.parameterList.map(parameter =>
           toNamedExpr(
             parameter,
-            reservedWord,
-            importModuleMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             localVariableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         )
       };
@@ -1513,23 +1495,31 @@ export const toNamedExpr = (
     }
 
     case Expr_.EnumTag: {
-      const tagNameAndValueList = exposedConstEnumMap.get(expr.typeName);
+      const enum_ = util.getFirstElementByCondition<type.Enum>(
+        enumList,
+        enum_ => enum_.name === expr.typeName
+      );
 
-      if (tagNameAndValueList === undefined) {
+      if (enum_ === undefined) {
         throw new Error(
           "外部に公開していない列挙型のパターンを使おうとしている typeName=" +
             expr.typeName +
             " 公開している列挙型" +
-            [...exposedConstEnumMap.entries()].map(([name]) => name).join(",")
+            [...enumList.entries()].map(([name]) => name).join(",")
         );
       }
-      const value = tagNameAndValueList.get(expr.tagName);
-      if (value === undefined) {
+      const tagNameAndValue = util.getFirstElementByCondition<
+        type.TagNameAndValue
+      >(
+        enum_.tagNameAndValueList,
+        tagNameAndValue => tagNameAndValue.name === expr.tagName
+      );
+      if (tagNameAndValue === undefined) {
         throw new Error(
           "存在しないパターンを指定した typeName=" +
             expr.typeName +
             " allPattern=[" +
-            [...tagNameAndValueList.keys()].join(",") +
+            [...enum_.tagNameAndValueList.keys()].join(",") +
             "] patternName=" +
             expr.tagName
         );
@@ -1539,7 +1529,7 @@ export const toNamedExpr = (
         _: namedExpr.Expr_.ConstEnumPattern,
         tagName: expr.tagName,
         typeName: expr.typeName,
-        value: value
+        value: tagNameAndValue.value
       };
     }
 
@@ -1574,7 +1564,7 @@ export const toNamedStatementList = (
   identiferIndex: identifer.IdentiferIndex,
   localVariableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
   argumentNameMap: ReadonlyMap<string, string>,
-  exposedConstEnumMap: type.ExportConstEnumMap
+  exposedConstEnumMap: ReadonlyArray<type.Enum>
 ): ReadonlyArray<namedExpr.Statement> => {
   const variableNameInScopeList: Map<string, string> = new Map();
 
@@ -1586,7 +1576,7 @@ export const toNamedStatementList = (
       case Statement_.FunctionWithReturnValueVariableDefinition: {
         const identiferAndIndex = identifer.createIdentifer(
           identiferIndex,
-          reservedWord
+          globalNameAndImportPathAndIdentifer.globalNameSet
         );
         variableNameInScopeList.set(
           variableNameListToMapKey(statement.name),
@@ -1608,8 +1598,7 @@ export const toNamedStatementList = (
   for (const statement of statementList) {
     const statementAndIndex = toNamedStatement(
       statement,
-      reservedWord,
-      importedModuleNameMap,
+      globalNameAndImportPathAndIdentifer,
       identiferIndex,
       newArgumentVariableNameMapList,
       variableDefinitionIndex,
@@ -1623,12 +1612,11 @@ export const toNamedStatementList = (
 
 export const toNamedStatement = (
   statement: Statement,
-  reservedWord: ReadonlySet<string>,
-  importedModuleNameMap: ReadonlyMap<string, string>,
+  globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer,
   identiferIndex: identifer.IdentiferIndex,
   variableNameMapList: ReadonlyArray<ReadonlyMap<string, string>>,
   variableDefinitionIndex: number,
-  exposedConstEnumMap: type.ExportConstEnumMap
+  enumList: ReadonlyArray<type.Enum>
 ): { statement: namedExpr.Statement; index: number } => {
   switch (statement._) {
     case Statement_.EvaluateExpr:
@@ -1637,11 +1625,10 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.EvaluateExpr,
           expr: toNamedExpr(
             statement.expr,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1652,20 +1639,18 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.Set,
           targetObject: toNamedExpr(
             statement.targetObject,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           ),
           operator: statement.operator,
           expr: toNamedExpr(
             statement.expr,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1677,20 +1662,18 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.If,
           condition: toNamedExpr(
             statement.condition,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           ),
           thenStatementList: toNamedStatementList(
             statement.thenStatementList,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
             new Map(),
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1701,11 +1684,10 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.ThrowError,
           errorMessage: toNamedExpr(
             statement.errorMessage,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1717,11 +1699,10 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.Return,
           expr: toNamedExpr(
             statement.expr,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1748,17 +1729,15 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.VariableDefinition,
           expr: toNamedExpr(
             statement.expr,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           ),
           name: searchName(variableNameMapList, statement.name),
           typeExpr: typeExpr.toNamed(
             statement.typeExpr,
-            reservedWord,
-            importedModuleNameMap
+            globalNameAndImportPathAndIdentifer
           ),
           isConst: statement.isConst
         },
@@ -1773,15 +1752,14 @@ export const toNamedStatement = (
       for (const parameter of statement.parameterList) {
         const identiferAndIndex = identifer.createIdentifer(
           identiferIndex,
-          reservedWord
+          globalNameAndImportPathAndIdentifer.globalNameSet
         );
         namedParameterList.push({
           oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndIndex.identifer,
           typeExpr: typeExpr.toNamed(
             parameter.typeExpr,
-            reservedWord,
-            importedModuleNameMap
+            globalNameAndImportPathAndIdentifer
           )
         });
         identiferIndex = identiferAndIndex.nextIdentiferIndex;
@@ -1793,13 +1771,11 @@ export const toNamedStatement = (
           parameterList: namedParameterList,
           returnType: typeExpr.toNamed(
             statement.returnType,
-            reservedWord,
-            importedModuleNameMap
+            globalNameAndImportPathAndIdentifer
           ),
           statementList: toNamedStatementList(
             statement.statementList,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
             new Map(
@@ -1808,7 +1784,7 @@ export const toNamedStatement = (
                 parameter.name
               ])
             ),
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex + 1
@@ -1823,15 +1799,14 @@ export const toNamedStatement = (
       for (const parameter of statement.parameterList) {
         const identiferAndIndex = identifer.createIdentifer(
           identiferIndex,
-          reservedWord
+          globalNameAndImportPathAndIdentifer.globalNameSet
         );
         namedParameterList.push({
           oldName: variableNameListToMapKey(parameter.name),
           name: identiferAndIndex.identifer,
           typeExpr: typeExpr.toNamed(
             parameter.typeExpr,
-            reservedWord,
-            importedModuleNameMap
+            globalNameAndImportPathAndIdentifer
           )
         });
         identiferIndex = identiferAndIndex.nextIdentiferIndex;
@@ -1843,8 +1818,7 @@ export const toNamedStatement = (
           parameterList: namedParameterList,
           statementList: toNamedStatementList(
             statement.statementList,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
             new Map(
@@ -1853,7 +1827,7 @@ export const toNamedStatement = (
                 parameter.name
               ])
             ),
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex + 1
@@ -1862,7 +1836,7 @@ export const toNamedStatement = (
     case Statement_.For: {
       const counterVariableNameAndIndex = identifer.createIdentifer(
         identiferIndex,
-        reservedWord
+        globalNameAndImportPathAndIdentifer.globalNameSet
       );
       return {
         statement: {
@@ -1870,8 +1844,7 @@ export const toNamedStatement = (
           counterVariableName: counterVariableNameAndIndex.identifer,
           statementList: toNamedStatementList(
             statement.statementList,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             counterVariableNameAndIndex.nextIdentiferIndex,
             variableNameMapList,
             new Map([
@@ -1880,15 +1853,14 @@ export const toNamedStatement = (
                 counterVariableNameAndIndex.identifer
               ]
             ]),
-            exposedConstEnumMap
+            enumList
           ),
           untilExpr: toNamedExpr(
             statement.untilExpr,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1897,7 +1869,7 @@ export const toNamedStatement = (
     case Statement_.ForOf: {
       const elementVariableNameAndIndex = identifer.createIdentifer(
         identiferIndex,
-        reservedWord
+        globalNameAndImportPathAndIdentifer.globalNameSet
       );
       return {
         statement: {
@@ -1905,8 +1877,7 @@ export const toNamedStatement = (
           elementVariableName: elementVariableNameAndIndex.identifer,
           statementList: toNamedStatementList(
             statement.statementList,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             elementVariableNameAndIndex.nextIdentiferIndex,
             variableNameMapList,
             new Map([
@@ -1915,15 +1886,14 @@ export const toNamedStatement = (
                 elementVariableNameAndIndex.identifer
               ]
             ]),
-            exposedConstEnumMap
+            enumList
           ),
           iterableExpr: toNamedExpr(
             statement.iterableExpr,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
@@ -1935,12 +1905,11 @@ export const toNamedStatement = (
           _: namedExpr.Statement_.WhileTrue,
           statementList: toNamedStatementList(
             statement.statementList,
-            reservedWord,
-            importedModuleNameMap,
+            globalNameAndImportPathAndIdentifer,
             identiferIndex,
             variableNameMapList,
             new Map(),
-            exposedConstEnumMap
+            enumList
           )
         },
         index: variableDefinitionIndex
