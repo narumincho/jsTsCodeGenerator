@@ -13,6 +13,7 @@ export type TypeExpr =
   | { _: TypeExpr_.Boolean }
   | { _: TypeExpr_.Undefined }
   | { _: TypeExpr_.Null }
+  | { _: TypeExpr_.Never }
   | {
       _: TypeExpr_.Object;
       memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
@@ -54,6 +55,7 @@ const enum TypeExpr_ {
   Boolean,
   Undefined,
   Null,
+  Never,
   Object,
   FunctionWithReturn,
   FunctionReturnVoid,
@@ -98,6 +100,13 @@ export const typeUndefined: TypeExpr = {
  */
 export const typeNull: TypeExpr = {
   _: TypeExpr_.Null
+};
+
+/**
+ * never型
+ */
+export const typeNever: TypeExpr = {
+  _: TypeExpr_.Never
 };
 
 /**
@@ -384,6 +393,12 @@ export const toNamed = (
       return {
         _: named.TypeExpr_.Number
       };
+
+    case TypeExpr_.Never:
+      return {
+        _: named.TypeExpr_.Never
+      };
+
     case TypeExpr_.Undefined:
       return {
         _: named.TypeExpr_.Undefined
