@@ -20,13 +20,9 @@ export type TypeExpr =
       memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
     }
   | {
-      _: TypeExpr_.FunctionWithReturn;
+      _: TypeExpr_.Function;
       parameterList: ReadonlyArray<TypeExpr>;
       return: TypeExpr;
-    }
-  | {
-      _: TypeExpr_.FunctionReturnVoid;
-      parameterList: ReadonlyArray<TypeExpr>;
     }
   | {
       _: TypeExpr_.WithTypeParameter;
@@ -59,7 +55,7 @@ const enum TypeExpr_ {
   Never,
   Void,
   Object,
-  FunctionWithReturn,
+  Function,
   FunctionReturnVoid,
   EnumTagLiteral,
   Union,
@@ -122,25 +118,15 @@ export const object = (
 });
 
 /**
- * 戻り値がある関数
+ * 関数 `(parameter: parameter) => returnType`
  */
 export const functionWithReturn = (
   parameter: ReadonlyArray<TypeExpr>,
   returnType: TypeExpr
 ): TypeExpr => ({
-  _: TypeExpr_.FunctionWithReturn,
+  _: TypeExpr_.Function,
   parameterList: parameter,
   return: returnType
-});
-
-/**
- * 戻り値がない関数
- */
-export const functionReturnVoid = (
-  parameter: ReadonlyArray<TypeExpr>
-): TypeExpr => ({
-  _: TypeExpr_.FunctionReturnVoid,
-  parameterList: parameter
 });
 
 /**
@@ -337,17 +323,11 @@ export const scanGlobalVariableNameAndImportedPath = (
       }
       return;
 
-    case TypeExpr_.FunctionWithReturn:
+    case TypeExpr_.Function:
       for (const parameter of typeExpr.parameterList) {
         scanGlobalVariableNameAndImportedPath(parameter, scanData);
       }
       scanGlobalVariableNameAndImportedPath(typeExpr.return, scanData);
-      return;
-
-    case TypeExpr_.FunctionReturnVoid:
-      for (const parameter of typeExpr.parameterList) {
-        scanGlobalVariableNameAndImportedPath(parameter, scanData);
-      }
       return;
 
     case TypeExpr_.Union:
@@ -424,7 +404,7 @@ export const toNamed = (
         )
       };
 
-    case TypeExpr_.FunctionWithReturn: {
+    case TypeExpr_.Function: {
       const parameterList: Array<{
         name: string;
         typeExpr: named.TypeExpr;
@@ -442,34 +422,12 @@ export const toNamed = (
         });
       }
       return {
-        _: named.TypeExpr_.FunctionWithReturn,
+        _: named.TypeExpr_.Function,
         parameterList: parameterList,
         return: toNamed(typeExpr.return, reservedWord, importModuleMap)
       };
     }
 
-    case TypeExpr_.FunctionReturnVoid: {
-      const parameterList: Array<{
-        name: string;
-        typeExpr: named.TypeExpr;
-      }> = [];
-      let identiferIndex = identifer.initialIdentiferIndex;
-      for (const parameterType of typeExpr.parameterList) {
-        const identiferAndNextIndex = identifer.createIdentifer(
-          identiferIndex,
-          reservedWord
-        );
-        identiferIndex = identiferAndNextIndex.nextIdentiferIndex;
-        parameterList.push({
-          name: identiferAndNextIndex.identifer,
-          typeExpr: toNamed(parameterType, reservedWord, importModuleMap)
-        });
-      }
-      return {
-        _: named.TypeExpr_.FunctionReturnVoid,
-        parameterList: parameterList
-      };
-    }
     case TypeExpr_.EnumTagLiteral:
       return {
         _: named.TypeExpr_.EnumTagLiteral,

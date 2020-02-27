@@ -16,19 +16,12 @@ export type TypeExpr =
       memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
     }
   | {
-      _: TypeExpr_.FunctionWithReturn;
+      _: TypeExpr_.Function;
       parameterList: ReadonlyArray<{
         name: string;
         typeExpr: TypeExpr;
       }>;
       return: TypeExpr;
-    }
-  | {
-      _: TypeExpr_.FunctionReturnVoid;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: TypeExpr;
-      }>;
     }
   | {
       _: TypeExpr_.EnumTagLiteral;
@@ -61,7 +54,7 @@ export const enum TypeExpr_ {
   Never,
   Void,
   Object,
-  FunctionWithReturn,
+  Function,
   FunctionReturnVoid,
   EnumTagLiteral,
   Union,
@@ -72,7 +65,7 @@ export const enum TypeExpr_ {
 }
 
 /** 関数の引数と戻り値の型を文字列にする */
-const parameterAndReturnToString = (
+const functionTypeToString = (
   parameterList: ReadonlyArray<{
     name: string;
     typeExpr: TypeExpr;
@@ -127,14 +120,8 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
         " }"
       );
 
-    case TypeExpr_.FunctionWithReturn:
-      return parameterAndReturnToString(
-        typeExpr.parameterList,
-        typeExpr.return
-      );
-
-    case TypeExpr_.FunctionReturnVoid:
-      return parameterAndReturnToString(typeExpr.parameterList, null);
+    case TypeExpr_.Function:
+      return functionTypeToString(typeExpr.parameterList, typeExpr.return);
 
     case TypeExpr_.EnumTagLiteral:
       return typeExpr.typeName + "." + typeExpr.tagName;
