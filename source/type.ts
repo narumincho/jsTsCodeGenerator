@@ -96,6 +96,10 @@ export type Variable = {
 export type UsedNameAndModulePath = {
   readonly usedNameSet: Set<identifer.Identifer>;
   readonly modulePathList: Set<string>;
+  readonly enumTagListMap: Map<
+    identifer.Identifer,
+    ReadonlyArray<identifer.Identifer>
+  >;
 };
 
 export type ModulePathOrName = string & { _modulePathOrName: never };
@@ -113,11 +117,12 @@ export type CollectedData = {
 
 export const init: UsedNameAndModulePath = {
   usedNameSet: new Set(),
-  modulePathList: new Set()
+  modulePathList: new Set(),
+  enumTagListMap: new Map()
 };
 
 export type Enum = {
-  readonly name: string;
+  readonly name: identifer.Identifer;
   readonly document: string;
   readonly tagList: ReadonlyArray<Tag>;
 };
@@ -202,7 +207,7 @@ export type Expr =
     }
   | {
       _: Expr_.ImportedVariable;
-      path: string;
+      moduleName: string;
       name: string;
     }
   | {
@@ -222,8 +227,8 @@ export type Expr =
     }
   | {
       _: Expr_.EnumTag;
-      typeName: string;
-      tagName: string;
+      typeName: identifer.Identifer;
+      tagName: identifer.Identifer;
     }
   | {
       _: Expr_.BuiltIn;
@@ -370,7 +375,7 @@ export type TypeExpr =
     }
   | {
       _: TypeExpr_.ImportedType;
-      path: string;
+      moduleName: string;
       name: string;
     }
   | { _: TypeExpr_.GlobalType; name: identifer.Identifer }
@@ -820,7 +825,7 @@ export const newExpr = (
 export const importedVariable = (path: string, name: string): Expr => ({
   _: Expr_.ImportedVariable,
   name,
-  path
+  moduleName: path
 });
 
 /**
@@ -837,7 +842,10 @@ export const variable = (name: identifer.Identifer): Expr => ({
  * @param typeName 型の名前
  * @param tagName タグの名前
  */
-export const enumTag = (typeName: string, tagName: string): Expr => ({
+export const enumTag = (
+  typeName: identifer.Identifer,
+  tagName: identifer.Identifer
+): Expr => ({
   _: Expr_.EnumTag,
   typeName,
   tagName: tagName
@@ -1309,7 +1317,7 @@ export const withTypeParameter = (
  */
 export const importedType = (path: string, name: string): TypeExpr => ({
   _: TypeExpr_.ImportedType,
-  path,
+  moduleName: path,
   name
 });
 

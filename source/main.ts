@@ -21,17 +21,24 @@ export const generateCodeAsString = (
     identifer.initialIdentiferIndex
   );
 
-  return toString.toString(code, importedModuleNameMap, codeType);
+  return toString.toString(
+    code,
+    {
+      importedModuleNameIdentiferMap: importedModuleNameMap,
+      enumTagListMap: usedNameAndModulePath.enumTagListMap
+    },
+    codeType
+  );
 };
 
 const createImportedModuleName = (
   usedNameAndModulePath: type.UsedNameAndModulePath,
   identiferIndex: identifer.IdentiferIndex
 ): {
-  importedModuleNameMap: type.CollectedData;
+  importedModuleNameMap: Map<string, identifer.Identifer>;
   nextIdentiferIndex: identifer.IdentiferIndex;
 } => {
-  const importedModuleNameMap = new Map<string, string>();
+  const importedModuleNameMap = new Map<string, identifer.Identifer>();
   for (const modulePath of usedNameAndModulePath.modulePathList) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,

@@ -28,9 +28,18 @@ export const toString = (
       .join("\n") + "\n";
 
   const definitionCode =
-    code.exportDefinition.map(definitionToString).join("\n") + "\n";
+    code.exportDefinition
+      .map(definition =>
+        definitionToString(definition, collectedData, codeType)
+      )
+      .join("") + "\n";
 
-  const statementCode = statementListToString(code.statementList, 0, codeType);
+  const statementCode = statementListToString(
+    code.statementList,
+    0,
+    collectedData,
+    codeType
+  );
 
   if (code.statementList.length === 0) {
     return importCode + definitionCode;
@@ -38,27 +47,43 @@ export const toString = (
   return importCode + definitionCode + statementCode;
 };
 
-const definitionToString = (definition: type.Definition): string => {
+const definitionToString = (
+  definition: type.Definition,
+  collectedData: type.CollectedData,
+  codeType: CodeType
+): string => {
   switch (definition._) {
     case type.Definition_.TypeAlias:
-      return typeAliasToString(definition.typeAlias);
+      if (codeType === CodeType.JavaScript) {
+        return "";
+      }
+      return typeAliasToString(definition.typeAlias, collectedData);
+
     case type.Definition_.Enum:
+      if (codeType === CodeType.JavaScript) {
+        return "";
+      }
       return enumToString(definition.enum_);
+
     case type.Definition_.Function:
-      return functionToString(definition.function_);
+      return functionToString(definition.function_, collectedData, codeType);
+
     case type.Definition_.Variable:
-      return variableToString(definition.variable);
+      return variableToString(definition.variable, collectedData, codeType);
   }
 };
 
-const typeAliasToString = (typeAlias: type.TypeAlias): string => {
+const typeAliasToString = (
+  typeAlias: type.TypeAlias,
+  collectedData: type.CollectedData
+): string => {
   return (
     documentToString(typeAlias.document) +
     "export type " +
     (typeAlias.name as string) +
     " = " +
-    typeExprToString(typeAlias.typeExpr) +
-    ";"
+    typeExprToString(typeAlias.typeExpr, collectedData) +
+    ";\n\n"
   );
 };
 
@@ -70,11 +95,15 @@ const enumToString = (enum_: type.Enum): string => {
     enum_.tagList
       .map(tag => documentToString(tag.document) + "  " + (tag.name as string))
       .join(",\n") +
-    "\n}"
+    "\n}\n\n"
   );
 };
 
-const functionToString = (function_: type.Function): string => {
+const functionToString = (
+  function_: type.Function,
+  collectedData: type.CollectedData,
+  codeType: CodeType
+): string => {
   return (
     documentToString(
       function_.document +
@@ -89,19 +118,32 @@ const functionToString = (function_: type.Function): string => {
         parameter =>
           (parameter.name as string) +
           ": " +
-          typeExprToString(parameter.typeExpr)
+          typeExprToString(parameter.typeExpr, collectedData)
       )
       .join(", ") +
     "): " +
-    typeExprToString(function_.returnType) +
+    typeExprToString(function_.returnType, collectedData) +
     " => " +
-    lambdaBodyToString(function_.statementList, 0, CodeType.TypeScript) +
-    ";"
+    lambdaBodyToString(function_.statementList, 0, collectedData, codeType) +
+    ";\n\n"
   );
 };
 
-const variableToString = (variable: type.Variable): string => {
-  return "";
+const variableToString = (
+  variable: type.Variable,
+  collectedData: type.CollectedData,
+  codeType: CodeType
+): string => {
+  return (
+    documentToString(variable.document) +
+    "export const " +
+    (variable.name as string) +
+    ": " +
+    typeExprToString(variable.typeExpr, collectedData) +
+    " = " +
+    exprToString(variable.expr, 0, collectedData, codeType) +
+    ";\n\n"
+  );
 };
 
 const documentToString = (document: string): string =>
@@ -131,6 +173,7 @@ const parameterListToDocument = (
 export const lambdaBodyToString = (
   statementList: ReadonlyArray<type.Statement>,
   indent: number,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string => {
   if (
@@ -141,19 +184,21 @@ export const lambdaBodyToString = (
       type.lambda([], type.typeVoid, []),
       statementList[0].expr,
       indent,
+      collectedData,
       codeType
     );
   }
-  return statementListToString(statementList, indent, codeType);
+  return statementListToString(statementList, indent, collectedData, codeType);
 };
 
 /**
  * 式をコードに変換する
  * @param expr 式
  */
-const exprToCodeAsString = (
+const exprToString = (
   expr: type.Expr,
   indent: number,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string => {
   switch (expr._) {
@@ -176,7 +221,9 @@ const exprToCodeAsString = (
       return (
         "[" +
         expr.exprList
-          .map(element => exprToCodeAsString(element, indent, codeType))
+          .map(element =>
+            exprToString(element, indent, collectedData, codeType)
+          )
           .join("," + codeTypeSpace(codeType)) +
         "]"
       );
@@ -192,7 +239,7 @@ const exprToCodeAsString = (
                 ? key
                 : stringLiteralValueToString(key)) +
               (":" + codeTypeSpace(codeType)) +
-              exprToCodeAsString(value, indent, codeType)
+              exprToString(value, indent, collectedData, codeType)
           )
           .join(", ") +
         codeTypeSpace(codeType) +
@@ -202,7 +249,13 @@ const exprToCodeAsString = (
     case type.Expr_.UnaryOperator:
       return (
         expr.operator +
-        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType)
+        exprToStringWithCombineStrength(
+          expr,
+          expr.expr,
+          indent,
+          collectedData,
+          codeType
+        )
       );
     case type.Expr_.BinaryOperator:
       return binaryOperatorExprToString(
@@ -210,6 +263,7 @@ const exprToCodeAsString = (
         expr.left,
         expr.right,
         indent,
+        collectedData,
         codeType
       );
     case type.Expr_.ConditionalOperator:
@@ -218,12 +272,25 @@ const exprToCodeAsString = (
           expr,
           expr.condition,
           indent,
+          collectedData,
           codeType
         ) +
         "?" +
-        exprToStringWithCombineStrength(expr, expr.thenExpr, indent, codeType) +
+        exprToStringWithCombineStrength(
+          expr,
+          expr.thenExpr,
+          indent,
+          collectedData,
+          codeType
+        ) +
         ":" +
-        exprToStringWithCombineStrength(expr, expr.elseExpr, indent, codeType)
+        exprToStringWithCombineStrength(
+          expr,
+          expr.elseExpr,
+          indent,
+          collectedData,
+          codeType
+        )
       );
 
     case type.Expr_.Lambda:
@@ -233,20 +300,33 @@ const exprToCodeAsString = (
             "(" +
             expr.parameterList
               .map(
-                o => (o.name as string) + ": " + typeExprToString(o.typeExpr)
+                o =>
+                  (o.name as string) +
+                  ": " +
+                  typeExprToString(o.typeExpr, collectedData)
               )
               .join(", ") +
             "): " +
-            typeExprToString(expr.returnType) +
+            typeExprToString(expr.returnType, collectedData) +
             "=>" +
-            lambdaBodyToString(expr.statementList, indent, codeType)
+            lambdaBodyToString(
+              expr.statementList,
+              indent,
+              collectedData,
+              codeType
+            )
           );
         case CodeType.JavaScript:
           return (
             "(" +
             expr.parameterList.map(o => o.name).join(",") +
             ")=>" +
-            lambdaBodyToString(expr.statementList, indent, codeType)
+            lambdaBodyToString(
+              expr.statementList,
+              indent,
+              collectedData,
+              codeType
+            )
           );
       }
       break;
@@ -254,24 +334,47 @@ const exprToCodeAsString = (
     case type.Expr_.Variable:
       return expr.name;
 
-    case type.Expr_.ImportedVariable:
-      return expr.nameSpaceIdentifer + "." + expr.name; // TODO
+    case type.Expr_.ImportedVariable: {
+      const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
+        expr.moduleName
+      );
+      if (nameSpaceIdentifer === undefined) {
+        throw Error(
+          "収集されなかった, モジュールがある moduleName=" + expr.moduleName
+        );
+      }
+      return (nameSpaceIdentifer as string) + "." + expr.name;
+    }
 
     case type.Expr_.Get:
       return (
-        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
+        exprToStringWithCombineStrength(
+          expr,
+          expr.expr,
+          indent,
+          collectedData,
+          codeType
+        ) +
         (expr.propertyName._ === type.Expr_.StringLiteral &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
-          : "[" + exprToCodeAsString(expr.propertyName, indent, codeType) + "]")
+          : "[" +
+            exprToString(expr.propertyName, indent, collectedData, codeType) +
+            "]")
       );
 
     case type.Expr_.Call:
       return (
-        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
+        exprToStringWithCombineStrength(
+          expr,
+          expr.expr,
+          indent,
+          collectedData,
+          codeType
+        ) +
         "(" +
         expr.parameterList
-          .map(e => exprToCodeAsString(e, indent, codeType))
+          .map(e => exprToString(e, indent, collectedData, codeType))
           .join("," + codeTypeSpace(codeType)) +
         ")"
       );
@@ -279,20 +382,39 @@ const exprToCodeAsString = (
     case type.Expr_.New:
       return (
         "new " +
-        exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
+        exprToStringWithCombineStrength(
+          expr,
+          expr.expr,
+          indent,
+          collectedData,
+          codeType
+        ) +
         "(" +
         expr.parameterList
-          .map(e => exprToCodeAsString(e, indent, codeType))
+          .map(e => exprToString(e, indent, collectedData, codeType))
           .join("," + codeTypeSpace(codeType)) +
         ")"
       );
 
     case type.Expr_.EnumTag:
       switch (codeType) {
-        case CodeType.JavaScript:
-          return expr.value.toString(); //TODO
+        case CodeType.JavaScript: {
+          const tagList = collectedData.enumTagListMap.get(expr.typeName);
+          if (tagList === undefined) {
+            throw new Error(
+              "Enumの型を収集できなかった enum type name =" +
+                (expr.typeName as string)
+            );
+          }
+          return (
+            tagList.indexOf(expr.tagName).toString() +
+            "/* " +
+            (expr.tagName as string) +
+            " */"
+          );
+        }
         case CodeType.TypeScript:
-          return expr.typeName + "." + expr.tagName;
+          return (expr.typeName as string) + "." + (expr.tagName as string);
       }
       break;
 
@@ -352,6 +474,7 @@ const binaryOperatorExprToString = (
   left: type.Expr,
   right: type.Expr,
   indent: number,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
@@ -368,14 +491,14 @@ const binaryOperatorExprToString = (
     (operatorExprCombineStrength > leftExprCombineStrength ||
     (operatorExprCombineStrength === leftExprCombineStrength &&
       associativity === Associativity.RightToLeft)
-      ? "(" + exprToCodeAsString(left, indent, codeType) + ")"
-      : exprToCodeAsString(left, indent, codeType)) +
+      ? "(" + exprToString(left, indent, collectedData, codeType) + ")"
+      : exprToString(left, indent, collectedData, codeType)) +
     (codeType === CodeType.TypeScript ? " " + operator + " " : operator) +
     (operatorExprCombineStrength > rightExprCombineStrength ||
     (operatorExprCombineStrength === rightExprCombineStrength &&
       associativity === Associativity.LeftToRight)
-      ? "(" + exprToCodeAsString(right, indent, codeType) + ")"
-      : exprToCodeAsString(right, indent, codeType))
+      ? "(" + exprToString(right, indent, collectedData, codeType) + ")"
+      : exprToString(right, indent, collectedData, codeType))
   );
 };
 
@@ -383,12 +506,13 @@ const exprToStringWithCombineStrength = (
   expr: type.Expr,
   target: type.Expr,
   indent: number,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string => {
   if (exprCombineStrength(expr) > exprCombineStrength(target)) {
-    return "(" + exprToCodeAsString(target, indent, codeType) + ")";
+    return "(" + exprToString(target, indent, collectedData, codeType) + ")";
   }
-  return exprToCodeAsString(target, indent, codeType);
+  return exprToString(target, indent, collectedData, codeType);
 };
 
 const exprCombineStrength = (expr: type.Expr): number => {
@@ -460,12 +584,18 @@ const binaryOperatorCombineStrength = (
 export const statementListToString = (
   statementList: ReadonlyArray<type.Statement>,
   indent: number,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string =>
   "{\n" +
   statementList
     .map(statement =>
-      statementToTypeScriptCodeAsString(statement, indent + 1, codeType)
+      statementToTypeScriptCodeAsString(
+        statement,
+        indent + 1,
+        collectedData,
+        codeType
+      )
     )
     .join("\n") +
   "\n" +
@@ -479,6 +609,7 @@ export const statementListToString = (
 const statementToTypeScriptCodeAsString = (
   statement: type.Statement,
   indent: number,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string => {
   const indentString = "  ".repeat(indent);
@@ -486,19 +617,19 @@ const statementToTypeScriptCodeAsString = (
     case type.Statement_.EvaluateExpr:
       return (
         indentString +
-        exprToCodeAsString(statement.expr, indent, codeType) +
+        exprToString(statement.expr, indent, collectedData, codeType) +
         ";"
       );
 
     case type.Statement_.Set:
       return (
         indentString +
-        exprToCodeAsString(statement.targetObject, indent, codeType) +
+        exprToString(statement.targetObject, indent, collectedData, codeType) +
         codeTypeSpace(codeType) +
         (statement.operator === null ? "" : statement.operator) +
         "=" +
         codeTypeSpace(codeType) +
-        exprToCodeAsString(statement.expr, indent, codeType) +
+        exprToString(statement.expr, indent, collectedData, codeType) +
         ";"
       );
 
@@ -506,16 +637,21 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "if (" +
-        exprToCodeAsString(statement.condition, indent, codeType) +
+        exprToString(statement.condition, indent, collectedData, codeType) +
         ") " +
-        statementListToString(statement.thenStatementList, indent, codeType)
+        statementListToString(
+          statement.thenStatementList,
+          indent,
+          collectedData,
+          codeType
+        )
       );
 
     case type.Statement_.ThrowError:
       return (
         indentString +
         "throw new Error(" +
-        exprToCodeAsString(statement.errorMessage, indent, codeType) +
+        exprToString(statement.errorMessage, indent, collectedData, codeType) +
         ");"
       );
 
@@ -523,7 +659,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "return " +
-        exprToCodeAsString(statement.expr, indent, codeType) +
+        exprToString(statement.expr, indent, collectedData, codeType) +
         ";"
       );
 
@@ -542,9 +678,9 @@ const statementToTypeScriptCodeAsString = (
             " " +
             (statement.name as string) +
             ": " +
-            typeExprToString(statement.typeExpr) +
+            typeExprToString(statement.typeExpr, collectedData) +
             " = " +
-            exprToCodeAsString(statement.expr, indent, codeType) +
+            exprToString(statement.expr, indent, collectedData, codeType) +
             ";"
           );
         case CodeType.JavaScript:
@@ -554,7 +690,7 @@ const statementToTypeScriptCodeAsString = (
             " " +
             statement.name +
             "=" +
-            exprToCodeAsString(statement.expr, indent, codeType) +
+            exprToString(statement.expr, indent, collectedData, codeType) +
             ";"
           );
       }
@@ -573,13 +709,18 @@ const statementToTypeScriptCodeAsString = (
                 parameter =>
                   (parameter.name as string) +
                   ": " +
-                  typeExprToString(parameter.typeExpr)
+                  typeExprToString(parameter.typeExpr, collectedData)
               )
               .join(", ") +
             "): " +
-            typeExprToString(statement.returnType) +
+            typeExprToString(statement.returnType, collectedData) +
             "=>" +
-            lambdaBodyToString(statement.statementList, indent, codeType) +
+            lambdaBodyToString(
+              statement.statementList,
+              indent,
+              collectedData,
+              codeType
+            ) +
             ";"
           );
         case CodeType.JavaScript:
@@ -590,7 +731,12 @@ const statementToTypeScriptCodeAsString = (
             "=(" +
             statement.parameterList.map(parameter => parameter.name).join(",") +
             ")=>" +
-            lambdaBodyToString(statement.statementList, indent, codeType) +
+            lambdaBodyToString(
+              statement.statementList,
+              indent,
+              collectedData,
+              codeType
+            ) +
             ";"
           );
       }
@@ -604,11 +750,16 @@ const statementToTypeScriptCodeAsString = (
         " = 0; " +
         statement.counterVariableName +
         " < " +
-        exprToCodeAsString(statement.untilExpr, indent, codeType) +
+        exprToString(statement.untilExpr, indent, collectedData, codeType) +
         ";" +
         statement.counterVariableName +
         "+= 1)" +
-        statementListToString(statement.statementList, indent, codeType)
+        statementListToString(
+          statement.statementList,
+          indent,
+          collectedData,
+          codeType
+        )
       );
 
     case type.Statement_.ForOf:
@@ -617,16 +768,26 @@ const statementToTypeScriptCodeAsString = (
         "for (const " +
         statement.elementVariableName +
         " of " +
-        exprToCodeAsString(statement.iterableExpr, indent, codeType) +
+        exprToString(statement.iterableExpr, indent, collectedData, codeType) +
         ")" +
-        statementListToString(statement.statementList, indent, codeType)
+        statementListToString(
+          statement.statementList,
+          indent,
+          collectedData,
+          codeType
+        )
       );
 
     case type.Statement_.WhileTrue:
       return (
         indentString +
         "while (true) " +
-        statementListToString(statement.statementList, indent, codeType)
+        statementListToString(
+          statement.statementList,
+          indent,
+          collectedData,
+          codeType
+        )
       );
 
     case type.Statement_.Break:
@@ -667,7 +828,8 @@ export const builtInToString = (
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   parameterTypeList: ReadonlyArray<type.TypeExpr>,
-  returnType: type.TypeExpr
+  returnType: type.TypeExpr,
+  collectedData: type.CollectedData
 ): string => {
   let index = identifer.initialIdentiferIndex;
   const parameterList: Array<{
@@ -688,18 +850,23 @@ const functionTypeToString = (
     parameterList
       .map(
         parameter =>
-          parameter.name + ": " + typeExprToString(parameter.typeExpr)
+          parameter.name +
+          ": " +
+          typeExprToString(parameter.typeExpr, collectedData)
       )
       .join(", ") +
     ") => " +
-    typeExprToString(returnType)
+    typeExprToString(returnType, collectedData)
   );
 };
 /**
  * 型の式をコードに変換する
  * @param typeExpr 型の式
  */
-export const typeExprToString = (typeExpr: type.TypeExpr): string => {
+export const typeExprToString = (
+  typeExpr: type.TypeExpr,
+  collectedData: type.CollectedData
+): string => {
   switch (typeExpr._) {
     case type.TypeExpr_.Number:
       return "number";
@@ -728,36 +895,54 @@ export const typeExprToString = (typeExpr: type.TypeExpr): string => {
         [...typeExpr.memberList.entries()]
           .map(
             ([name, typeAndDocument]) =>
-              name + ": " + typeExprToString(typeAndDocument.typeExpr)
+              name +
+              ": " +
+              typeExprToString(typeAndDocument.typeExpr, collectedData)
           )
           .join("; ") +
         " }"
       );
 
     case type.TypeExpr_.Function:
-      return functionTypeToString(typeExpr.parameterList, typeExpr.return);
+      return functionTypeToString(
+        typeExpr.parameterList,
+        typeExpr.return,
+        collectedData
+      );
 
     case type.TypeExpr_.EnumTagLiteral:
       return typeExpr.typeName + "." + typeExpr.tagName;
 
     case type.TypeExpr_.Union:
       return typeExpr.types
-        .map(typeExpr => typeExprToString(typeExpr))
+        .map(typeExpr => typeExprToString(typeExpr, collectedData))
         .join(" | ");
 
     case type.TypeExpr_.WithTypeParameter:
       return (
-        typeExprToString(typeExpr.typeExpr) +
+        typeExprToString(typeExpr.typeExpr, collectedData) +
         "<" +
-        typeExpr.typeParameterList.map(typeExprToString).join(", ") +
+        typeExpr.typeParameterList
+          .map(type_ => typeExprToString(type_, collectedData))
+          .join(", ") +
         ">"
       );
 
     case type.TypeExpr_.GlobalType:
       return typeExpr.name;
 
-    case type.TypeExpr_.ImportedType:
-      return typeExpr.nameSpaceIdentifer + "." + typeExpr.name; // TODO
+    case type.TypeExpr_.ImportedType: {
+      const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
+        typeExpr.moduleName
+      );
+      if (nameSpaceIdentifer === undefined) {
+        throw Error(
+          "収集されなかった, モジュールがある moduleName=" + typeExpr.moduleName
+        );
+      }
+
+      return (nameSpaceIdentifer as string) + "." + typeExpr.name;
+    }
 
     case type.TypeExpr_.BuiltIn:
       return builtInTypeToString(typeExpr.builtIn);

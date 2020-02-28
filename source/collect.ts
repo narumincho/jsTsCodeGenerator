@@ -23,8 +23,10 @@ const scanDefinition = (
       return;
 
     case type.Definition_.Enum:
-      for (const tagNameAndValue of definition.enum_.tagList) {
-      }
+      scanData.enumTagListMap.set(
+        definition.enum_.name,
+        definition.enum_.tagList.map(tag => tag.name)
+      );
       return;
 
     case type.Definition_.Function:
@@ -89,7 +91,7 @@ const collectExpr = (
       return;
 
     case type.Expr_.ImportedVariable:
-      scanData.modulePathList.add(expr.path);
+      scanData.modulePathList.add(expr.moduleName);
       return;
 
     case type.Expr_.Get:
@@ -250,7 +252,7 @@ const collectType = (
       return;
 
     case type.TypeExpr_.ImportedType:
-      scanData.modulePathList.add(typeExpr.path);
+      scanData.modulePathList.add(typeExpr.moduleName);
       return;
 
     case type.TypeExpr_.GlobalType:
