@@ -1,6 +1,5 @@
-import * as identifer from "../identifer";
-import * as type from "../type";
-import * as typeExpr from "./typeExpr";
+import * as identifer from "./identifer";
+import * as type from "./type";
 
 /**
  * グローバルで使われているものを収集したり、インポートしているものを収集する
@@ -35,9 +34,9 @@ export const scanExpr = (
 
     case type.Expr_.Lambda:
       for (const oneParameter of expr.parameterList) {
-        typeExpr.scan(oneParameter.typeExpr, scanData);
+        scanType(oneParameter.typeExpr, scanData);
       }
-      typeExpr.scan(expr.returnType, scanData);
+      scanType(expr.returnType, scanData);
       scanStatementList(expr.statementList, scanData);
       return;
 
@@ -116,14 +115,14 @@ export const scanStatement = (
 
     case type.Statement_.VariableDefinition:
       scanExpr(statement.expr, scanData);
-      typeExpr.scan(statement.typeExpr, scanData);
+      scanType(statement.typeExpr, scanData);
       return;
 
     case type.Statement_.FunctionDefinition:
       for (const parameter of statement.parameterList) {
-        typeExpr.scan(parameter.typeExpr, scanData);
+        scanType(parameter.typeExpr, scanData);
       }
-      typeExpr.scan(statement.returnType, scanData);
+      scanType(statement.returnType, scanData);
       scanStatementList(statement.statementList, scanData);
       return;
 
@@ -162,4 +161,58 @@ const searchName = (
         .map(scope => "[" + scope.join(",") + "]")
         .join(",")
   );
+};
+
+/**
+ * グローバル空間(グローバル変数、直下の関数の引数名)に出ている型の名前を集める
+ * @param typeExpr 型の式
+ * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
+ */
+export const scanType = (
+  typeExpr: type.TypeExpr,
+  scanData: type.GlobalNameData
+): void => {
+  switch (typeExpr._) {
+    case type.TypeExpr_.Number:
+    case type.TypeExpr_.String:
+    case type.TypeExpr_.Boolean:
+    case type.TypeExpr_.Null:
+    case type.TypeExpr_.Undefined:
+    case type.TypeExpr_.EnumTagLiteral:
+      return;
+
+    case type.TypeExpr_.Object:
+      for (const [, value] of typeExpr.memberList) {
+        scanType(value.typeExpr, scanData);
+      }
+      return;
+
+    case type.TypeExpr_.Function:
+      for (const parameter of typeExpr.parameterList) {
+        scanType(parameter, scanData);
+      }
+      scanType(typeExpr.return, scanData);
+      return;
+
+    case type.TypeExpr_.Union:
+      for (const oneType of typeExpr.types) {
+        scanType(oneType, scanData);
+      }
+      return;
+
+    case type.TypeExpr_.WithTypeParameter:
+      scanType(typeExpr.typeExpr, scanData);
+      for (const parameter of typeExpr.typeParameterList) {
+        scanType(parameter, scanData);
+      }
+      return;
+
+    case type.TypeExpr_.ImportedType:
+      scanData.importedModulePath.add(typeExpr.path);
+      return;
+
+    case type.TypeExpr_.GlobalType:
+      scanData.globalNameSet.add(typeExpr.name);
+      return;
+  }
 };

@@ -1,12 +1,9 @@
-import * as indexedTypeExpr from "./indexedTree/typeExpr";
-import * as indexedExpr from "./indexedTree/expr";
+import * as collect from "./collect";
 import * as type from "./type";
 import * as identifer from "./identifer";
-import * as namedExpr from "./namedTree/expr";
-import * as namedTypeExpr from "./namedTree/typeExpr";
+import * as namedExpr from "./toString";
 
-export { indexedTypeExpr as typeExpr };
-export { indexedExpr as expr };
+export { collect };
 export { type };
 export { identifer };
 
@@ -36,7 +33,7 @@ const scanDefinition = (
         definition.typeAlias.name
       );
       scanData.globalNameSet.add(definition.typeAlias.name);
-      indexedTypeExpr.scan(definition.typeAlias.typeExpr, scanData);
+      collect.scanType(definition.typeAlias.typeExpr, scanData);
       return;
 
     case type.Definition_.Enum:
@@ -62,13 +59,10 @@ const scanDefinition = (
           parameter.name
         );
         scanData.globalNameSet.add(parameter.name);
-        indexedTypeExpr.scan(parameter.typeExpr, scanData);
+        collect.scanType(parameter.typeExpr, scanData);
       }
-      indexedTypeExpr.scan(definition.function_.returnType, scanData);
-      indexedExpr.scanStatementList(
-        definition.function_.statementList,
-        scanData
-      );
+      collect.scanType(definition.function_.returnType, scanData);
+      collect.scanStatementList(definition.function_.statementList, scanData);
       return;
 
     case type.Definition_.Variable:
@@ -77,8 +71,8 @@ const scanDefinition = (
         definition.variable.name
       );
       scanData.globalNameSet.add(definition.variable.name);
-      indexedTypeExpr.scan(definition.variable.typeExpr, scanData);
-      indexedExpr.scanExpr(definition.variable.expr, scanData);
+      collect.scanType(definition.variable.typeExpr, scanData);
+      collect.scanExpr(definition.variable.expr, scanData);
       return;
   }
 };
@@ -121,6 +115,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
     identifer.initialIdentiferIndex,
     globalNameSet
   );
+
   const globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer = {
     globalNameSet: globalNameSet,
     importedModuleNameIdentiferMap: importedModuleNameMap
@@ -198,7 +193,7 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
     (code.statementList.length === 0
       ? ""
       : namedExpr.statementListToString(
-          indexedExpr.toNamedStatementList(
+          collect.toNamedStatementList(
             code.statementList,
             globalNameSet,
             importedModuleNameMap,
@@ -265,7 +260,7 @@ export const toESModulesBrowserCode = (code: Code): string => {
     (code.statementList.length === 0
       ? ""
       : namedExpr.statementListToString(
-          indexedExpr.toNamedStatementList(
+          collect.toNamedStatementList(
             code.statementList,
             globalNameSet,
             importedModuleNameMap,
