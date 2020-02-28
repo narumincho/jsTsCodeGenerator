@@ -1,5 +1,5 @@
 import * as identifer from "./identifer";
-import * as type from "./type";
+import * as data from "./data";
 
 /**
  * 出力するコードの種類
@@ -15,8 +15,8 @@ export const enum CodeType {
  * コードを文字列にする
  */
 export const toString = (
-  code: type.Code,
-  collectedData: type.CollectedData,
+  code: data.Code,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   const importCode =
@@ -48,34 +48,34 @@ export const toString = (
 };
 
 const definitionToString = (
-  definition: type.Definition,
-  collectedData: type.CollectedData,
+  definition: data.Definition,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   switch (definition._) {
-    case type.Definition_.TypeAlias:
+    case data.Definition_.TypeAlias:
       if (codeType === CodeType.JavaScript) {
         return "";
       }
       return typeAliasToString(definition.typeAlias, collectedData);
 
-    case type.Definition_.Enum:
+    case data.Definition_.Enum:
       if (codeType === CodeType.JavaScript) {
         return "";
       }
       return enumToString(definition.enum_);
 
-    case type.Definition_.Function:
+    case data.Definition_.Function:
       return functionToString(definition.function_, collectedData, codeType);
 
-    case type.Definition_.Variable:
+    case data.Definition_.Variable:
       return variableToString(definition.variable, collectedData, codeType);
   }
 };
 
 const typeAliasToString = (
-  typeAlias: type.TypeAlias,
-  collectedData: type.CollectedData
+  typeAlias: data.TypeAlias,
+  collectedData: data.CollectedData
 ): string => {
   return (
     documentToString(typeAlias.document) +
@@ -87,7 +87,7 @@ const typeAliasToString = (
   );
 };
 
-const enumToString = (enum_: type.Enum): string => {
+const enumToString = (enum_: data.Enum): string => {
   return (
     documentToString(enum_.document) +
     "export const enum" +
@@ -100,8 +100,8 @@ const enumToString = (enum_: type.Enum): string => {
 };
 
 const functionToString = (
-  function_: type.Function,
-  collectedData: type.CollectedData,
+  function_: data.Function,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   return (
@@ -130,8 +130,8 @@ const functionToString = (
 };
 
 const variableToString = (
-  variable: type.Variable,
-  collectedData: type.CollectedData,
+  variable: data.Variable,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   return (
@@ -157,7 +157,7 @@ const documentToString = (document: string): string =>
       "\n */\n";
 
 const parameterListToDocument = (
-  parameterList: ReadonlyArray<type.ParameterWithDocument>
+  parameterList: ReadonlyArray<data.ParameterWithDocument>
 ): string =>
   parameterList
     .map(parameter =>
@@ -171,17 +171,17 @@ const parameterListToDocument = (
  * @param indent
  */
 export const lambdaBodyToString = (
-  statementList: ReadonlyArray<type.Statement>,
+  statementList: ReadonlyArray<data.Statement>,
   indent: number,
-  collectedData: type.CollectedData,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   if (
     statementList.length === 1 &&
-    statementList[0]._ === type.Statement_.Return
+    statementList[0]._ === data.Statement_.Return
   ) {
     return exprToStringWithCombineStrength(
-      type.lambda([], type.typeVoid, []),
+      data.lambda([], data.typeVoid, []),
       statementList[0].expr,
       indent,
       collectedData,
@@ -196,28 +196,28 @@ export const lambdaBodyToString = (
  * @param expr 式
  */
 const exprToString = (
-  expr: type.Expr,
+  expr: data.Expr,
   indent: number,
-  collectedData: type.CollectedData,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   switch (expr._) {
-    case type.Expr_.NumberLiteral:
+    case data.Expr_.NumberLiteral:
       return expr.value.toString();
 
-    case type.Expr_.StringLiteral:
+    case data.Expr_.StringLiteral:
       return stringLiteralValueToString(expr.value);
 
-    case type.Expr_.BooleanLiteral:
+    case data.Expr_.BooleanLiteral:
       return expr.value ? "true" : "false";
 
-    case type.Expr_.UndefinedLiteral:
+    case data.Expr_.UndefinedLiteral:
       return "undefined";
 
-    case type.Expr_.NullLiteral:
+    case data.Expr_.NullLiteral:
       return "null";
 
-    case type.Expr_.ArrayLiteral:
+    case data.Expr_.ArrayLiteral:
       return (
         "[" +
         expr.exprList
@@ -228,7 +228,7 @@ const exprToString = (
         "]"
       );
 
-    case type.Expr_.ObjectLiteral:
+    case data.Expr_.ObjectLiteral:
       return (
         "{" +
         codeTypeSpace(codeType) +
@@ -246,7 +246,7 @@ const exprToString = (
         "}"
       );
 
-    case type.Expr_.UnaryOperator:
+    case data.Expr_.UnaryOperator:
       return (
         expr.operator +
         exprToStringWithCombineStrength(
@@ -257,7 +257,7 @@ const exprToString = (
           codeType
         )
       );
-    case type.Expr_.BinaryOperator:
+    case data.Expr_.BinaryOperator:
       return binaryOperatorExprToString(
         expr.operator,
         expr.left,
@@ -266,7 +266,7 @@ const exprToString = (
         collectedData,
         codeType
       );
-    case type.Expr_.ConditionalOperator:
+    case data.Expr_.ConditionalOperator:
       return (
         exprToStringWithCombineStrength(
           expr,
@@ -293,7 +293,7 @@ const exprToString = (
         )
       );
 
-    case type.Expr_.Lambda:
+    case data.Expr_.Lambda:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -331,10 +331,10 @@ const exprToString = (
       }
       break;
 
-    case type.Expr_.Variable:
+    case data.Expr_.Variable:
       return expr.name;
 
-    case type.Expr_.ImportedVariable: {
+    case data.Expr_.ImportedVariable: {
       const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
         expr.moduleName
       );
@@ -346,7 +346,7 @@ const exprToString = (
       return (nameSpaceIdentifer as string) + "." + expr.name;
     }
 
-    case type.Expr_.Get:
+    case data.Expr_.Get:
       return (
         exprToStringWithCombineStrength(
           expr,
@@ -355,7 +355,7 @@ const exprToString = (
           collectedData,
           codeType
         ) +
-        (expr.propertyName._ === type.Expr_.StringLiteral &&
+        (expr.propertyName._ === data.Expr_.StringLiteral &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
           : "[" +
@@ -363,7 +363,7 @@ const exprToString = (
             "]")
       );
 
-    case type.Expr_.Call:
+    case data.Expr_.Call:
       return (
         exprToStringWithCombineStrength(
           expr,
@@ -379,7 +379,7 @@ const exprToString = (
         ")"
       );
 
-    case type.Expr_.New:
+    case data.Expr_.New:
       return (
         "new " +
         exprToStringWithCombineStrength(
@@ -396,7 +396,7 @@ const exprToString = (
         ")"
       );
 
-    case type.Expr_.EnumTag:
+    case data.Expr_.EnumTag:
       switch (codeType) {
         case CodeType.JavaScript: {
           const tagList = collectedData.enumTagListMap.get(expr.typeName);
@@ -418,7 +418,7 @@ const exprToString = (
       }
       break;
 
-    case type.Expr_.BuiltIn:
+    case data.Expr_.BuiltIn:
       return builtInToString(expr.builtIn);
   }
 };
@@ -443,7 +443,7 @@ const enum Associativity {
 }
 
 const binaryOperatorAssociativity = (
-  binaryOperator: type.BinaryOperator
+  binaryOperator: data.BinaryOperator
 ): Associativity => {
   switch (binaryOperator) {
     case "**":
@@ -470,15 +470,15 @@ const binaryOperatorAssociativity = (
 };
 
 const binaryOperatorExprToString = (
-  operator: type.BinaryOperator,
-  left: type.Expr,
-  right: type.Expr,
+  operator: data.BinaryOperator,
+  left: data.Expr,
+  right: data.Expr,
   indent: number,
-  collectedData: type.CollectedData,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
-    _: type.Expr_.BinaryOperator,
+    _: data.Expr_.BinaryOperator,
     operator,
     left,
     right
@@ -503,10 +503,10 @@ const binaryOperatorExprToString = (
 };
 
 const exprToStringWithCombineStrength = (
-  expr: type.Expr,
-  target: type.Expr,
+  expr: data.Expr,
+  target: data.Expr,
   indent: number,
-  collectedData: type.CollectedData,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   if (exprCombineStrength(expr) > exprCombineStrength(target)) {
@@ -515,38 +515,38 @@ const exprToStringWithCombineStrength = (
   return exprToString(target, indent, collectedData, codeType);
 };
 
-const exprCombineStrength = (expr: type.Expr): number => {
+const exprCombineStrength = (expr: data.Expr): number => {
   switch (expr._) {
-    case type.Expr_.NumberLiteral:
-    case type.Expr_.StringLiteral:
-    case type.Expr_.BooleanLiteral:
-    case type.Expr_.NullLiteral:
-    case type.Expr_.UndefinedLiteral:
-    case type.Expr_.ArrayLiteral:
-    case type.Expr_.Variable:
-    case type.Expr_.ImportedVariable:
-    case type.Expr_.BuiltIn:
+    case data.Expr_.NumberLiteral:
+    case data.Expr_.StringLiteral:
+    case data.Expr_.BooleanLiteral:
+    case data.Expr_.NullLiteral:
+    case data.Expr_.UndefinedLiteral:
+    case data.Expr_.ArrayLiteral:
+    case data.Expr_.Variable:
+    case data.Expr_.ImportedVariable:
+    case data.Expr_.BuiltIn:
       return 23;
-    case type.Expr_.Lambda:
+    case data.Expr_.Lambda:
       return 22;
-    case type.Expr_.ObjectLiteral:
+    case data.Expr_.ObjectLiteral:
       return 21;
-    case type.Expr_.Get:
-    case type.Expr_.Call:
-    case type.Expr_.New:
-    case type.Expr_.EnumTag:
+    case data.Expr_.Get:
+    case data.Expr_.Call:
+    case data.Expr_.New:
+    case data.Expr_.EnumTag:
       return 20;
-    case type.Expr_.UnaryOperator:
+    case data.Expr_.UnaryOperator:
       return 17;
-    case type.Expr_.BinaryOperator:
+    case data.Expr_.BinaryOperator:
       return binaryOperatorCombineStrength(expr.operator);
-    case type.Expr_.ConditionalOperator:
+    case data.Expr_.ConditionalOperator:
       return 4;
   }
 };
 
 const binaryOperatorCombineStrength = (
-  binaryOperator: type.BinaryOperator
+  binaryOperator: data.BinaryOperator
 ): number => {
   switch (binaryOperator) {
     case "**":
@@ -582,9 +582,9 @@ const binaryOperatorCombineStrength = (
 };
 
 export const statementListToString = (
-  statementList: ReadonlyArray<type.Statement>,
+  statementList: ReadonlyArray<data.Statement>,
   indent: number,
-  collectedData: type.CollectedData,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string =>
   "{\n" +
@@ -607,21 +607,21 @@ export const statementListToString = (
  * @param statement 文
  */
 const statementToTypeScriptCodeAsString = (
-  statement: type.Statement,
+  statement: data.Statement,
   indent: number,
-  collectedData: type.CollectedData,
+  collectedData: data.CollectedData,
   codeType: CodeType
 ): string => {
   const indentString = "  ".repeat(indent);
   switch (statement._) {
-    case type.Statement_.EvaluateExpr:
+    case data.Statement_.EvaluateExpr:
       return (
         indentString +
         exprToString(statement.expr, indent, collectedData, codeType) +
         ";"
       );
 
-    case type.Statement_.Set:
+    case data.Statement_.Set:
       return (
         indentString +
         exprToString(statement.targetObject, indent, collectedData, codeType) +
@@ -633,7 +633,7 @@ const statementToTypeScriptCodeAsString = (
         ";"
       );
 
-    case type.Statement_.If:
+    case data.Statement_.If:
       return (
         indentString +
         "if (" +
@@ -647,7 +647,7 @@ const statementToTypeScriptCodeAsString = (
         )
       );
 
-    case type.Statement_.ThrowError:
+    case data.Statement_.ThrowError:
       return (
         indentString +
         "throw new Error(" +
@@ -655,7 +655,7 @@ const statementToTypeScriptCodeAsString = (
         ");"
       );
 
-    case type.Statement_.Return:
+    case data.Statement_.Return:
       return (
         indentString +
         "return " +
@@ -663,13 +663,13 @@ const statementToTypeScriptCodeAsString = (
         ";"
       );
 
-    case type.Statement_.ReturnVoid:
+    case data.Statement_.ReturnVoid:
       return indentString + "return;";
 
-    case type.Statement_.Continue:
+    case data.Statement_.Continue:
       return indentString + "continue;";
 
-    case type.Statement_.VariableDefinition:
+    case data.Statement_.VariableDefinition:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -696,7 +696,7 @@ const statementToTypeScriptCodeAsString = (
       }
       break;
 
-    case type.Statement_.FunctionDefinition:
+    case data.Statement_.FunctionDefinition:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -742,7 +742,7 @@ const statementToTypeScriptCodeAsString = (
       }
       break;
 
-    case type.Statement_.For:
+    case data.Statement_.For:
       return (
         indentString +
         "for (let " +
@@ -762,7 +762,7 @@ const statementToTypeScriptCodeAsString = (
         )
       );
 
-    case type.Statement_.ForOf:
+    case data.Statement_.ForOf:
       return (
         indentString +
         "for (const " +
@@ -778,7 +778,7 @@ const statementToTypeScriptCodeAsString = (
         )
       );
 
-    case type.Statement_.WhileTrue:
+    case data.Statement_.WhileTrue:
       return (
         indentString +
         "while (true) " +
@@ -790,51 +790,51 @@ const statementToTypeScriptCodeAsString = (
         )
       );
 
-    case type.Statement_.Break:
+    case data.Statement_.Break:
       return indentString + "break;";
   }
 };
 
 export const builtInToString = (
-  builtInObjects: type.BuiltInVariable
+  builtInObjects: data.BuiltInVariable
 ): string => {
   switch (builtInObjects) {
-    case type.BuiltInVariable.Object:
+    case data.BuiltInVariable.Object:
       return "Object";
 
-    case type.BuiltInVariable.Number:
+    case data.BuiltInVariable.Number:
       return "Number";
 
-    case type.BuiltInVariable.Math:
+    case data.BuiltInVariable.Math:
       return "Math";
 
-    case type.BuiltInVariable.Date:
+    case data.BuiltInVariable.Date:
       return "Date";
 
-    case type.BuiltInVariable.Uint8Array:
+    case data.BuiltInVariable.Uint8Array:
       return "Uint8Array";
 
-    case type.BuiltInVariable.Map:
+    case data.BuiltInVariable.Map:
       return "Map";
 
-    case type.BuiltInVariable.Set:
+    case data.BuiltInVariable.Set:
       return "Set";
 
-    case type.BuiltInVariable.console:
+    case data.BuiltInVariable.console:
       return "console";
   }
 };
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
-  parameterTypeList: ReadonlyArray<type.TypeExpr>,
-  returnType: type.TypeExpr,
-  collectedData: type.CollectedData
+  parameterTypeList: ReadonlyArray<data.TypeExpr>,
+  returnType: data.TypeExpr,
+  collectedData: data.CollectedData
 ): string => {
   let index = identifer.initialIdentiferIndex;
   const parameterList: Array<{
     name: string;
-    typeExpr: type.TypeExpr;
+    typeExpr: data.TypeExpr;
   }> = [];
   for (const parameter of parameterTypeList) {
     const indexAndIdentifer = identifer.createIdentifer(index, new Set());
@@ -864,32 +864,32 @@ const functionTypeToString = (
  * @param typeExpr 型の式
  */
 export const typeExprToString = (
-  typeExpr: type.TypeExpr,
-  collectedData: type.CollectedData
+  typeExpr: data.TypeExpr,
+  collectedData: data.CollectedData
 ): string => {
   switch (typeExpr._) {
-    case type.TypeExpr_.Number:
+    case data.TypeExpr_.Number:
       return "number";
 
-    case type.TypeExpr_.String:
+    case data.TypeExpr_.String:
       return "string";
 
-    case type.TypeExpr_.Boolean:
+    case data.TypeExpr_.Boolean:
       return "boolean";
 
-    case type.TypeExpr_.Null:
+    case data.TypeExpr_.Null:
       return "null";
 
-    case type.TypeExpr_.Never:
+    case data.TypeExpr_.Never:
       return "never";
 
-    case type.TypeExpr_.Void:
+    case data.TypeExpr_.Void:
       return "void";
 
-    case type.TypeExpr_.Undefined:
+    case data.TypeExpr_.Undefined:
       return "undefined";
 
-    case type.TypeExpr_.Object:
+    case data.TypeExpr_.Object:
       return (
         "{ " +
         [...typeExpr.memberList.entries()]
@@ -903,22 +903,22 @@ export const typeExprToString = (
         " }"
       );
 
-    case type.TypeExpr_.Function:
+    case data.TypeExpr_.Function:
       return functionTypeToString(
         typeExpr.parameterList,
         typeExpr.return,
         collectedData
       );
 
-    case type.TypeExpr_.EnumTagLiteral:
+    case data.TypeExpr_.EnumTagLiteral:
       return typeExpr.typeName + "." + typeExpr.tagName;
 
-    case type.TypeExpr_.Union:
+    case data.TypeExpr_.Union:
       return typeExpr.types
         .map(typeExpr => typeExprToString(typeExpr, collectedData))
         .join(" | ");
 
-    case type.TypeExpr_.WithTypeParameter:
+    case data.TypeExpr_.WithTypeParameter:
       return (
         typeExprToString(typeExpr.typeExpr, collectedData) +
         "<" +
@@ -928,10 +928,10 @@ export const typeExprToString = (
         ">"
       );
 
-    case type.TypeExpr_.GlobalType:
+    case data.TypeExpr_.GlobalType:
       return typeExpr.name;
 
-    case type.TypeExpr_.ImportedType: {
+    case data.TypeExpr_.ImportedType: {
       const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
         typeExpr.moduleName
       );
@@ -944,30 +944,30 @@ export const typeExprToString = (
       return (nameSpaceIdentifer as string) + "." + typeExpr.name;
     }
 
-    case type.TypeExpr_.BuiltIn:
+    case data.TypeExpr_.BuiltIn:
       return builtInTypeToString(typeExpr.builtIn);
   }
 };
 
-const builtInTypeToString = (builtInType: type.BuiltInType): string => {
+const builtInTypeToString = (builtInType: data.BuiltInType): string => {
   switch (builtInType) {
-    case type.BuiltInType.Array:
+    case data.BuiltInType.Array:
       return "Array";
-    case type.BuiltInType.ReadonlyArray:
+    case data.BuiltInType.ReadonlyArray:
       return "ReadonlyArray";
-    case type.BuiltInType.Uint8Array:
+    case data.BuiltInType.Uint8Array:
       return "Uint8Array";
-    case type.BuiltInType.Promise:
+    case data.BuiltInType.Promise:
       return "Promise";
-    case type.BuiltInType.Date:
+    case data.BuiltInType.Date:
       return "Date";
-    case type.BuiltInType.Map:
+    case data.BuiltInType.Map:
       return "Map";
-    case type.BuiltInType.ReadonlyMap:
+    case data.BuiltInType.ReadonlyMap:
       return "ReadonlyMap";
-    case type.BuiltInType.Set:
+    case data.BuiltInType.Set:
       return "Set";
-    case type.BuiltInType.ReadonlySet:
+    case data.BuiltInType.ReadonlySet:
       return "ReadonlySet";
   }
 };
