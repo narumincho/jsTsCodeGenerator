@@ -301,27 +301,27 @@ export type Statement =
     }
   | {
       _: Statement_.VariableDefinition;
-      name: string;
+      name: identifer.Identifer;
       expr: Expr;
       type_: Type;
       isConst: boolean;
     }
   | {
       _: Statement_.FunctionDefinition;
-      name: string;
+      name: identifer.Identifer;
       parameterList: ReadonlyArray<Parameter>;
       returnType: Type;
       statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.For;
-      counterVariableName: string;
+      counterVariableName: identifer.Identifer;
       untilExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.ForOf;
-      elementVariableName: string;
+      elementVariableName: identifer.Identifer;
       iterableExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
@@ -874,7 +874,7 @@ export const builtInVariable = (builtIn: BuiltInVariable): Expr => ({
  * 式を評価する
  * @param expr 式
  */
-export const evaluateExpr = (expr: Expr): Statement => ({
+export const statementEvaluateExpr = (expr: Expr): Statement => ({
   _: Statement_.EvaluateExpr,
   expr
 });
@@ -892,7 +892,7 @@ export const evaluateExpr = (expr: Expr): Statement => ({
  * @param operator 演算子
  * @param expr 式
  */
-export const set = (
+export const statementSet = (
   targetObject: Expr,
   operator: BinaryOperator | null,
   expr: Expr
@@ -908,7 +908,7 @@ export const set = (
  * @param condition 条件式
  * @param thenStatementList 条件が成立したらどうするか
  */
-export const ifStatement = (
+export const statementIf = (
   condition: Expr,
   thenStatementList: ReadonlyArray<Statement>
 ): Statement => ({
@@ -921,7 +921,7 @@ export const ifStatement = (
  * throw new Error("エラーメッセージ");
  * @param errorMessage エラーメッセージ
  */
-export const throwError = (errorMessage: Expr): Statement => ({
+export const statementThrowError = (errorMessage: Expr): Statement => ({
   _: Statement_.ThrowError,
   errorMessage
 });
@@ -930,7 +930,7 @@ export const throwError = (errorMessage: Expr): Statement => ({
  * return expr;
  * @param expr 関数が返す値
  */
-export const returnStatement = (expr: Expr): Statement => ({
+export const statementReturn = (expr: Expr): Statement => ({
   _: Statement_.Return,
   expr
 });
@@ -939,7 +939,7 @@ export const returnStatement = (expr: Expr): Statement => ({
  * return;
  * 戻り値がvoidの関数を早く抜ける
  */
-export const returnVoidStatement: Statement = {
+export const statementReturnVoid: Statement = {
   _: Statement_.ReturnVoid
 };
 
@@ -947,7 +947,7 @@ export const returnVoidStatement: Statement = {
  * continue
  * forの繰り返しを次に進める
  */
-export const continueStatement = (): Statement => ({
+export const statementContinue = (): Statement => ({
   _: Statement_.Continue
 });
 
@@ -958,8 +958,8 @@ export const continueStatement = (): Statement => ({
  * @param type_ 型
  * @param expr 式
  */
-export const variableDefinition = (
-  name: string,
+export const statementVariableDefinition = (
+  name: identifer.Identifer,
   type_: Type,
   expr: Expr
 ): Statement => ({
@@ -977,8 +977,8 @@ export const variableDefinition = (
  * @param type_ 型
  * @param expr 式
  */
-export const letVariableDefinition = (
-  name: string,
+export const statementLetVariableDefinition = (
+  name: identifer.Identifer,
   type_: Type,
   expr: Expr
 ): Statement => ({
@@ -997,9 +997,9 @@ export const letVariableDefinition = (
  * @param returnType 戻り値の型
  * @param statementList 関数本体
  */
-export const functionDefinition = (
-  name: string,
-  parameterList: ReadonlyArray<Parameter>,
+export const statementFunctionDefinition = (
+  name: identifer.Identifer,
+  parameterList: ReadonlyArray<ParameterWithDocument>,
   returnType: Type,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
@@ -1019,8 +1019,8 @@ export const functionDefinition = (
  * @param untilExpr 繰り返す数 + 1
  * @param statementList 繰り返す内容
  */
-export const forStatement = (
-  counterVariableName: string,
+export const statementFor = (
+  counterVariableName: identifer.Identifer,
   untilExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
@@ -1037,8 +1037,8 @@ export const forStatement = (
  * }
  * ```
  */
-export const forOfStatement = (
-  elementVariableName: string,
+export const statementForOf = (
+  elementVariableName: identifer.Identifer,
   iterableExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
@@ -1052,7 +1052,7 @@ export const forOfStatement = (
  * while (true) { statementList }
  * @param statementList ループする内容
  */
-export const whileTrue = (
+export const statementWhileTrue = (
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
   _: Statement_.WhileTrue,
@@ -1063,7 +1063,7 @@ export const whileTrue = (
  * break;
  * whileのループから抜ける
  */
-export const breakStatement = (): Statement => ({ _: Statement_.Break });
+export const statementBreak = (): Statement => ({ _: Statement_.Break });
 
 type Literal =
   | number
@@ -1211,7 +1211,7 @@ export const newSet = (initValueList: Expr): Expr =>
  * ```
  */
 export const consoleLog = (expr: Expr): Statement =>
-  evaluateExpr(
+  statementEvaluateExpr(
     callMethod(builtInVariable(BuiltInVariable.console), "log", [expr])
   );
 
@@ -1267,7 +1267,7 @@ export const typeVoid: Type = {
 /**
  * オブジェクト
  */
-export const object = (
+export const typeObject = (
   memberList: Map<string, { type_: Type; document: string }>
 ): Type => ({
   _: Type_.Object,
@@ -1277,7 +1277,7 @@ export const object = (
 /**
  * 関数 `(parameter: parameter) => returnType`
  */
-export const functionWithReturn = (
+export const typeFunction = (
   parameter: ReadonlyArray<Type>,
   returnType: Type
 ): Type => ({
@@ -1291,7 +1291,10 @@ export const functionWithReturn = (
  * @param typeName 型の名前 `Color`
  * @param tagName タグの名前 `Red`
  */
-export const enumTagLiteral = (typeName: string, tagName: string): Type => ({
+export const typeEnumTagLiteral = (
+  typeName: string,
+  tagName: string
+): Type => ({
   _: Type_.EnumTagLiteral,
   typeName,
   tagName: tagName
@@ -1300,7 +1303,7 @@ export const enumTagLiteral = (typeName: string, tagName: string): Type => ({
  * ユニオン型 `a | b`
  * @param types 型のリスト
  */
-export const union = (types: ReadonlyArray<Type>): Type => ({
+export const typeUnion = (types: ReadonlyArray<Type>): Type => ({
   _: Type_.Union,
   types
 });
@@ -1308,7 +1311,7 @@ export const union = (types: ReadonlyArray<Type>): Type => ({
 /**
  * 型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`
  */
-export const withTypeParameter = (
+export const typeWithParameter = (
   type_: Type,
   typeParameterList: ReadonlyArray<Type>
 ): Type => ({
@@ -1322,7 +1325,7 @@ export const withTypeParameter = (
  * @param path インポートするモジュールのパス
  * @param name 型名
  */
-export const importedType = (path: string, name: string): Type => ({
+export const typeImported = (path: string, name: string): Type => ({
   _: Type_.ImportedType,
   moduleName: path,
   name
@@ -1332,7 +1335,7 @@ export const importedType = (path: string, name: string): Type => ({
  * グローバル空間の型
  * @param name 型名
  */
-export const globalType = (name: identifer.Identifer): Type => ({
+export const typeGlobal = (name: identifer.Identifer): Type => ({
   _: Type_.GlobalType,
   name
 });
@@ -1353,13 +1356,13 @@ const builtInType = (builtIn: BuiltInType): Type => ({
  * `Array<elementType>`
  */
 export const arrayType = (elementType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.Array), [elementType]);
+  typeWithParameter(builtInType(BuiltInType.Array), [elementType]);
 
 /**
  * `ReadonlyArray<elementType>`
  */
 export const readonlyArrayType = (elementType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.ReadonlyArray), [elementType]);
+  typeWithParameter(builtInType(BuiltInType.ReadonlyArray), [elementType]);
 
 /**
  * `Uint8Array`
@@ -1370,7 +1373,7 @@ export const uint8ArrayType: Type = builtInType(BuiltInType.Uint8Array);
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.Promise), [returnType]);
+  typeWithParameter(builtInType(BuiltInType.Promise), [returnType]);
 
 /**
  * `Date`
@@ -1381,22 +1384,22 @@ export const dateType: Type = builtInType(BuiltInType.Date);
  * `Map<keyType, valueType>`
  */
 export const mapType = (keyType: Type, valueType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.Map), [keyType, valueType]);
+  typeWithParameter(builtInType(BuiltInType.Map), [keyType, valueType]);
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
 export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.ReadonlyMap), [keyType, valueType]);
+  typeWithParameter(builtInType(BuiltInType.ReadonlyMap), [keyType, valueType]);
 
 /**
  * `Set<elementType>`
  */
 export const setType = (elementType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.Set), [elementType]);
+  typeWithParameter(builtInType(BuiltInType.Set), [elementType]);
 
 /**
  * `ReadonlySet<elementType>`
  */
 export const readonlySetType = (elementType: Type): Type =>
-  withTypeParameter(builtInType(BuiltInType.ReadonlySet), [elementType]);
+  typeWithParameter(builtInType(BuiltInType.ReadonlySet), [elementType]);
