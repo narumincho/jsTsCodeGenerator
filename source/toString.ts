@@ -2,22 +2,12 @@ import * as identifer from "./identifer";
 import * as data from "./data";
 
 /**
- * 出力するコードの種類
- */
-export const enum CodeType {
-  /** Enumの値は数値リテラルとして展開される. 型情報が出力されない */
-  JavaScript,
-  /** 型情報も出力される */
-  TypeScript
-}
-
-/**
  * コードを文字列にする
  */
 export const toString = (
   code: data.Code,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   const importCode =
     [...collectedData.importedModuleNameIdentiferMap.entries()]
@@ -50,17 +40,17 @@ export const toString = (
 const definitionToString = (
   definition: data.Definition,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   switch (definition._) {
     case data.Definition_.TypeAlias:
-      if (codeType === CodeType.JavaScript) {
+      if (codeType === data.CodeType.JavaScript) {
         return "";
       }
       return typeAliasToString(definition.typeAlias, collectedData);
 
     case data.Definition_.Enum:
-      if (codeType === CodeType.JavaScript) {
+      if (codeType === data.CodeType.JavaScript) {
         return "";
       }
       return enumToString(definition.enum_);
@@ -102,7 +92,7 @@ const enumToString = (enum_: data.Enum): string => {
 const functionToString = (
   function_: data.Function,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   return (
     documentToString(
@@ -132,7 +122,7 @@ const functionToString = (
 const variableToString = (
   variable: data.Variable,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   return (
     documentToString(variable.document) +
@@ -174,7 +164,7 @@ export const lambdaBodyToString = (
   statementList: ReadonlyArray<data.Statement>,
   indent: number,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   if (
     statementList.length === 1 &&
@@ -199,7 +189,7 @@ const exprToString = (
   expr: data.Expr,
   indent: number,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   switch (expr._) {
     case data.Expr_.NumberLiteral:
@@ -295,7 +285,7 @@ const exprToString = (
 
     case data.Expr_.Lambda:
       switch (codeType) {
-        case CodeType.TypeScript:
+        case data.CodeType.TypeScript:
           return (
             "(" +
             expr.parameterList
@@ -316,7 +306,7 @@ const exprToString = (
               codeType
             )
           );
-        case CodeType.JavaScript:
+        case data.CodeType.JavaScript:
           return (
             "(" +
             expr.parameterList.map(o => o.name).join(",") +
@@ -398,7 +388,7 @@ const exprToString = (
 
     case data.Expr_.EnumTag:
       switch (codeType) {
-        case CodeType.JavaScript: {
+        case data.CodeType.JavaScript: {
           const tagList = collectedData.enumTagListMap.get(expr.typeName);
           if (tagList === undefined) {
             throw new Error(
@@ -413,7 +403,7 @@ const exprToString = (
             " */"
           );
         }
-        case CodeType.TypeScript:
+        case data.CodeType.TypeScript:
           return (expr.typeName as string) + "." + (expr.tagName as string);
       }
       break;
@@ -423,8 +413,8 @@ const exprToString = (
   }
 };
 
-const codeTypeSpace = (codeType: CodeType): string =>
-  codeType === CodeType.TypeScript ? " " : "";
+const codeTypeSpace = (codeType: data.CodeType): string =>
+  codeType === data.CodeType.TypeScript ? " " : "";
 
 const stringLiteralValueToString = (value: string): string => {
   return (
@@ -475,7 +465,7 @@ const binaryOperatorExprToString = (
   right: data.Expr,
   indent: number,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
     _: data.Expr_.BinaryOperator,
@@ -493,7 +483,7 @@ const binaryOperatorExprToString = (
       associativity === Associativity.RightToLeft)
       ? "(" + exprToString(left, indent, collectedData, codeType) + ")"
       : exprToString(left, indent, collectedData, codeType)) +
-    (codeType === CodeType.TypeScript ? " " + operator + " " : operator) +
+    (codeType === data.CodeType.TypeScript ? " " + operator + " " : operator) +
     (operatorExprCombineStrength > rightExprCombineStrength ||
     (operatorExprCombineStrength === rightExprCombineStrength &&
       associativity === Associativity.LeftToRight)
@@ -507,7 +497,7 @@ const exprToStringWithCombineStrength = (
   target: data.Expr,
   indent: number,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   if (exprCombineStrength(expr) > exprCombineStrength(target)) {
     return "(" + exprToString(target, indent, collectedData, codeType) + ")";
@@ -585,7 +575,7 @@ export const statementListToString = (
   statementList: ReadonlyArray<data.Statement>,
   indent: number,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string =>
   "{\n" +
   statementList
@@ -610,7 +600,7 @@ const statementToTypeScriptCodeAsString = (
   statement: data.Statement,
   indent: number,
   collectedData: data.CollectedData,
-  codeType: CodeType
+  codeType: data.CodeType
 ): string => {
   const indentString = "  ".repeat(indent);
   switch (statement._) {
@@ -671,7 +661,7 @@ const statementToTypeScriptCodeAsString = (
 
     case data.Statement_.VariableDefinition:
       switch (codeType) {
-        case CodeType.TypeScript:
+        case data.CodeType.TypeScript:
           return (
             indentString +
             (statement.isConst ? "const" : "let") +
@@ -683,7 +673,7 @@ const statementToTypeScriptCodeAsString = (
             exprToString(statement.expr, indent, collectedData, codeType) +
             ";"
           );
-        case CodeType.JavaScript:
+        case data.CodeType.JavaScript:
           return (
             indentString +
             (statement.isConst ? "const" : "let") +
@@ -698,7 +688,7 @@ const statementToTypeScriptCodeAsString = (
 
     case data.Statement_.FunctionDefinition:
       switch (codeType) {
-        case CodeType.TypeScript:
+        case data.CodeType.TypeScript:
           return (
             indentString +
             "const " +
@@ -723,7 +713,7 @@ const statementToTypeScriptCodeAsString = (
             ) +
             ";"
           );
-        case CodeType.JavaScript:
+        case data.CodeType.JavaScript:
           return (
             indentString +
             "const " +

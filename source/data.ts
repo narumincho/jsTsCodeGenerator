@@ -15,6 +15,16 @@ export type Code = {
   readonly statementList: ReadonlyArray<Statement>;
 };
 
+/**
+ * 出力するコードの種類
+ */
+export const enum CodeType {
+  /** Enumの値は数値リテラルとして展開される. 型情報が出力されない */
+  JavaScript,
+  /** 型情報も出力される */
+  TypeScript
+}
+
 export type Definition =
   | { _: Definition_.TypeAlias; typeAlias: TypeAlias }
   | {

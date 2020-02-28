@@ -9,7 +9,7 @@ export { identifer };
 
 export const generateCodeAsString = (
   code: data.Code,
-  codeType: toString.CodeType
+  codeType: data.CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const usedNameAndModulePath: data.UsedNameAndModulePath = collect.collectCode(
