@@ -90,7 +90,7 @@ export type Expr =
   | {
       _: Expr_.Lambda;
       parameterList: ReadonlyArray<{
-        name: ReadonlyArray<string>;
+        name: string;
         typeExpr: TypeExpr;
       }>;
       returnType: TypeExpr;
@@ -661,9 +661,9 @@ export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
  * @param returnType 戻り値
  * @param statementList 本体
  */
-export const lambdaWithReturn = (
+export const lambda = (
   parameterList: ReadonlyArray<{
-    name: ReadonlyArray<string>;
+    name: string;
     typeExpr: TypeExpr;
   }>,
   returnType: TypeExpr,
@@ -672,23 +672,6 @@ export const lambdaWithReturn = (
   _: Expr_.Lambda,
   parameterList,
   returnType,
-  statementList
-});
-
-/**
- * 戻り値のないラムダ式
- * @param parameter パラメーター
- * @param statementList 本体
- */
-export const lambdaReturnVoid = (
-  parameterList: ReadonlyArray<{
-    name: ReadonlyArray<string>;
-    typeExpr: TypeExpr;
-  }>,
-  statementList: ReadonlyArray<Statement>
-): Expr => ({
-  _: Expr_.LambdaReturnVoid,
-  parameterList,
   statementList
 });
 
