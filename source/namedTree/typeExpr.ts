@@ -17,6 +17,18 @@ const functionTypeToString = (
   ") => " +
   (returnType === null ? "void" : typeExprToString(returnType));
 
+  return (
+    "(" +
+    parameterList
+      .map(
+        parameter =>
+          parameter.name + ": " + typeExprToString(parameter.typeExpr)
+      )
+      .join(", ") +
+    ") => " +
+    typeExprToString(returnType)
+  );
+};
 /**
  * 型の式をコードに変換する
  * @param typeExpr 型の式

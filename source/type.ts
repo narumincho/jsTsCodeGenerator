@@ -1,3 +1,92 @@
+/**
+ * TypeScriptやJavaScriptのコードを表現する。
+ * TypeScriptでも出力できるように型情報をつける必要がある
+ */
+export type Code = {
+  /**
+   * 外部に公開する定義
+   */
+  readonly exportDefinition: ReadonlyArray<Definition>;
+  /**
+   * 定義した後に実行するコード
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+export type Definition =
+  | { _: Definition_.TypeAlias; typeAlias: TypeAlias }
+  | {
+      _: Definition_.Enum;
+      enum_: Enum;
+    }
+  | {
+      _: Definition_.Function;
+      function_: Function_;
+    }
+  | {
+      _: Definition_.Variable;
+      variable: Variable;
+    };
+
+export const enum Definition_ {
+  TypeAlias,
+  Enum,
+  Function,
+  Variable
+}
+
+export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
+  _: Definition_.TypeAlias,
+  typeAlias
+});
+
+export const definitionEnum = (enum_: Enum): Definition => ({
+  _: Definition_.Enum,
+  enum_
+});
+
+export const definitionFunction = (function_: Function_): Definition => ({
+  _: Definition_.Function,
+  function_
+});
+
+export const definitionVariable = (variable: Variable): Definition => ({
+  _: Definition_.Variable,
+  variable
+});
+
+export type TypeAlias = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: TypeExpr;
+};
+
+export type Function_ = {
+  readonly name: string;
+  readonly document: string;
+  readonly parameterList: ReadonlyArray<ParameterWithDocument>;
+  readonly returnType: TypeExpr;
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+export type ParameterWithDocument = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: TypeExpr;
+};
+
+export type Parameter = {
+  name: string;
+  typeExpr: TypeExpr;
+};
+
+export type Variable = {
+  readonly name: string;
+  readonly document: string;
+  readonly typeExpr: TypeExpr;
+  readonly expr: Expr;
+};
+
 export type GlobalNameData = {
   readonly globalNameSet: Set<string>;
   readonly importedModulePath: Set<string>;
@@ -89,15 +178,12 @@ export type Expr =
     }
   | {
       _: Expr_.Lambda;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: TypeExpr;
-      }>;
+      parameterList: ReadonlyArray<Parameter>;
       returnType: TypeExpr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Expr_.GlobalVariable;
+      _: Expr_.Variable;
       name: string;
     }
   | {
@@ -121,10 +207,6 @@ export type Expr =
       parameterList: ReadonlyArray<Expr>;
     }
   | {
-      _: Expr_.LocalVariable;
-      name: ReadonlyArray<string>;
-    }
-  | {
       _: Expr_.EnumTag;
       typeName: string;
       tagName: string;
@@ -146,13 +228,11 @@ export const enum Expr_ {
   BinaryOperator,
   ConditionalOperator,
   Lambda,
-  LambdaReturnVoid,
-  GlobalVariable,
+  Variable,
   ImportedVariable,
   Get,
   Call,
   New,
-  LocalVariable,
   EnumTag,
   BuiltIn
 }
@@ -192,39 +272,27 @@ export type Statement =
     }
   | {
       _: Statement_.VariableDefinition;
-      name: ReadonlyArray<string>;
+      name: string;
       expr: Expr;
       typeExpr: TypeExpr;
       isConst: boolean;
     }
   | {
-      _: Statement_.FunctionWithReturnValueVariableDefinition;
-      name: ReadonlyArray<string>;
-      parameterList: ReadonlyArray<{
-        name: ReadonlyArray<string>;
-        typeExpr: TypeExpr;
-      }>;
+      _: Statement_.FunctionDefinition;
+      name: string;
+      parameterList: ReadonlyArray<Parameter>;
       returnType: TypeExpr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.ReturnVoidFunctionVariableDefinition;
-      name: ReadonlyArray<string>;
-      parameterList: ReadonlyArray<{
-        name: ReadonlyArray<string>;
-        typeExpr: TypeExpr;
-      }>;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
       _: Statement_.For;
-      counterVariableName: ReadonlyArray<string>;
+      counterVariableName: string;
       untilExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
       _: Statement_.ForOf;
-      elementVariableName: ReadonlyArray<string>;
+      elementVariableName: string;
       iterableExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
@@ -245,8 +313,7 @@ export const enum Statement_ {
   ReturnVoid,
   Continue,
   VariableDefinition,
-  FunctionWithReturnValueVariableDefinition,
-  ReturnVoidFunctionVariableDefinition,
+  FunctionDefinition,
   For,
   ForOf,
   WhileTrue,
@@ -746,20 +813,11 @@ export const importedVariable = (path: string, name: string): Expr => ({
 });
 
 /**
- * グローバル空間にある変数
+ * 変数
  * @param name 変数名
  */
-export const globalVariable = (name: string): Expr => ({
-  _: Expr_.GlobalVariable,
-  name
-});
-
-/**
- * ローカル変数
- * @param name 名前 (出力時には短い名前に変換される)
- */
-export const localVariable = (name: ReadonlyArray<string>): Expr => ({
-  _: Expr_.LocalVariable,
+export const variable = (name: string): Expr => ({
+  _: Expr_.Variable,
   name
 });
 
@@ -872,7 +930,7 @@ export const continueStatement = (): Statement => ({
  * @param expr 式
  */
 export const variableDefinition = (
-  name: ReadonlyArray<string>,
+  name: string,
   typeExpr: TypeExpr,
   expr: Expr
 ): Statement => ({
@@ -891,7 +949,7 @@ export const variableDefinition = (
  * @param expr 式
  */
 export const letVariableDefinition = (
-  name: ReadonlyArray<string>,
+  name: string,
   typeExpr: TypeExpr,
   expr: Expr
 ): Statement => ({
@@ -903,47 +961,23 @@ export const letVariableDefinition = (
 });
 
 /**
- * `const a = (parameterList): returnType => { statementList }`
+ * `const name = (parameterList): returnType => { statementList }`
  * ローカル関数の定義
- * @param name 名前 (出力時には短い名前に変換される。この名前には`!`を使えない)
+ * @param name 名前
  * @param parameterList パラメータ
  * @param returnType 戻り値の型
  * @param statementList 関数本体
  */
-export const functionWithReturnValueVariableDefinition = (
-  name: ReadonlyArray<string>,
-  parameterList: ReadonlyArray<{
-    name: ReadonlyArray<string>;
-    typeExpr: TypeExpr;
-  }>,
+export const functionDefinition = (
+  name: string,
+  parameterList: ReadonlyArray<Parameter>,
   returnType: TypeExpr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
-  _: Statement_.FunctionWithReturnValueVariableDefinition,
+  _: Statement_.FunctionDefinition,
   name,
   parameterList,
   returnType,
-  statementList
-});
-
-/**
- * const a = (parameterList): void => { statementList }
- * 戻り値がないローカル関数の定義
- * @param name 名前(出力時には短い名前に変換される)
- * @param parameterList パラメータ
- * @param statementList 関数本体
- */
-export const returnVoidFunctionVariableDefinition = (
-  name: ReadonlyArray<string>,
-  parameterList: ReadonlyArray<{
-    name: ReadonlyArray<string>;
-    typeExpr: TypeExpr;
-  }>,
-  statementList: ReadonlyArray<Statement>
-): Statement => ({
-  _: Statement_.ReturnVoidFunctionVariableDefinition,
-  name,
-  parameterList,
   statementList
 });
 
@@ -957,7 +991,7 @@ export const returnVoidFunctionVariableDefinition = (
  * @param statementList 繰り返す内容
  */
 export const forStatement = (
-  counterVariableName: ReadonlyArray<string>,
+  counterVariableName: string,
   untilExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
@@ -975,7 +1009,7 @@ export const forStatement = (
  * ```
  */
 export const forOfStatement = (
-  elementVariableName: ReadonlyArray<string>,
+  elementVariableName: string,
   iterableExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
@@ -1192,6 +1226,13 @@ export const typeNull: TypeExpr = {
  */
 export const typeNever: TypeExpr = {
   _: TypeExpr_.Never
+};
+
+/**
+ * void型
+ */
+export const typeVoid: TypeExpr = {
+  _: TypeExpr_.Void
 };
 
 /**

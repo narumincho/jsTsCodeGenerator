@@ -41,7 +41,7 @@ export const scanExpr = (
       scanStatementList(expr.statementList, scanData);
       return;
 
-    case type.Expr_.GlobalVariable:
+    case type.Expr_.Variable:
       identifer.checkIdentiferThrow("global variable name", expr.name);
       scanData.globalNameSet.add(expr.name);
       return;
@@ -119,18 +119,11 @@ export const scanStatement = (
       typeExpr.scan(statement.typeExpr, scanData);
       return;
 
-    case type.Statement_.FunctionWithReturnValueVariableDefinition:
+    case type.Statement_.FunctionDefinition:
       for (const parameter of statement.parameterList) {
         typeExpr.scan(parameter.typeExpr, scanData);
       }
       typeExpr.scan(statement.returnType, scanData);
-      scanStatementList(statement.statementList, scanData);
-      return;
-
-    case type.Statement_.ReturnVoidFunctionVariableDefinition:
-      for (const parameter of statement.parameterList) {
-        typeExpr.scan(parameter.typeExpr, scanData);
-      }
       scanStatementList(statement.statementList, scanData);
       return;
 

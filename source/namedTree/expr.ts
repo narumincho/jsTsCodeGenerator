@@ -22,7 +22,7 @@ export const lambdaBodyToString = (
     statementList[0]._ === type.Statement_.Return
   ) {
     return exprToStringWithCombineStrength(
-      type.lambdaReturnVoid([], []),
+      type.lambda([], type.typeVoid, []),
       statementList[0].expr,
       indent,
       codeType
@@ -133,7 +133,7 @@ const exprToCodeAsString = (
       }
       break;
 
-    case type.Expr_.GlobalVariable:
+    case type.Expr_.Variable:
       return expr.name;
 
     case type.Expr_.ImportedVariable:
@@ -168,9 +168,6 @@ const exprToCodeAsString = (
           .join("," + codeTypeSpace(codeType)) +
         ")"
       );
-
-    case type.Expr_.LocalVariable:
-      return expr.name;
 
     case type.Expr_.EnumTag:
       switch (codeType) {
@@ -284,9 +281,8 @@ const exprCombineStrength = (expr: type.Expr): number => {
     case type.Expr_.NullLiteral:
     case type.Expr_.UndefinedLiteral:
     case type.Expr_.ArrayLiteral:
-    case type.Expr_.GlobalVariable:
+    case type.Expr_.Variable:
     case type.Expr_.ImportedVariable:
-    case type.Expr_.LocalVariable:
     case type.Expr_.BuiltIn:
       return 23;
     case type.Expr_.Lambda:
@@ -446,7 +442,7 @@ const statementToTypeScriptCodeAsString = (
       }
       break;
 
-    case type.Statement_.FunctionWithReturnValueVariableDefinition:
+    case type.Statement_.FunctionDefinition:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -465,40 +461,6 @@ const statementToTypeScriptCodeAsString = (
             "): " +
             typeExpr.typeExprToString(statement.returnType) +
             "=>" +
-            lambdaBodyToString(statement.statementList, indent, codeType) +
-            ";"
-          );
-        case CodeType.JavaScript:
-          return (
-            indentString +
-            "const " +
-            statement.name +
-            "=(" +
-            statement.parameterList.map(parameter => parameter.name).join(",") +
-            ")=>" +
-            lambdaBodyToString(statement.statementList, indent, codeType) +
-            ";"
-          );
-      }
-      break;
-
-    case type.Statement_.ReturnVoidFunctionVariableDefinition:
-      switch (codeType) {
-        case CodeType.TypeScript:
-          return (
-            indentString +
-            "const " +
-            statement.name +
-            " = (" +
-            statement.parameterList
-              .map(
-                parameter =>
-                  parameter.name +
-                  ": " +
-                  typeExpr.typeExprToString(parameter.typeExpr)
-              )
-              .join(", ") +
-            "): void => " +
             lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
           );
