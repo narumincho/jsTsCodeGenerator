@@ -1,226 +1,6 @@
 import * as typeExpr from "./typeExpr";
 import * as identifer from "../identifer";
 import * as type from "../type";
-import * as builtIn from "../builtIn";
-
-export type Expr =
-  | { _: Expr_.NumberLiteral; value: number }
-  | {
-      _: Expr_.StringLiteral;
-      value: string;
-    }
-  | {
-      _: Expr_.BooleanLiteral;
-      value: boolean;
-    }
-  | {
-      _: Expr_.NullLiteral;
-    }
-  | {
-      _: Expr_.UndefinedLiteral;
-    }
-  | {
-      _: Expr_.UnaryOperator;
-      operator: type.UnaryOperator;
-      expr: Expr;
-    }
-  | {
-      _: Expr_.BinaryOperator;
-      operator: type.BinaryOperator;
-      left: Expr;
-      right: Expr;
-    }
-  | {
-      _: Expr_.ConditionalOperator;
-      condition: Expr;
-      thenExpr: Expr;
-      elseExpr: Expr;
-    }
-  | {
-      _: Expr_.ArrayLiteral;
-      exprList: ReadonlyArray<Expr>;
-    }
-  | {
-      _: Expr_.ObjectLiteral;
-      memberList: Map<string, Expr>;
-    }
-  | {
-      _: Expr_.LambdaWithReturn;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: typeExpr.TypeExpr;
-      }>;
-      returnType: typeExpr.TypeExpr;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Expr_.LambdaReturnVoid;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: typeExpr.TypeExpr;
-      }>;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Expr_.GlobalVariable;
-      name: string;
-    }
-  | {
-      _: Expr_.ImportedVariable;
-      nameSpaceIdentifer: string;
-      name: string;
-    }
-  | {
-      _: Expr_.Argument;
-      name: string;
-    }
-  | {
-      _: Expr_.Get;
-      expr: Expr;
-      propertyName: Expr;
-    }
-  | {
-      _: Expr_.Call;
-      expr: Expr;
-      parameterList: ReadonlyArray<Expr>;
-    }
-  | {
-      _: Expr_.New;
-      expr: Expr;
-      parameterList: ReadonlyArray<Expr>;
-    }
-  | {
-      _: Expr_.LocalVariable;
-      name: string;
-    }
-  | {
-      _: Expr_.ConstEnumPattern;
-      typeName: string;
-      tagName: string;
-      value: number;
-    }
-  | {
-      _: Expr_.BuiltIn;
-      builtIn: builtIn.Variable;
-    };
-
-export const enum Expr_ {
-  NumberLiteral,
-  StringLiteral,
-  BooleanLiteral,
-  UndefinedLiteral,
-  NullLiteral,
-  ArrayLiteral,
-  ObjectLiteral,
-  UnaryOperator,
-  BinaryOperator,
-  ConditionalOperator,
-  LambdaWithReturn,
-  LambdaReturnVoid,
-  GlobalVariable,
-  ImportedVariable,
-  Argument,
-  Get,
-  Call,
-  IfWithVoidReturn,
-  New,
-  LocalVariable,
-  ConstEnumPattern,
-  BuiltIn
-}
-
-export type Statement =
-  | {
-      _: Statement_.EvaluateExpr;
-      expr: Expr;
-    }
-  | {
-      _: Statement_.Set;
-      targetObject: Expr;
-      operator: type.BinaryOperator | null;
-      expr: Expr;
-    }
-  | {
-      _: Statement_.If;
-      condition: Expr;
-      thenStatementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Statement_.ThrowError;
-      errorMessage: Expr;
-    }
-  | {
-      _: Statement_.Return;
-      expr: Expr;
-    }
-  | {
-      _: Statement_.ReturnVoid;
-    }
-  | {
-      _: Statement_.Continue;
-    }
-  | {
-      _: Statement_.VariableDefinition;
-      name: string;
-      expr: Expr;
-      typeExpr: typeExpr.TypeExpr;
-      isConst: boolean;
-    }
-  | {
-      _: Statement_.FunctionWithReturnValueVariableDefinition;
-      name: string;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: typeExpr.TypeExpr;
-      }>;
-      returnType: typeExpr.TypeExpr;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Statement_.ReturnVoidFunctionVariableDefinition;
-      name: string;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: typeExpr.TypeExpr;
-      }>;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Statement_.For;
-      counterVariableName: string;
-      untilExpr: Expr;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Statement_.ForOf;
-      elementVariableName: string;
-      iterableExpr: Expr;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Statement_.WhileTrue;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Statement_.Break;
-    };
-
-export const enum Statement_ {
-  EvaluateExpr,
-  Set,
-  If,
-  ThrowError,
-  Return,
-  ReturnVoid,
-  Continue,
-  VariableDefinition,
-  FunctionWithReturnValueVariableDefinition,
-  ReturnVoidFunctionVariableDefinition,
-  For,
-  ForOf,
-  WhileTrue,
-  Break
-}
 
 export const enum CodeType {
   JavaScript,
@@ -233,17 +13,16 @@ export const enum CodeType {
  * @param indent
  */
 export const lambdaBodyToString = (
-  statementList: ReadonlyArray<Statement>,
+  statementList: ReadonlyArray<type.Statement>,
   indent: number,
   codeType: CodeType
 ): string => {
-  if (statementList.length === 1 && statementList[0]._ === Statement_.Return) {
+  if (
+    statementList.length === 1 &&
+    statementList[0]._ === type.Statement_.Return
+  ) {
     return exprToStringWithCombineStrength(
-      {
-        _: Expr_.LambdaReturnVoid,
-        parameterList: [],
-        statementList: []
-      },
+      type.lambdaReturnVoid([], []),
       statementList[0].expr,
       indent,
       codeType
@@ -257,27 +36,27 @@ export const lambdaBodyToString = (
  * @param expr 式
  */
 const exprToCodeAsString = (
-  expr: Expr,
+  expr: type.Expr,
   indent: number,
   codeType: CodeType
 ): string => {
   switch (expr._) {
-    case Expr_.NumberLiteral:
+    case type.Expr_.NumberLiteral:
       return expr.value.toString();
 
-    case Expr_.StringLiteral:
+    case type.Expr_.StringLiteral:
       return stringLiteralValueToString(expr.value);
 
-    case Expr_.BooleanLiteral:
+    case type.Expr_.BooleanLiteral:
       return expr.value ? "true" : "false";
 
-    case Expr_.UndefinedLiteral:
+    case type.Expr_.UndefinedLiteral:
       return "undefined";
 
-    case Expr_.NullLiteral:
+    case type.Expr_.NullLiteral:
       return "null";
 
-    case Expr_.ArrayLiteral:
+    case type.Expr_.ArrayLiteral:
       return (
         "[" +
         expr.exprList
@@ -286,7 +65,7 @@ const exprToCodeAsString = (
         "]"
       );
 
-    case Expr_.ObjectLiteral:
+    case type.Expr_.ObjectLiteral:
       return (
         "{" +
         codeTypeSpace(codeType) +
@@ -304,12 +83,12 @@ const exprToCodeAsString = (
         "}"
       );
 
-    case Expr_.UnaryOperator:
+    case type.Expr_.UnaryOperator:
       return (
         expr.operator +
         exprToStringWithCombineStrength(expr, expr.expr, indent, codeType)
       );
-    case Expr_.BinaryOperator:
+    case type.Expr_.BinaryOperator:
       return binaryOperatorExprToString(
         expr.operator,
         expr.left,
@@ -317,7 +96,7 @@ const exprToCodeAsString = (
         indent,
         codeType
       );
-    case Expr_.ConditionalOperator:
+    case type.Expr_.ConditionalOperator:
       return (
         exprToStringWithCombineStrength(
           expr,
@@ -331,7 +110,7 @@ const exprToCodeAsString = (
         exprToStringWithCombineStrength(expr, expr.elseExpr, indent, codeType)
       );
 
-    case Expr_.LambdaWithReturn:
+    case type.Expr_.LambdaWithReturn:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -354,7 +133,7 @@ const exprToCodeAsString = (
       }
       break;
 
-    case Expr_.LambdaReturnVoid:
+    case type.Expr_.LambdaReturnVoid:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -375,16 +154,16 @@ const exprToCodeAsString = (
       }
       break;
 
-    case Expr_.GlobalVariable:
+    case type.Expr_.GlobalVariable:
       return expr.name;
 
-    case Expr_.ImportedVariable:
+    case type.Expr_.ImportedVariable:
       return expr.nameSpaceIdentifer + "." + expr.name;
 
-    case Expr_.Argument:
+    case type.Expr_.Argument:
       return expr.name;
 
-    case Expr_.Get:
+    case type.Expr_.Get:
       return (
         exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
         (expr.propertyName._ === Expr_.StringLiteral &&
@@ -393,7 +172,7 @@ const exprToCodeAsString = (
           : "[" + exprToCodeAsString(expr.propertyName, indent, codeType) + "]")
       );
 
-    case Expr_.Call:
+    case type.Expr_.Call:
       return (
         exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
         "(" +
@@ -403,7 +182,7 @@ const exprToCodeAsString = (
         ")"
       );
 
-    case Expr_.New:
+    case type.Expr_.New:
       return (
         "new " +
         exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
@@ -414,10 +193,10 @@ const exprToCodeAsString = (
         ")"
       );
 
-    case Expr_.LocalVariable:
+    case type.Expr_.LocalVariable:
       return expr.name;
 
-    case Expr_.ConstEnumPattern:
+    case type.Expr_.ConstEnumPattern:
       switch (codeType) {
         case CodeType.JavaScript:
           return expr.value.toString();
@@ -426,7 +205,7 @@ const exprToCodeAsString = (
       }
       break;
 
-    case Expr_.BuiltIn:
+    case type.Expr_.BuiltIn:
       return builtInToString(expr.builtIn);
   }
 };
@@ -479,13 +258,13 @@ const binaryOperatorAssociativity = (
 
 const binaryOperatorExprToString = (
   operator: type.BinaryOperator,
-  left: Expr,
-  right: Expr,
+  left: type.Expr,
+  right: type.Expr,
   indent: number,
   codeType: CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
-    _: Expr_.BinaryOperator,
+    _: type.Expr_.BinaryOperator,
     operator,
     left,
     right
@@ -510,8 +289,8 @@ const binaryOperatorExprToString = (
 };
 
 const exprToStringWithCombineStrength = (
-  expr: Expr,
-  target: Expr,
+  expr: type.Expr,
+  target: type.Expr,
   indent: number,
   codeType: CodeType
 ): string => {
@@ -521,35 +300,34 @@ const exprToStringWithCombineStrength = (
   return exprToCodeAsString(target, indent, codeType);
 };
 
-const exprCombineStrength = (expr: Expr): number => {
+const exprCombineStrength = (expr: type.Expr): number => {
   switch (expr._) {
-    case Expr_.NumberLiteral:
-    case Expr_.StringLiteral:
-    case Expr_.BooleanLiteral:
-    case Expr_.NullLiteral:
-    case Expr_.UndefinedLiteral:
-    case Expr_.ArrayLiteral:
-    case Expr_.GlobalVariable:
-    case Expr_.ImportedVariable:
-    case Expr_.Argument:
-    case Expr_.LocalVariable:
-    case Expr_.BuiltIn:
+    case type.Expr_.NumberLiteral:
+    case type.Expr_.StringLiteral:
+    case type.Expr_.BooleanLiteral:
+    case type.Expr_.NullLiteral:
+    case type.Expr_.UndefinedLiteral:
+    case type.Expr_.ArrayLiteral:
+    case type.Expr_.GlobalVariable:
+    case type.Expr_.ImportedVariable:
+    case type.Expr_.LocalVariable:
+    case type.Expr_.BuiltIn:
       return 23;
-    case Expr_.LambdaWithReturn:
-    case Expr_.LambdaReturnVoid:
+    case type.Expr_.LambdaWithReturn:
+    case type.Expr_.LambdaReturnVoid:
       return 22;
-    case Expr_.ObjectLiteral:
+    case type.Expr_.ObjectLiteral:
       return 21;
-    case Expr_.Get:
-    case Expr_.Call:
-    case Expr_.New:
-    case Expr_.ConstEnumPattern:
+    case type.Expr_.Get:
+    case type.Expr_.Call:
+    case type.Expr_.New:
+    case type.Expr_.EnumTag:
       return 20;
-    case Expr_.UnaryOperator:
+    case type.Expr_.UnaryOperator:
       return 17;
-    case Expr_.BinaryOperator:
+    case type.Expr_.BinaryOperator:
       return binaryOperatorCombineStrength(expr.operator);
-    case Expr_.ConditionalOperator:
+    case type.Expr_.ConditionalOperator:
       return 4;
   }
 };
@@ -591,7 +369,7 @@ const binaryOperatorCombineStrength = (
 };
 
 export const statementListToString = (
-  statementList: ReadonlyArray<Statement>,
+  statementList: ReadonlyArray<type.Statement>,
   indent: number,
   codeType: CodeType
 ): string =>
@@ -610,20 +388,20 @@ export const statementListToString = (
  * @param statement 文
  */
 const statementToTypeScriptCodeAsString = (
-  statement: Statement,
+  statement: type.Statement,
   indent: number,
   codeType: CodeType
 ): string => {
   const indentString = "  ".repeat(indent);
   switch (statement._) {
-    case Statement_.EvaluateExpr:
+    case type.Statement_.EvaluateExpr:
       return (
         indentString +
         exprToCodeAsString(statement.expr, indent, codeType) +
         ";"
       );
 
-    case Statement_.Set:
+    case type.Statement_.Set:
       return (
         indentString +
         exprToCodeAsString(statement.targetObject, indent, codeType) +
@@ -635,7 +413,7 @@ const statementToTypeScriptCodeAsString = (
         ";"
       );
 
-    case Statement_.If:
+    case type.Statement_.If:
       return (
         indentString +
         "if (" +
@@ -644,7 +422,7 @@ const statementToTypeScriptCodeAsString = (
         statementListToString(statement.thenStatementList, indent, codeType)
       );
 
-    case Statement_.ThrowError:
+    case type.Statement_.ThrowError:
       return (
         indentString +
         "throw new Error(" +
@@ -652,7 +430,7 @@ const statementToTypeScriptCodeAsString = (
         ");"
       );
 
-    case Statement_.Return:
+    case type.Statement_.Return:
       return (
         indentString +
         "return " +
@@ -660,13 +438,13 @@ const statementToTypeScriptCodeAsString = (
         ";"
       );
 
-    case Statement_.ReturnVoid:
+    case type.Statement_.ReturnVoid:
       return indentString + "return;";
 
-    case Statement_.Continue:
+    case type.Statement_.Continue:
       return indentString + "continue;";
 
-    case Statement_.VariableDefinition:
+    case type.Statement_.VariableDefinition:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -693,7 +471,7 @@ const statementToTypeScriptCodeAsString = (
       }
       break;
 
-    case Statement_.FunctionWithReturnValueVariableDefinition:
+    case type.Statement_.FunctionWithReturnValueVariableDefinition:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -729,7 +507,7 @@ const statementToTypeScriptCodeAsString = (
       }
       break;
 
-    case Statement_.ReturnVoidFunctionVariableDefinition:
+    case type.Statement_.ReturnVoidFunctionVariableDefinition:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -763,7 +541,7 @@ const statementToTypeScriptCodeAsString = (
       }
       break;
 
-    case Statement_.For:
+    case type.Statement_.For:
       return (
         indentString +
         "for (let " +
@@ -778,7 +556,7 @@ const statementToTypeScriptCodeAsString = (
         statementListToString(statement.statementList, indent, codeType)
       );
 
-    case Statement_.ForOf:
+    case type.Statement_.ForOf:
       return (
         indentString +
         "for (const " +
@@ -789,42 +567,44 @@ const statementToTypeScriptCodeAsString = (
         statementListToString(statement.statementList, indent, codeType)
       );
 
-    case Statement_.WhileTrue:
+    case type.Statement_.WhileTrue:
       return (
         indentString +
         "while (true) " +
         statementListToString(statement.statementList, indent, codeType)
       );
 
-    case Statement_.Break:
+    case type.Statement_.Break:
       return indentString + "break;";
   }
 };
 
-export const builtInToString = (builtInObjects: builtIn.Variable): string => {
+export const builtInToString = (
+  builtInObjects: type.BuiltInVariable
+): string => {
   switch (builtInObjects) {
-    case builtIn.Variable.Object:
+    case type.BuiltInVariable.Object:
       return "Object";
 
-    case builtIn.Variable.Number:
+    case type.BuiltInVariable.Number:
       return "Number";
 
-    case builtIn.Variable.Math:
+    case type.BuiltInVariable.Math:
       return "Math";
 
-    case builtIn.Variable.Date:
+    case type.BuiltInVariable.Date:
       return "Date";
 
-    case builtIn.Variable.Uint8Array:
+    case type.BuiltInVariable.Uint8Array:
       return "Uint8Array";
 
-    case builtIn.Variable.Map:
+    case type.BuiltInVariable.Map:
       return "Map";
 
-    case builtIn.Variable.Set:
+    case type.BuiltInVariable.Set:
       return "Set";
 
-    case builtIn.Variable.console:
+    case type.BuiltInVariable.console:
       return "console";
   }
 };

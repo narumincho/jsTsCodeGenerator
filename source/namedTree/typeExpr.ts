@@ -1,76 +1,12 @@
-import * as builtIn from "../builtIn";
-
-/**
- * 型を表現する式
- */
-export type TypeExpr =
-  | { _: TypeExpr_.Number }
-  | { _: TypeExpr_.String }
-  | { _: TypeExpr_.Boolean }
-  | { _: TypeExpr_.Undefined }
-  | { _: TypeExpr_.Null }
-  | { _: TypeExpr_.Never }
-  | { _: TypeExpr_.Void }
-  | {
-      _: TypeExpr_.Object;
-      memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
-    }
-  | {
-      _: TypeExpr_.Function;
-      parameterList: ReadonlyArray<{
-        name: string;
-        typeExpr: TypeExpr;
-      }>;
-      return: TypeExpr;
-    }
-  | {
-      _: TypeExpr_.EnumTagLiteral;
-      typeName: string;
-      tagName: string;
-    }
-  | {
-      _: TypeExpr_.Union;
-      types: ReadonlyArray<TypeExpr>;
-    }
-  | {
-      _: TypeExpr_.WithTypeParameter;
-      typeExpr: TypeExpr;
-      typeParameterList: ReadonlyArray<TypeExpr>;
-    }
-  | {
-      _: TypeExpr_.ImportedType;
-      nameSpaceIdentifer: string;
-      name: string;
-    }
-  | { _: TypeExpr_.GlobalType; name: string }
-  | { _: TypeExpr_.BuiltIn; builtIn: builtIn.Type };
-
-export const enum TypeExpr_ {
-  Number,
-  String,
-  Boolean,
-  Undefined,
-  Null,
-  Never,
-  Void,
-  Object,
-  Function,
-  FunctionReturnVoid,
-  EnumTagLiteral,
-  Union,
-  WithTypeParameter,
-  ImportedType,
-  GlobalType,
-  BuiltIn
-}
+import * as type from "../type";
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   parameterList: ReadonlyArray<{
     name: string;
-    typeExpr: TypeExpr;
+    typeExpr: type.TypeExpr;
   }>,
-  returnType: TypeExpr | null
+  returnType: type.TypeExpr | null
 ): string =>
   "(" +
   parameterList
@@ -85,30 +21,30 @@ const functionTypeToString = (
  * 型の式をコードに変換する
  * @param typeExpr 型の式
  */
-export const typeExprToString = (typeExpr: TypeExpr): string => {
+export const typeExprToString = (typeExpr: type.TypeExpr): string => {
   switch (typeExpr._) {
-    case TypeExpr_.Number:
+    case type.TypeExpr_.Number:
       return "number";
 
-    case TypeExpr_.String:
+    case type.TypeExpr_.String:
       return "string";
 
-    case TypeExpr_.Boolean:
+    case type.TypeExpr_.Boolean:
       return "boolean";
 
-    case TypeExpr_.Null:
+    case type.TypeExpr_.Null:
       return "null";
 
-    case TypeExpr_.Never:
+    case type.TypeExpr_.Never:
       return "never";
 
-    case TypeExpr_.Void:
+    case type.TypeExpr_.Void:
       return "void";
 
-    case TypeExpr_.Undefined:
+    case type.TypeExpr_.Undefined:
       return "undefined";
 
-    case TypeExpr_.Object:
+    case type.TypeExpr_.Object:
       return (
         "{ " +
         [...typeExpr.memberList.entries()]
@@ -120,18 +56,18 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
         " }"
       );
 
-    case TypeExpr_.Function:
+    case type.TypeExpr_.Function:
       return functionTypeToString(typeExpr.parameterList, typeExpr.return);
 
-    case TypeExpr_.EnumTagLiteral:
+    case type.TypeExpr_.EnumTagLiteral:
       return typeExpr.typeName + "." + typeExpr.tagName;
 
-    case TypeExpr_.Union:
+    case type.TypeExpr_.Union:
       return typeExpr.types
         .map(typeExpr => typeExprToString(typeExpr))
         .join(" | ");
 
-    case TypeExpr_.WithTypeParameter:
+    case type.TypeExpr_.WithTypeParameter:
       return (
         typeExprToString(typeExpr.typeExpr) +
         "<" +
@@ -139,36 +75,36 @@ export const typeExprToString = (typeExpr: TypeExpr): string => {
         ">"
       );
 
-    case TypeExpr_.GlobalType:
+    case type.TypeExpr_.GlobalType:
       return typeExpr.name;
 
-    case TypeExpr_.ImportedType:
+    case type.TypeExpr_.ImportedType:
       return typeExpr.nameSpaceIdentifer + "." + typeExpr.name;
 
-    case TypeExpr_.BuiltIn:
+    case type.TypeExpr_.BuiltIn:
       return builtInToString(typeExpr.builtIn);
   }
 };
 
-const builtInToString = (builtInType: builtIn.Type): string => {
+const builtInToString = (builtInType: type.BuiltInType): string => {
   switch (builtInType) {
-    case builtIn.Type.Array:
+    case type.BuiltInType.Array:
       return "Array";
-    case builtIn.Type.ReadonlyArray:
+    case type.BuiltInType.ReadonlyArray:
       return "ReadonlyArray";
-    case builtIn.Type.Uint8Array:
+    case type.BuiltInType.Uint8Array:
       return "Uint8Array";
-    case builtIn.Type.Promise:
+    case type.BuiltInType.Promise:
       return "Promise";
-    case builtIn.Type.Date:
+    case type.BuiltInType.Date:
       return "Date";
-    case builtIn.Type.Map:
+    case type.BuiltInType.Map:
       return "Map";
-    case builtIn.Type.ReadonlyMap:
+    case type.BuiltInType.ReadonlyMap:
       return "ReadonlyMap";
-    case builtIn.Type.Set:
+    case type.BuiltInType.Set:
       return "Set";
-    case builtIn.Type.ReadonlySet:
+    case type.BuiltInType.ReadonlySet:
       return "ReadonlySet";
   }
 };
