@@ -11,72 +11,6 @@ export { identifer };
  *                                      Module
  * ====================================================================================== */
 
-/**
- * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
- */
-const scanCode = (code: type.Code): type.GlobalNameData => {
-  const scanData: type.GlobalNameData = type.init;
-  for (const definition of code.exportDefinition) {
-    scanDefinition(definition, scanData);
-  }
-  return scanData;
-};
-
-const scanDefinition = (
-  definition: type.Definition,
-  scanData: type.GlobalNameData
-): void => {
-  switch (definition._) {
-    case type.Definition_.TypeAlias:
-      identifer.checkIdentiferThrow(
-        "export type name",
-        definition.typeAlias.name
-      );
-      scanData.globalNameSet.add(definition.typeAlias.name);
-      collect.scanType(definition.typeAlias.typeExpr, scanData);
-      return;
-
-    case type.Definition_.Enum:
-      identifer.checkIdentiferThrow("export enum name", definition.enum_.name);
-      for (const tagNameAndValue of definition.enum_.tagNameAndValueList) {
-        identifer.checkIdentiferThrow(
-          "enum member at " + definition.enum_.name,
-          tagNameAndValue.name
-        );
-      }
-      return;
-
-    case type.Definition_.Function:
-      identifer.checkIdentiferThrow(
-        "export function name",
-        definition.function_.name
-      );
-      scanData.globalNameSet.add(definition.function_.name);
-      for (const parameter of definition.function_.parameterList) {
-        identifer.checkIdentiferThrow(
-          "export function parameter name. functionName = " +
-            definition.function_.name,
-          parameter.name
-        );
-        scanData.globalNameSet.add(parameter.name);
-        collect.scanType(parameter.typeExpr, scanData);
-      }
-      collect.scanType(definition.function_.returnType, scanData);
-      collect.scanStatementList(definition.function_.statementList, scanData);
-      return;
-
-    case type.Definition_.Variable:
-      identifer.checkIdentiferThrow(
-        "export variable name",
-        definition.variable.name
-      );
-      scanData.globalNameSet.add(definition.variable.name);
-      collect.scanType(definition.variable.typeExpr, scanData);
-      collect.scanExpr(definition.variable.expr, scanData);
-      return;
-  }
-};
-
 const createImportedModuleName = (
   importedModulePathSet: Set<string>,
   identiferIndex: identifer.IdentiferIndex,
@@ -105,7 +39,7 @@ const createImportedModuleName = (
 
 export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const { globalNameSet, importedModulePath } = scanCode(code);
+  const { globalNameSet, importedModulePath } = collect.collectCode(code);
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
     importedModuleNameMap,
@@ -208,9 +142,9 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
   );
 };
 
-export const toESModulesBrowserCode = (code: Code): string => {
+export const toESModulesBrowserCode = (code: type.Code): string => {
   // グローバル空間にある名前とimportしたESモジュールのURLを集める
-  const { globalNameSet, importedModulePath } = scanCode(code);
+  const { globalNameSet, importedModulePath } = collect.collectCode(code);
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
