@@ -18,7 +18,7 @@ const scanDefinition = (
   switch (definition._) {
     case data.Definition_.TypeAlias:
       scanData.usedNameSet.add(definition.typeAlias.name);
-      collectType(definition.typeAlias.typeExpr, scanData);
+      collectType(definition.typeAlias.type_, scanData);
       return;
 
     case data.Definition_.Enum:
@@ -32,7 +32,7 @@ const scanDefinition = (
       scanData.usedNameSet.add(definition.function_.name);
       for (const parameter of definition.function_.parameterList) {
         scanData.usedNameSet.add(parameter.name);
-        collectType(parameter.typeExpr, scanData);
+        collectType(parameter.type_, scanData);
       }
       collectType(definition.function_.returnType, scanData);
       collectStatementList(definition.function_.statementList, scanData);
@@ -40,7 +40,7 @@ const scanDefinition = (
 
     case data.Definition_.Variable:
       scanData.usedNameSet.add(definition.variable.name);
-      collectType(definition.variable.typeExpr, scanData);
+      collectType(definition.variable.type_, scanData);
       collectExpr(definition.variable.expr, scanData);
       return;
   }
@@ -79,7 +79,7 @@ const collectExpr = (
 
     case data.Expr_.Lambda:
       for (const oneParameter of expr.parameterList) {
-        collectType(oneParameter.typeExpr, scanData);
+        collectType(oneParameter.type_, scanData);
       }
       collectType(expr.returnType, scanData);
       collectStatementList(expr.statementList, scanData);
@@ -158,12 +158,12 @@ const collectStatement = (
 
     case data.Statement_.VariableDefinition:
       collectExpr(statement.expr, scanData);
-      collectType(statement.typeExpr, scanData);
+      collectType(statement.type_, scanData);
       return;
 
     case data.Statement_.FunctionDefinition:
       for (const parameter of statement.parameterList) {
-        collectType(parameter.typeExpr, scanData);
+        collectType(parameter.type_, scanData);
       }
       collectType(statement.returnType, scanData);
       collectStatementList(statement.statementList, scanData);
@@ -208,54 +208,54 @@ const searchName = (
 
 /**
  * グローバル空間(グローバル変数、直下の関数の引数名)に出ている型の名前を集める
- * @param typeExpr 型の式
+ * @param type_ 型の式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectType = (
-  typeExpr: data.TypeExpr,
+  type_: data.Type,
   scanData: data.UsedNameAndModulePath
 ): void => {
-  switch (typeExpr._) {
-    case data.TypeExpr_.Number:
-    case data.TypeExpr_.String:
-    case data.TypeExpr_.Boolean:
-    case data.TypeExpr_.Null:
-    case data.TypeExpr_.Undefined:
-    case data.TypeExpr_.EnumTagLiteral:
+  switch (type_._) {
+    case data.Type_.Number:
+    case data.Type_.String:
+    case data.Type_.Boolean:
+    case data.Type_.Null:
+    case data.Type_.Undefined:
+    case data.Type_.EnumTagLiteral:
       return;
 
-    case data.TypeExpr_.Object:
-      for (const [, value] of typeExpr.memberList) {
-        collectType(value.typeExpr, scanData);
+    case data.Type_.Object:
+      for (const [, value] of type_.memberList) {
+        collectType(value.type_, scanData);
       }
       return;
 
-    case data.TypeExpr_.Function:
-      for (const parameter of typeExpr.parameterList) {
+    case data.Type_.Function:
+      for (const parameter of type_.parameterList) {
         collectType(parameter, scanData);
       }
-      collectType(typeExpr.return, scanData);
+      collectType(type_.return, scanData);
       return;
 
-    case data.TypeExpr_.Union:
-      for (const oneType of typeExpr.types) {
+    case data.Type_.Union:
+      for (const oneType of type_.types) {
         collectType(oneType, scanData);
       }
       return;
 
-    case data.TypeExpr_.WithTypeParameter:
-      collectType(typeExpr.typeExpr, scanData);
-      for (const parameter of typeExpr.typeParameterList) {
+    case data.Type_.WithTypeParameter:
+      collectType(type_.type_, scanData);
+      for (const parameter of type_.typeParameterList) {
         collectType(parameter, scanData);
       }
       return;
 
-    case data.TypeExpr_.ImportedType:
-      scanData.modulePathList.add(typeExpr.moduleName);
+    case data.Type_.ImportedType:
+      scanData.modulePathList.add(type_.moduleName);
       return;
 
-    case data.TypeExpr_.GlobalType:
-      scanData.usedNameSet.add(typeExpr.name);
+    case data.Type_.GlobalType:
+      scanData.usedNameSet.add(type_.name);
       return;
   }
 };

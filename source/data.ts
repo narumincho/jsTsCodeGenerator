@@ -70,32 +70,32 @@ export const definitionVariable = (variable: Variable): Definition => ({
 export type TypeAlias = {
   readonly name: identifer.Identifer;
   readonly document: string;
-  readonly typeExpr: TypeExpr;
+  readonly type_: Type;
 };
 
 export type Function = {
   readonly name: identifer.Identifer;
   readonly document: string;
   readonly parameterList: ReadonlyArray<ParameterWithDocument>;
-  readonly returnType: TypeExpr;
+  readonly returnType: Type;
   readonly statementList: ReadonlyArray<Statement>;
 };
 
 export type ParameterWithDocument = {
   readonly name: identifer.Identifer;
   readonly document: string;
-  readonly typeExpr: TypeExpr;
+  readonly type_: Type;
 };
 
 export type Parameter = {
   name: identifer.Identifer;
-  typeExpr: TypeExpr;
+  type_: Type;
 };
 
 export type Variable = {
   readonly name: identifer.Identifer;
   readonly document: string;
-  readonly typeExpr: TypeExpr;
+  readonly type_: Type;
   readonly expr: Expr;
 };
 
@@ -208,7 +208,7 @@ export type Expr =
   | {
       _: Expr_.Lambda;
       parameterList: ReadonlyArray<Parameter>;
-      returnType: TypeExpr;
+      returnType: Type;
       statementList: ReadonlyArray<Statement>;
     }
   | {
@@ -303,14 +303,14 @@ export type Statement =
       _: Statement_.VariableDefinition;
       name: string;
       expr: Expr;
-      typeExpr: TypeExpr;
+      type_: Type;
       isConst: boolean;
     }
   | {
       _: Statement_.FunctionDefinition;
       name: string;
       parameterList: ReadonlyArray<Parameter>;
-      returnType: TypeExpr;
+      returnType: Type;
       statementList: ReadonlyArray<Statement>;
     }
   | {
@@ -352,46 +352,46 @@ export const enum Statement_ {
 /**
  * 型を表現する式
  */
-export type TypeExpr =
-  | { _: TypeExpr_.Number }
-  | { _: TypeExpr_.String }
-  | { _: TypeExpr_.Boolean }
-  | { _: TypeExpr_.Undefined }
-  | { _: TypeExpr_.Null }
-  | { _: TypeExpr_.Never }
-  | { _: TypeExpr_.Void }
+export type Type =
+  | { _: Type_.Number }
+  | { _: Type_.String }
+  | { _: Type_.Boolean }
+  | { _: Type_.Undefined }
+  | { _: Type_.Null }
+  | { _: Type_.Never }
+  | { _: Type_.Void }
   | {
-      _: TypeExpr_.Object;
-      memberList: Map<string, { typeExpr: TypeExpr; document: string }>;
+      _: Type_.Object;
+      memberList: Map<string, { type_: Type; document: string }>;
     }
   | {
-      _: TypeExpr_.Function;
-      parameterList: ReadonlyArray<TypeExpr>;
-      return: TypeExpr;
+      _: Type_.Function;
+      parameterList: ReadonlyArray<Type>;
+      return: Type;
     }
   | {
-      _: TypeExpr_.WithTypeParameter;
-      typeExpr: TypeExpr;
-      typeParameterList: ReadonlyArray<TypeExpr>;
+      _: Type_.WithTypeParameter;
+      type_: Type;
+      typeParameterList: ReadonlyArray<Type>;
     }
   | {
-      _: TypeExpr_.EnumTagLiteral;
+      _: Type_.EnumTagLiteral;
       typeName: string;
       tagName: string;
     }
   | {
-      _: TypeExpr_.Union;
-      types: ReadonlyArray<TypeExpr>;
+      _: Type_.Union;
+      types: ReadonlyArray<Type>;
     }
   | {
-      _: TypeExpr_.ImportedType;
+      _: Type_.ImportedType;
       moduleName: string;
       name: string;
     }
-  | { _: TypeExpr_.GlobalType; name: identifer.Identifer }
-  | { _: TypeExpr_.BuiltIn; builtIn: BuiltInType };
+  | { _: Type_.GlobalType; name: identifer.Identifer }
+  | { _: Type_.BuiltIn; builtIn: BuiltInType };
 
-export const enum TypeExpr_ {
+export const enum Type_ {
   Number,
   String,
   Boolean,
@@ -759,7 +759,7 @@ export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
  */
 export const lambda = (
   parameterList: ReadonlyArray<Parameter>,
-  returnType: TypeExpr,
+  returnType: Type,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
   _: Expr_.Lambda,
@@ -952,40 +952,40 @@ export const continueStatement = (): Statement => ({
 });
 
 /**
- * `const a: typeExpr = expr`
+ * `const a: type_ = expr`
  * ローカル変数の定義。変数名は自動で決まる
  * @param name 名前 (出力時には短い名前に変換される。この名前には`!`を使えない)
- * @param typeExpr 型
+ * @param type_ 型
  * @param expr 式
  */
 export const variableDefinition = (
   name: string,
-  typeExpr: TypeExpr,
+  type_: Type,
   expr: Expr
 ): Statement => ({
   _: Statement_.VariableDefinition,
   name,
   expr,
-  typeExpr,
+  type_,
   isConst: true
 });
 
 /**
- * `let a: typeExpr = expr`
+ * `let a: type_ = expr`
  * 上書きできる変数を定義する
  * @param name 名前
- * @param typeExpr 型
+ * @param type_ 型
  * @param expr 式
  */
 export const letVariableDefinition = (
   name: string,
-  typeExpr: TypeExpr,
+  type_: Type,
   expr: Expr
 ): Statement => ({
   _: Statement_.VariableDefinition,
   name,
   expr,
-  typeExpr,
+  type_,
   isConst: false
 });
 
@@ -1000,7 +1000,7 @@ export const letVariableDefinition = (
 export const functionDefinition = (
   name: string,
   parameterList: ReadonlyArray<Parameter>,
-  returnType: TypeExpr,
+  returnType: Type,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
   _: Statement_.FunctionDefinition,
@@ -1218,59 +1218,59 @@ export const consoleLog = (expr: Expr): Statement =>
 /**
  * プリミティブの型のnumber
  */
-export const typeNumber: TypeExpr = {
-  _: TypeExpr_.Number
+export const typeNumber: Type = {
+  _: Type_.Number
 };
 
 /**
  * プリミティブの型のstring
  */
-export const typeString: TypeExpr = {
-  _: TypeExpr_.String
+export const typeString: Type = {
+  _: Type_.String
 };
 
 /**
  * プリミティブの型のboolean
  */
-export const typeBoolean: TypeExpr = {
-  _: TypeExpr_.Boolean
+export const typeBoolean: Type = {
+  _: Type_.Boolean
 };
 
 /**
  * プリミティブの型のundefined
  */
-export const typeUndefined: TypeExpr = {
-  _: TypeExpr_.Undefined
+export const typeUndefined: Type = {
+  _: Type_.Undefined
 };
 
 /**
  * プリミティブの型のnull
  */
-export const typeNull: TypeExpr = {
-  _: TypeExpr_.Null
+export const typeNull: Type = {
+  _: Type_.Null
 };
 
 /**
  * never型
  */
-export const typeNever: TypeExpr = {
-  _: TypeExpr_.Never
+export const typeNever: Type = {
+  _: Type_.Never
 };
 
 /**
  * void型
  */
-export const typeVoid: TypeExpr = {
-  _: TypeExpr_.Void
+export const typeVoid: Type = {
+  _: Type_.Void
 };
 
 /**
  * オブジェクト
  */
 export const object = (
-  memberList: Map<string, { typeExpr: TypeExpr; document: string }>
-): TypeExpr => ({
-  _: TypeExpr_.Object,
+  memberList: Map<string, { type_: Type; document: string }>
+): Type => ({
+  _: Type_.Object,
   memberList: memberList
 });
 
@@ -1278,10 +1278,10 @@ export const object = (
  * 関数 `(parameter: parameter) => returnType`
  */
 export const functionWithReturn = (
-  parameter: ReadonlyArray<TypeExpr>,
-  returnType: TypeExpr
-): TypeExpr => ({
-  _: TypeExpr_.Function,
+  parameter: ReadonlyArray<Type>,
+  returnType: Type
+): Type => ({
+  _: Type_.Function,
   parameterList: parameter,
   return: returnType
 });
@@ -1291,11 +1291,8 @@ export const functionWithReturn = (
  * @param typeName 型の名前 `Color`
  * @param tagName タグの名前 `Red`
  */
-export const enumTagLiteral = (
-  typeName: string,
-  tagName: string
-): TypeExpr => ({
-  _: TypeExpr_.EnumTagLiteral,
+export const enumTagLiteral = (typeName: string, tagName: string): Type => ({
+  _: Type_.EnumTagLiteral,
   typeName,
   tagName: tagName
 });
@@ -1303,8 +1300,8 @@ export const enumTagLiteral = (
  * ユニオン型 `a | b`
  * @param types 型のリスト
  */
-export const union = (types: ReadonlyArray<TypeExpr>): TypeExpr => ({
-  _: TypeExpr_.Union,
+export const union = (types: ReadonlyArray<Type>): Type => ({
+  _: Type_.Union,
   types
 });
 
@@ -1312,11 +1309,11 @@ export const union = (types: ReadonlyArray<TypeExpr>): TypeExpr => ({
  * 型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`
  */
 export const withTypeParameter = (
-  typeExpr: TypeExpr,
-  typeParameterList: ReadonlyArray<TypeExpr>
-): TypeExpr => ({
-  _: TypeExpr_.WithTypeParameter,
-  typeExpr,
+  type_: Type,
+  typeParameterList: ReadonlyArray<Type>
+): Type => ({
+  _: Type_.WithTypeParameter,
+  type_,
   typeParameterList
 });
 
@@ -1325,8 +1322,8 @@ export const withTypeParameter = (
  * @param path インポートするモジュールのパス
  * @param name 型名
  */
-export const importedType = (path: string, name: string): TypeExpr => ({
-  _: TypeExpr_.ImportedType,
+export const importedType = (path: string, name: string): Type => ({
+  _: Type_.ImportedType,
   moduleName: path,
   name
 });
@@ -1335,16 +1332,16 @@ export const importedType = (path: string, name: string): TypeExpr => ({
  * グローバル空間の型
  * @param name 型名
  */
-export const globalType = (name: identifer.Identifer): TypeExpr => ({
-  _: TypeExpr_.GlobalType,
+export const globalType = (name: identifer.Identifer): Type => ({
+  _: Type_.GlobalType,
   name
 });
 
 /**
  * 標準に入っている型
  */
-const builtInType = (builtIn: BuiltInType): TypeExpr => ({
-  _: TypeExpr_.BuiltIn,
+const builtInType = (builtIn: BuiltInType): Type => ({
+  _: Type_.BuiltIn,
   builtIn
 });
 /* =======================================================
@@ -1355,54 +1352,51 @@ const builtInType = (builtIn: BuiltInType): TypeExpr => ({
 /**
  * `Array<elementType>`
  */
-export const arrayType = (elementType: TypeExpr): TypeExpr =>
+export const arrayType = (elementType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.Array), [elementType]);
 
 /**
  * `ReadonlyArray<elementType>`
  */
-export const readonlyArrayType = (elementType: TypeExpr): TypeExpr =>
+export const readonlyArrayType = (elementType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.ReadonlyArray), [elementType]);
 
 /**
  * `Uint8Array`
  */
-export const uint8ArrayType: TypeExpr = builtInType(BuiltInType.Uint8Array);
+export const uint8ArrayType: Type = builtInType(BuiltInType.Uint8Array);
 
 /**
  * `Promise<returnType>`
  */
-export const promiseType = (returnType: TypeExpr): TypeExpr =>
+export const promiseType = (returnType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.Promise), [returnType]);
 
 /**
  * `Date`
  */
-export const dateType: TypeExpr = builtInType(BuiltInType.Date);
+export const dateType: Type = builtInType(BuiltInType.Date);
 
 /**
  * `Map<keyType, valueType>`
  */
-export const mapType = (keyType: TypeExpr, valueType: TypeExpr): TypeExpr =>
+export const mapType = (keyType: Type, valueType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.Map), [keyType, valueType]);
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
-export const readonlyMapType = (
-  keyType: TypeExpr,
-  valueType: TypeExpr
-): TypeExpr =>
+export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.ReadonlyMap), [keyType, valueType]);
 
 /**
  * `Set<elementType>`
  */
-export const setType = (elementType: TypeExpr): TypeExpr =>
+export const setType = (elementType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.Set), [elementType]);
 
 /**
  * `ReadonlySet<elementType>`
  */
-export const readonlySetType = (elementType: TypeExpr): TypeExpr =>
+export const readonlySetType = (elementType: Type): Type =>
   withTypeParameter(builtInType(BuiltInType.ReadonlySet), [elementType]);

@@ -3,7 +3,6 @@ import * as data from "./data";
 import * as identifer from "./identifer";
 import * as toString from "./toString";
 
-export { collect };
 export { data };
 export { identifer };
 

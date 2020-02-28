@@ -72,7 +72,7 @@ const typeAliasToString = (
     "export type " +
     (typeAlias.name as string) +
     " = " +
-    typeExprToString(typeAlias.typeExpr, collectedData) +
+    typeToString(typeAlias.type_, collectedData) +
     ";\n\n"
   );
 };
@@ -108,11 +108,11 @@ const functionToString = (
         parameter =>
           (parameter.name as string) +
           ": " +
-          typeExprToString(parameter.typeExpr, collectedData)
+          typeToString(parameter.type_, collectedData)
       )
       .join(", ") +
     "): " +
-    typeExprToString(function_.returnType, collectedData) +
+    typeToString(function_.returnType, collectedData) +
     " => " +
     lambdaBodyToString(function_.statementList, 0, collectedData, codeType) +
     ";\n\n"
@@ -129,7 +129,7 @@ const variableToString = (
     "export const " +
     (variable.name as string) +
     ": " +
-    typeExprToString(variable.typeExpr, collectedData) +
+    typeToString(variable.type_, collectedData) +
     " = " +
     exprToString(variable.expr, 0, collectedData, codeType) +
     ";\n\n"
@@ -293,11 +293,11 @@ const exprToString = (
                 o =>
                   (o.name as string) +
                   ": " +
-                  typeExprToString(o.typeExpr, collectedData)
+                  typeToString(o.type_, collectedData)
               )
               .join(", ") +
             "): " +
-            typeExprToString(expr.returnType, collectedData) +
+            typeToString(expr.returnType, collectedData) +
             "=>" +
             lambdaBodyToString(
               expr.statementList,
@@ -668,7 +668,7 @@ const statementToTypeScriptCodeAsString = (
             " " +
             (statement.name as string) +
             ": " +
-            typeExprToString(statement.typeExpr, collectedData) +
+            typeToString(statement.type_, collectedData) +
             " = " +
             exprToString(statement.expr, indent, collectedData, codeType) +
             ";"
@@ -699,11 +699,11 @@ const statementToTypeScriptCodeAsString = (
                 parameter =>
                   (parameter.name as string) +
                   ": " +
-                  typeExprToString(parameter.typeExpr, collectedData)
+                  typeToString(parameter.type_, collectedData)
               )
               .join(", ") +
             "): " +
-            typeExprToString(statement.returnType, collectedData) +
+            typeToString(statement.returnType, collectedData) +
             "=>" +
             lambdaBodyToString(
               statement.statementList,
@@ -817,21 +817,21 @@ export const builtInToString = (
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
-  parameterTypeList: ReadonlyArray<data.TypeExpr>,
-  returnType: data.TypeExpr,
+  parameterTypeList: ReadonlyArray<data.Type>,
+  returnType: data.Type,
   collectedData: data.CollectedData
 ): string => {
   let index = identifer.initialIdentiferIndex;
   const parameterList: Array<{
     name: string;
-    typeExpr: data.TypeExpr;
+    type_: data.Type;
   }> = [];
   for (const parameter of parameterTypeList) {
     const indexAndIdentifer = identifer.createIdentifer(index, new Set());
     index = indexAndIdentifer.nextIdentiferIndex;
     parameterList.push({
       name: indexAndIdentifer.identifer,
-      typeExpr: parameter
+      type_: parameter
     });
   }
 
@@ -840,102 +840,98 @@ const functionTypeToString = (
     parameterList
       .map(
         parameter =>
-          parameter.name +
-          ": " +
-          typeExprToString(parameter.typeExpr, collectedData)
+          parameter.name + ": " + typeToString(parameter.type_, collectedData)
       )
       .join(", ") +
     ") => " +
-    typeExprToString(returnType, collectedData)
+    typeToString(returnType, collectedData)
   );
 };
 /**
  * 型の式をコードに変換する
- * @param typeExpr 型の式
+ * @param type_ 型の式
  */
-export const typeExprToString = (
-  typeExpr: data.TypeExpr,
+export const typeToString = (
+  type_: data.Type,
   collectedData: data.CollectedData
 ): string => {
-  switch (typeExpr._) {
-    case data.TypeExpr_.Number:
+  switch (type_._) {
+    case data.Type_.Number:
       return "number";
 
-    case data.TypeExpr_.String:
+    case data.Type_.String:
       return "string";
 
-    case data.TypeExpr_.Boolean:
+    case data.Type_.Boolean:
       return "boolean";
 
-    case data.TypeExpr_.Null:
+    case data.Type_.Null:
       return "null";
 
-    case data.TypeExpr_.Never:
+    case data.Type_.Never:
       return "never";
 
-    case data.TypeExpr_.Void:
+    case data.Type_.Void:
       return "void";
 
-    case data.TypeExpr_.Undefined:
+    case data.Type_.Undefined:
       return "undefined";
 
-    case data.TypeExpr_.Object:
+    case data.Type_.Object:
       return (
         "{ " +
-        [...typeExpr.memberList.entries()]
+        [...type_.memberList.entries()]
           .map(
             ([name, typeAndDocument]) =>
-              name +
-              ": " +
-              typeExprToString(typeAndDocument.typeExpr, collectedData)
+              name + ": " + typeToString(typeAndDocument.type_, collectedData)
           )
           .join("; ") +
         " }"
       );
 
-    case data.TypeExpr_.Function:
+    case data.Type_.Function:
       return functionTypeToString(
-        typeExpr.parameterList,
-        typeExpr.return,
+        type_.parameterList,
+        type_.return,
         collectedData
       );
 
-    case data.TypeExpr_.EnumTagLiteral:
-      return typeExpr.typeName + "." + typeExpr.tagName;
+    case data.Type_.EnumTagLiteral:
+      return type_.typeName + "." + type_.tagName;
 
-    case data.TypeExpr_.Union:
-      return typeExpr.types
-        .map(typeExpr => typeExprToString(typeExpr, collectedData))
+    case data.Type_.Union:
+      return type_.types
+        .map(type_ => typeToString(type_, collectedData))
         .join(" | ");
 
-    case data.TypeExpr_.WithTypeParameter:
+    case data.Type_.WithTypeParameter:
       return (
-        typeExprToString(typeExpr.typeExpr, collectedData) +
+        typeToString(type_.type_, collectedData) +
         "<" +
-        typeExpr.typeParameterList
-          .map(type_ => typeExprToString(type_, collectedData))
+        type_.typeParameterList
+          .map(type_ => typeToString(type_, collectedData))
           .join(", ") +
         ">"
       );
 
-    case data.TypeExpr_.GlobalType:
-      return typeExpr.name;
+    case data.Type_.GlobalType:
+      return type_.name;
 
-    case data.TypeExpr_.ImportedType: {
+    case data.Type_.ImportedType: {
       const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
-        typeExpr.moduleName
+        type_.moduleName
       );
       if (nameSpaceIdentifer === undefined) {
         throw Error(
-          "収集されなかった, モジュールがある moduleName=" + typeExpr.moduleName
+          "収集されなかった, モジュールがある moduleName=" + type_.moduleName
         );
       }
 
-      return (nameSpaceIdentifer as string) + "." + typeExpr.name;
+      return (nameSpaceIdentifer as string) + "." + type_.name;
     }
 
-    case data.TypeExpr_.BuiltIn:
-      return builtInTypeToString(typeExpr.builtIn);
+    case data.Type_.BuiltIn:
+      return builtInTypeToString(type_.builtIn);
   }
 };
 
