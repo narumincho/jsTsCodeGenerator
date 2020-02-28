@@ -174,3 +174,28 @@ const createIdentiferByIndex = (index: number): string => {
     index = quotient;
   }
 };
+
+/**
+ *識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
+ * @param word 識別子として使えるかどうか調べるワード
+ */
+export const isIdentifer = (word: string): boolean => {
+  if (word.length <= 0) {
+    return false;
+  }
+  if (
+    !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(word[0])
+  ) {
+    return false;
+  }
+  for (let i = 1; i < word.length; i++) {
+    if (
+      !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
+        word[i]
+      )
+    ) {
+      return false;
+    }
+  }
+  return !reservedByLanguageWordSet.has(word);
+};

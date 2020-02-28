@@ -5,7 +5,9 @@ import * as type from "./type";
  * 出力するコードの種類
  */
 export const enum CodeType {
+  /** Enumの値は数値リテラルとして展開される. 型情報が出力されない */
   JavaScript,
+  /** 型情報も出力される */
   TypeScript
 }
 
@@ -14,11 +16,113 @@ export const enum CodeType {
  */
 export const toString = (
   code: type.Code,
-  importedModuleNameIdentiferMap: type.ImportedModuleNameIdentiferMap,
+  collectedData: type.CollectedData,
   codeType: CodeType
 ): string => {
+  const importCode =
+    [...collectedData.importedModuleNameIdentiferMap.entries()]
+      .map(
+        ([name, identifer]) =>
+          "import * as " + (identifer as string) + ' from "' + name + '";'
+      )
+      .join("\n") + "\n";
+
+  const definitionCode =
+    code.exportDefinition.map(definitionToString).join("\n") + "\n";
+
+  const statementCode = statementListToString(code.statementList, 0, codeType);
+
+  if (code.statementList.length === 0) {
+    return importCode + definitionCode;
+  }
+  return importCode + definitionCode + statementCode;
+};
+
+const definitionToString = (definition: type.Definition): string => {
+  switch (definition._) {
+    case type.Definition_.TypeAlias:
+      return typeAliasToString(definition.typeAlias);
+    case type.Definition_.Enum:
+      return enumToString(definition.enum_);
+    case type.Definition_.Function:
+      return functionToString(definition.function_);
+    case type.Definition_.Variable:
+      return variableToString(definition.variable);
+  }
+};
+
+const typeAliasToString = (typeAlias: type.TypeAlias): string => {
+  return (
+    documentToString(typeAlias.document) +
+    "export type " +
+    (typeAlias.name as string) +
+    " = " +
+    typeExprToString(typeAlias.typeExpr) +
+    ";"
+  );
+};
+
+const enumToString = (enum_: type.Enum): string => {
+  return (
+    documentToString(enum_.document) +
+    "export const enum" +
+    " {\n" +
+    enum_.tagList
+      .map(tag => documentToString(tag.document) + "  " + (tag.name as string))
+      .join(",\n") +
+    "\n}"
+  );
+};
+
+const functionToString = (function_: type.Function): string => {
+  return (
+    documentToString(
+      function_.document +
+        "\n" +
+        parameterListToDocument(function_.parameterList)
+    ) +
+    "export const " +
+    (function_.name as string) +
+    " = (" +
+    function_.parameterList
+      .map(
+        parameter =>
+          (parameter.name as string) +
+          ": " +
+          typeExprToString(parameter.typeExpr)
+      )
+      .join(", ") +
+    "): " +
+    typeExprToString(function_.returnType) +
+    " => " +
+    lambdaBodyToString(function_.statementList, 0, CodeType.TypeScript) +
+    ";"
+  );
+};
+
+const variableToString = (variable: type.Variable): string => {
   return "";
 };
+
+const documentToString = (document: string): string =>
+  document === ""
+    ? ""
+    : "/**\n" +
+      document
+        .split("\n")
+        .map(line => (line === "" ? " *" : " * " + line))
+        .join("\n") +
+      "\n */\n";
+
+const parameterListToDocument = (
+  parameterList: ReadonlyArray<type.ParameterWithDocument>
+): string =>
+  parameterList
+    .map(parameter =>
+      parameter.document === "" ? "" : "@param " + parameter.document + "\n"
+    )
+    .join("");
+
 /**
  * ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形にする
  * @param statementList
@@ -128,10 +232,12 @@ const exprToCodeAsString = (
           return (
             "(" +
             expr.parameterList
-              .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
+              .map(
+                o => (o.name as string) + ": " + typeExprToString(o.typeExpr)
+              )
               .join(", ") +
             "): " +
-            typeExpr.typeExprToString(expr.returnType) +
+            typeExprToString(expr.returnType) +
             "=>" +
             lambdaBodyToString(expr.statementList, indent, codeType)
           );
@@ -149,12 +255,12 @@ const exprToCodeAsString = (
       return expr.name;
 
     case type.Expr_.ImportedVariable:
-      return expr.nameSpaceIdentifer + "." + expr.name;
+      return expr.nameSpaceIdentifer + "." + expr.name; // TODO
 
     case type.Expr_.Get:
       return (
         exprToStringWithCombineStrength(expr, expr.expr, indent, codeType) +
-        (expr.propertyName._ === Expr_.StringLiteral &&
+        (expr.propertyName._ === type.Expr_.StringLiteral &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
           : "[" + exprToCodeAsString(expr.propertyName, indent, codeType) + "]")
@@ -184,7 +290,7 @@ const exprToCodeAsString = (
     case type.Expr_.EnumTag:
       switch (codeType) {
         case CodeType.JavaScript:
-          return expr.value.toString();
+          return expr.value.toString(); //TODO
         case CodeType.TypeScript:
           return expr.typeName + "." + expr.tagName;
       }
@@ -434,9 +540,9 @@ const statementToTypeScriptCodeAsString = (
             indentString +
             (statement.isConst ? "const" : "let") +
             " " +
-            statement.name +
+            (statement.name as string) +
             ": " +
-            typeExpr.typeExprToString(statement.typeExpr) +
+            typeExprToString(statement.typeExpr) +
             " = " +
             exprToCodeAsString(statement.expr, indent, codeType) +
             ";"
@@ -460,18 +566,18 @@ const statementToTypeScriptCodeAsString = (
           return (
             indentString +
             "const " +
-            statement.name +
+            (statement.name as string) +
             " = (" +
             statement.parameterList
               .map(
                 parameter =>
-                  parameter.name +
+                  (parameter.name as string) +
                   ": " +
-                  typeExpr.typeExprToString(parameter.typeExpr)
+                  typeExprToString(parameter.typeExpr)
               )
               .join(", ") +
             "): " +
-            typeExpr.typeExprToString(statement.returnType) +
+            typeExprToString(statement.returnType) +
             "=>" +
             lambdaBodyToString(statement.statementList, indent, codeType) +
             ";"
@@ -561,8 +667,7 @@ export const builtInToString = (
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   parameterTypeList: ReadonlyArray<type.TypeExpr>,
-  returnType: type.TypeExpr,
-  reserved: ReadonlySet<string>
+  returnType: type.TypeExpr
 ): string => {
   let index = identifer.initialIdentiferIndex;
   const parameterList: Array<{
@@ -570,7 +675,7 @@ const functionTypeToString = (
     typeExpr: type.TypeExpr;
   }> = [];
   for (const parameter of parameterTypeList) {
-    const indexAndIdentifer = identifer.createIdentifer(index, reserved);
+    const indexAndIdentifer = identifer.createIdentifer(index, new Set());
     index = indexAndIdentifer.nextIdentiferIndex;
     parameterList.push({
       name: indexAndIdentifer.identifer,
@@ -652,7 +757,7 @@ export const typeExprToString = (typeExpr: type.TypeExpr): string => {
       return typeExpr.name;
 
     case type.TypeExpr_.ImportedType:
-      return typeExpr.nameSpaceIdentifer + "." + typeExpr.name;
+      return typeExpr.nameSpaceIdentifer + "." + typeExpr.name; // TODO
 
     case type.TypeExpr_.BuiltIn:
       return builtInTypeToString(typeExpr.builtIn);

@@ -18,36 +18,18 @@ const scanDefinition = (
 ): void => {
   switch (definition._) {
     case type.Definition_.TypeAlias:
-      identifer.checkIdentiferThrow(
-        "export type name",
-        definition.typeAlias.name
-      );
       scanData.usedNameSet.add(definition.typeAlias.name);
       collectType(definition.typeAlias.typeExpr, scanData);
       return;
 
     case type.Definition_.Enum:
-      identifer.checkIdentiferThrow("export enum name", definition.enum_.name);
-      for (const tagNameAndValue of definition.enum_.tagNameAndValueList) {
-        identifer.checkIdentiferThrow(
-          "enum member at " + definition.enum_.name,
-          tagNameAndValue.name
-        );
+      for (const tagNameAndValue of definition.enum_.tagList) {
       }
       return;
 
     case type.Definition_.Function:
-      identifer.checkIdentiferThrow(
-        "export function name",
-        definition.function_.name
-      );
       scanData.usedNameSet.add(definition.function_.name);
       for (const parameter of definition.function_.parameterList) {
-        identifer.checkIdentiferThrow(
-          "export function parameter name. functionName = " +
-            definition.function_.name,
-          parameter.name
-        );
         scanData.usedNameSet.add(parameter.name);
         collectType(parameter.typeExpr, scanData);
       }
@@ -56,10 +38,6 @@ const scanDefinition = (
       return;
 
     case type.Definition_.Variable:
-      identifer.checkIdentiferThrow(
-        "export variable name",
-        definition.variable.name
-      );
       scanData.usedNameSet.add(definition.variable.name);
       collectType(definition.variable.typeExpr, scanData);
       collectExpr(definition.variable.expr, scanData);
@@ -107,12 +85,10 @@ const collectExpr = (
       return;
 
     case type.Expr_.Variable:
-      identifer.checkIdentiferThrow("global variable name", expr.name);
       scanData.usedNameSet.add(expr.name);
       return;
 
     case type.Expr_.ImportedVariable:
-      identifer.checkIdentiferThrow("imported variable name", expr.name);
       scanData.modulePathList.add(expr.path);
       return;
 

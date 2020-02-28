@@ -23,7 +23,7 @@ export type Definition =
     }
   | {
       _: Definition_.Function;
-      function_: Function_;
+      function_: Function;
     }
   | {
       _: Definition_.Variable;
@@ -47,7 +47,7 @@ export const definitionEnum = (enum_: Enum): Definition => ({
   enum_
 });
 
-export const definitionFunction = (function_: Function_): Definition => ({
+export const definitionFunction = (function_: Function): Definition => ({
   _: Definition_.Function,
   function_
 });
@@ -63,7 +63,7 @@ export type TypeAlias = {
   readonly typeExpr: TypeExpr;
 };
 
-export type Function_ = {
+export type Function = {
   readonly name: identifer.Identifer;
   readonly document: string;
   readonly parameterList: ReadonlyArray<ParameterWithDocument>;
@@ -101,12 +101,15 @@ export type UsedNameAndModulePath = {
 export type ModulePathOrName = string & { _modulePathOrName: never };
 
 /**
- * グローバルで使われているものの名前と, モジュールの識別子の辞書
+ * Enumのタグの情報とモジュールの識別子の辞書
  */
-export type ImportedModuleNameIdentiferMap = ReadonlyMap<
-  string,
-  identifer.Identifer
->;
+export type CollectedData = {
+  enumTagListMap: ReadonlyMap<
+    identifer.Identifer,
+    ReadonlyArray<identifer.Identifer>
+  >;
+  importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
+};
 
 export const init: UsedNameAndModulePath = {
   usedNameSet: new Set(),
@@ -116,7 +119,12 @@ export const init: UsedNameAndModulePath = {
 export type Enum = {
   readonly name: string;
   readonly document: string;
-  readonly tagNameAndValueList: ReadonlyArray<identifer.Identifer>;
+  readonly tagList: ReadonlyArray<Tag>;
+};
+
+export type Tag = {
+  name: identifer.Identifer;
+  document: string;
 };
 
 export type UnaryOperator = "-" | "~" | "!";
@@ -190,7 +198,7 @@ export type Expr =
     }
   | {
       _: Expr_.Variable;
-      name: string;
+      name: identifer.Identifer;
     }
   | {
       _: Expr_.ImportedVariable;
@@ -365,7 +373,7 @@ export type TypeExpr =
       path: string;
       name: string;
     }
-  | { _: TypeExpr_.GlobalType; name: string }
+  | { _: TypeExpr_.GlobalType; name: identifer.Identifer }
   | { _: TypeExpr_.BuiltIn; builtIn: BuiltInType };
 
 export const enum TypeExpr_ {
@@ -819,7 +827,7 @@ export const importedVariable = (path: string, name: string): Expr => ({
  * 変数
  * @param name 変数名
  */
-export const variable = (name: string): Expr => ({
+export const variable = (name: identifer.Identifer): Expr => ({
   _: Expr_.Variable,
   name
 });
@@ -1309,7 +1317,7 @@ export const importedType = (path: string, name: string): TypeExpr => ({
  * グローバル空間の型
  * @param name 型名
  */
-export const globalType = (name: string): TypeExpr => ({
+export const globalType = (name: identifer.Identifer): TypeExpr => ({
   _: TypeExpr_.GlobalType,
   name
 });
