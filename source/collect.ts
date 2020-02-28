@@ -4,8 +4,8 @@ import * as type from "./type";
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
-export const collectCode = (code: type.Code): type.GlobalNameData => {
-  const scanData: type.GlobalNameData = type.init;
+export const collectCode = (code: type.Code): type.UsedNameAndModulePath => {
+  const scanData: type.UsedNameAndModulePath = type.init;
   for (const definition of code.exportDefinition) {
     scanDefinition(definition, scanData);
   }
@@ -14,7 +14,7 @@ export const collectCode = (code: type.Code): type.GlobalNameData => {
 
 const scanDefinition = (
   definition: type.Definition,
-  scanData: type.GlobalNameData
+  scanData: type.UsedNameAndModulePath
 ): void => {
   switch (definition._) {
     case type.Definition_.TypeAlias:
@@ -22,7 +22,7 @@ const scanDefinition = (
         "export type name",
         definition.typeAlias.name
       );
-      scanData.globalNameSet.add(definition.typeAlias.name);
+      scanData.usedNameSet.add(definition.typeAlias.name);
       collectType(definition.typeAlias.typeExpr, scanData);
       return;
 
@@ -41,14 +41,14 @@ const scanDefinition = (
         "export function name",
         definition.function_.name
       );
-      scanData.globalNameSet.add(definition.function_.name);
+      scanData.usedNameSet.add(definition.function_.name);
       for (const parameter of definition.function_.parameterList) {
         identifer.checkIdentiferThrow(
           "export function parameter name. functionName = " +
             definition.function_.name,
           parameter.name
         );
-        scanData.globalNameSet.add(parameter.name);
+        scanData.usedNameSet.add(parameter.name);
         collectType(parameter.typeExpr, scanData);
       }
       collectType(definition.function_.returnType, scanData);
@@ -60,7 +60,7 @@ const scanDefinition = (
         "export variable name",
         definition.variable.name
       );
-      scanData.globalNameSet.add(definition.variable.name);
+      scanData.usedNameSet.add(definition.variable.name);
       collectType(definition.variable.typeExpr, scanData);
       collectExpr(definition.variable.expr, scanData);
       return;
@@ -72,7 +72,10 @@ const scanDefinition = (
  * @param expr 式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-const collectExpr = (expr: type.Expr, scanData: type.GlobalNameData): void => {
+const collectExpr = (
+  expr: type.Expr,
+  scanData: type.UsedNameAndModulePath
+): void => {
   switch (expr._) {
     case type.Expr_.NumberLiteral:
     case type.Expr_.UnaryOperator:
@@ -105,12 +108,12 @@ const collectExpr = (expr: type.Expr, scanData: type.GlobalNameData): void => {
 
     case type.Expr_.Variable:
       identifer.checkIdentiferThrow("global variable name", expr.name);
-      scanData.globalNameSet.add(expr.name);
+      scanData.usedNameSet.add(expr.name);
       return;
 
     case type.Expr_.ImportedVariable:
       identifer.checkIdentiferThrow("imported variable name", expr.name);
-      scanData.importedModulePath.add(expr.path);
+      scanData.modulePathList.add(expr.path);
       return;
 
     case type.Expr_.Get:
@@ -136,7 +139,7 @@ const collectExpr = (expr: type.Expr, scanData: type.GlobalNameData): void => {
 
 const collectStatementList = (
   statementList: ReadonlyArray<type.Statement>,
-  scanData: type.GlobalNameData
+  scanData: type.UsedNameAndModulePath
 ): void => {
   for (const statement of statementList) {
     collectStatement(statement, scanData);
@@ -145,7 +148,7 @@ const collectStatementList = (
 
 const collectStatement = (
   statement: type.Statement,
-  scanData: type.GlobalNameData
+  scanData: type.UsedNameAndModulePath
 ): void => {
   switch (statement._) {
     case type.Statement_.EvaluateExpr:
@@ -233,7 +236,7 @@ const searchName = (
  */
 const collectType = (
   typeExpr: type.TypeExpr,
-  scanData: type.GlobalNameData
+  scanData: type.UsedNameAndModulePath
 ): void => {
   switch (typeExpr._) {
     case type.TypeExpr_.Number:
@@ -271,11 +274,11 @@ const collectType = (
       return;
 
     case type.TypeExpr_.ImportedType:
-      scanData.importedModulePath.add(typeExpr.path);
+      scanData.modulePathList.add(typeExpr.path);
       return;
 
     case type.TypeExpr_.GlobalType:
-      scanData.globalNameSet.add(typeExpr.name);
+      scanData.usedNameSet.add(typeExpr.name);
       return;
   }
 };

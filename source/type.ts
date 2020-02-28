@@ -1,3 +1,5 @@
+import * as identifer from "./identifer";
+
 /**
  * TypeScriptやJavaScriptのコードを表現する。
  * TypeScriptでも出力できるように型情報をつける必要がある
@@ -56,13 +58,13 @@ export const definitionVariable = (variable: Variable): Definition => ({
 });
 
 export type TypeAlias = {
-  readonly name: string;
+  readonly name: identifer.Identifer;
   readonly document: string;
   readonly typeExpr: TypeExpr;
 };
 
 export type Function_ = {
-  readonly name: string;
+  readonly name: identifer.Identifer;
   readonly document: string;
   readonly parameterList: ReadonlyArray<ParameterWithDocument>;
   readonly returnType: TypeExpr;
@@ -70,36 +72,49 @@ export type Function_ = {
 };
 
 export type ParameterWithDocument = {
-  readonly name: string;
+  readonly name: identifer.Identifer;
   readonly document: string;
   readonly typeExpr: TypeExpr;
 };
 
 export type Parameter = {
-  name: string;
+  name: identifer.Identifer;
   typeExpr: TypeExpr;
 };
 
 export type Variable = {
-  readonly name: string;
+  readonly name: identifer.Identifer;
   readonly document: string;
   readonly typeExpr: TypeExpr;
   readonly expr: Expr;
 };
 
-export type GlobalNameData = {
-  readonly globalNameSet: Set<string>;
-  readonly importedModulePath: Set<string>;
+/**
+ * グローバルで使われている名前, ローカルで使われている名前, モジュールのパス
+ * 名前を圧縮したり, モジュールの識別子を作るのに使う
+ */
+export type UsedNameAndModulePath = {
+  readonly globalNameSet: Set<identifer.Identifer>;
+  readonly usedNameSet: Set<identifer.Identifer>;
+  readonly modulePathList: Set<string>;
 };
 
+export type ModulePathOrName = string & { _modulePathOrName: never };
+
+/**
+ * グローバルで使われているものの名前と, モジュールの識別子の辞書
+ */
 export type GlobalNameAndImportPathAndIdentifer = {
-  readonly globalNameSet: Set<string>;
-  readonly importedModuleNameIdentiferMap: ReadonlyMap<string, string>;
+  readonly globalNameSet: Set<identifer.Identifer>;
+  readonly importedModuleNameIdentiferMap: ReadonlyMap<
+    string,
+    identifer.Identifer
+  >;
 };
 
-export const init: GlobalNameData = {
-  globalNameSet: new Set(),
-  importedModulePath: new Set()
+export const init: UsedNameAndModulePath = {
+  usedNameSet: new Set(),
+  modulePathList: new Set()
 };
 
 export type Enum = {

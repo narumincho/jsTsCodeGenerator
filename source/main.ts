@@ -39,7 +39,10 @@ const createImportedModuleName = (
 
 export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const { globalNameSet, importedModulePath } = collect.collectCode(code);
+  const {
+    usedNameSet: globalNameSet,
+    modulePathList: importedModulePath
+  } = collect.collectCode(code);
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
     importedModuleNameMap,
@@ -144,7 +147,10 @@ export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
 
 export const toESModulesBrowserCode = (code: type.Code): string => {
   // グローバル空間にある名前とimportしたESモジュールのURLを集める
-  const { globalNameSet, importedModulePath } = collect.collectCode(code);
+  const {
+    usedNameSet: globalNameSet,
+    modulePathList: importedModulePath
+  } = collect.collectCode(code);
 
   // インポートしたモジュールの名前空間識別子を当てはめる
   const {
