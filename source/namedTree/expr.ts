@@ -110,7 +110,7 @@ const exprToCodeAsString = (
         exprToStringWithCombineStrength(expr, expr.elseExpr, indent, codeType)
       );
 
-    case type.Expr_.LambdaWithReturn:
+    case type.Expr_.Lambda:
       switch (codeType) {
         case CodeType.TypeScript:
           return (
@@ -133,35 +133,11 @@ const exprToCodeAsString = (
       }
       break;
 
-    case type.Expr_.LambdaReturnVoid:
-      switch (codeType) {
-        case CodeType.TypeScript:
-          return (
-            "(" +
-            expr.parameterList
-              .map(o => o.name + ": " + typeExpr.typeExprToString(o.typeExpr))
-              .join(", ") +
-            "): void=>" +
-            lambdaBodyToString(expr.statementList, indent, codeType)
-          );
-        case CodeType.JavaScript:
-          return (
-            "(" +
-            expr.parameterList.map(o => o.name).join(",") +
-            ")=>" +
-            lambdaBodyToString(expr.statementList, indent, codeType)
-          );
-      }
-      break;
-
     case type.Expr_.GlobalVariable:
       return expr.name;
 
     case type.Expr_.ImportedVariable:
       return expr.nameSpaceIdentifer + "." + expr.name;
-
-    case type.Expr_.Argument:
-      return expr.name;
 
     case type.Expr_.Get:
       return (
@@ -196,7 +172,7 @@ const exprToCodeAsString = (
     case type.Expr_.LocalVariable:
       return expr.name;
 
-    case type.Expr_.ConstEnumPattern:
+    case type.Expr_.EnumTag:
       switch (codeType) {
         case CodeType.JavaScript:
           return expr.value.toString();
@@ -313,8 +289,7 @@ const exprCombineStrength = (expr: type.Expr): number => {
     case type.Expr_.LocalVariable:
     case type.Expr_.BuiltIn:
       return 23;
-    case type.Expr_.LambdaWithReturn:
-    case type.Expr_.LambdaReturnVoid:
+    case type.Expr_.Lambda:
       return 22;
     case type.Expr_.ObjectLiteral:
       return 21;

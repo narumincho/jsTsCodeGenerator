@@ -88,20 +88,12 @@ export type Expr =
       memberList: Map<string, Expr>;
     }
   | {
-      _: Expr_.LambdaWithReturn;
+      _: Expr_.Lambda;
       parameterList: ReadonlyArray<{
         name: ReadonlyArray<string>;
         typeExpr: TypeExpr;
       }>;
       returnType: TypeExpr;
-      statementList: ReadonlyArray<Statement>;
-    }
-  | {
-      _: Expr_.LambdaReturnVoid;
-      parameterList: ReadonlyArray<{
-        name: ReadonlyArray<string>;
-        typeExpr: TypeExpr;
-      }>;
       statementList: ReadonlyArray<Statement>;
     }
   | {
@@ -153,7 +145,7 @@ export const enum Expr_ {
   UnaryOperator,
   BinaryOperator,
   ConditionalOperator,
-  LambdaWithReturn,
+  Lambda,
   LambdaReturnVoid,
   GlobalVariable,
   ImportedVariable,
@@ -677,7 +669,7 @@ export const lambdaWithReturn = (
   returnType: TypeExpr,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
-  _: Expr_.LambdaWithReturn,
+  _: Expr_.Lambda,
   parameterList,
   returnType,
   statementList
