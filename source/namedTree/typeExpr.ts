@@ -1,21 +1,25 @@
 import * as type from "../type";
+import * as identifer from "../identifer";
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
-  parameterList: ReadonlyArray<{
+  parameterTypeList: ReadonlyArray<type.TypeExpr>,
+  returnType: type.TypeExpr,
+  reserved: ReadonlySet<string>
+): string => {
+  let index = identifer.initialIdentiferIndex;
+  const parameterList: Array<{
     name: string;
     typeExpr: type.TypeExpr;
-  }>,
-  returnType: type.TypeExpr | null
-): string =>
-  "(" +
-  parameterList
-    .map(
-      parameter => parameter.name + ": " + typeExprToString(parameter.typeExpr)
-    )
-    .join(", ") +
-  ") => " +
-  (returnType === null ? "void" : typeExprToString(returnType));
+  }> = [];
+  for (const parameter of parameterTypeList) {
+    const indexAndIdentifer = identifer.createIdentifer(index, reserved);
+    index = indexAndIdentifer.nextIdentiferIndex;
+    parameterList.push({
+      name: indexAndIdentifer.identifer,
+      typeExpr: parameter
+    });
+  }
 
   return (
     "(" +
