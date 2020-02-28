@@ -12,21 +12,20 @@ export { identifer };
  * ====================================================================================== */
 
 const createImportedModuleName = (
-  importedModulePathSet: Set<string>,
-  identiferIndex: identifer.IdentiferIndex,
-  reserved: Set<string>
+  usedNameAndModulePath: type.UsedNameAndModulePath,
+  identiferIndex: identifer.IdentiferIndex
 ): {
-  importedModuleNameMap: Map<string, string>;
+  importedModuleNameMap: type.ImportedModuleNameIdentiferMap;
   nextIdentiferIndex: identifer.IdentiferIndex;
 } => {
   const importedModuleNameMap = new Map<string, string>();
-  for (const importedModulePath of importedModulePathSet) {
+  for (const modulePath of usedNameAndModulePath.modulePathList) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,
-      reserved
+      usedNameAndModulePath.usedNameSet
     );
     importedModuleNameMap.set(
-      importedModulePath,
+      modulePath,
       identiferAndNextIdentiferIndex.identifer
     );
     identiferIndex = identiferAndNextIdentiferIndex.nextIdentiferIndex;
@@ -39,24 +38,14 @@ const createImportedModuleName = (
 
 export const toNodeJsOrBrowserCodeAsTypeScript = (code: type.Code): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const {
-    usedNameSet: globalNameSet,
-    modulePathList: importedModulePath
-  } = collect.collectCode(code);
-  // インポートしたモジュールの名前空間識別子を当てはめる
-  const {
-    importedModuleNameMap,
-    nextIdentiferIndex
-  } = createImportedModuleName(
-    importedModulePath,
-    identifer.initialIdentiferIndex,
-    globalNameSet
+  const usedNameAndModulePath: type.UsedNameAndModulePath = collect.collectCode(
+    code
   );
-
-  const globalNameAndImportPathAndIdentifer: type.GlobalNameAndImportPathAndIdentifer = {
-    globalNameSet: globalNameSet,
-    importedModuleNameIdentiferMap: importedModuleNameMap
-  };
+  // インポートしたモジュールの名前空間識別子を当てはめる
+  const { importedModuleNameMap } = createImportedModuleName(
+    usedNameAndModulePath,
+    identifer.initialIdentiferIndex
+  );
 
   return (
     (importedModuleNameMap.size === 0

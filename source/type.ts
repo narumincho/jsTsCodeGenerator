@@ -90,11 +90,10 @@ export type Variable = {
 };
 
 /**
- * グローバルで使われている名前, ローカルで使われている名前, モジュールのパス
- * 名前を圧縮したり, モジュールの識別子を作るのに使う
+ * 使われている名前, モジュールのパス
+ * モジュールの識別子を作るのに使う
  */
 export type UsedNameAndModulePath = {
-  readonly globalNameSet: Set<identifer.Identifer>;
   readonly usedNameSet: Set<identifer.Identifer>;
   readonly modulePathList: Set<string>;
 };
@@ -104,13 +103,10 @@ export type ModulePathOrName = string & { _modulePathOrName: never };
 /**
  * グローバルで使われているものの名前と, モジュールの識別子の辞書
  */
-export type GlobalNameAndImportPathAndIdentifer = {
-  readonly globalNameSet: Set<identifer.Identifer>;
-  readonly importedModuleNameIdentiferMap: ReadonlyMap<
-    string,
-    identifer.Identifer
-  >;
-};
+export type ImportedModuleNameIdentiferMap = ReadonlyMap<
+  string,
+  identifer.Identifer
+>;
 
 export const init: UsedNameAndModulePath = {
   usedNameSet: new Set(),
@@ -120,12 +116,7 @@ export const init: UsedNameAndModulePath = {
 export type Enum = {
   readonly name: string;
   readonly document: string;
-  readonly tagNameAndValueList: ReadonlyArray<TagNameAndValue>;
-};
-
-export type TagNameAndValue = {
-  readonly name: string;
-  readonly value: number;
+  readonly tagNameAndValueList: ReadonlyArray<identifer.Identifer>;
 };
 
 export type UnaryOperator = "-" | "~" | "!";
@@ -738,16 +729,13 @@ export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
 };
 
 /**
- * 戻り値のあるラムダ式
+ * ラムダ式
  * @param parameter パラメーター
  * @param returnType 戻り値
  * @param statementList 本体
  */
 export const lambda = (
-  parameterList: ReadonlyArray<{
-    name: string;
-    typeExpr: TypeExpr;
-  }>,
+  parameterList: ReadonlyArray<Parameter>,
   returnType: TypeExpr,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({

@@ -133,7 +133,7 @@ export const initialIdentiferIndex = 0 as IdentiferIndex;
 export const createIdentifer = (
   identiferIndex: IdentiferIndex,
   reserved: ReadonlySet<string>
-): { identifer: string; nextIdentiferIndex: IdentiferIndex } => {
+): { identifer: Identifer; nextIdentiferIndex: IdentiferIndex } => {
   while (true) {
     const result = createIdentiferByIndex(identiferIndex);
     if (reserved.has(result) || reservedByLanguageWordSet.has(result)) {
@@ -141,7 +141,7 @@ export const createIdentifer = (
       continue;
     }
     return {
-      identifer: result,
+      identifer: result as Identifer,
       nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex
     };
   }

@@ -1,11 +1,24 @@
 import * as identifer from "./identifer";
 import * as type from "./type";
 
+/**
+ * 出力するコードの種類
+ */
 export const enum CodeType {
   JavaScript,
   TypeScript
 }
 
+/**
+ * コードを文字列にする
+ */
+export const toString = (
+  code: type.Code,
+  importedModuleNameIdentiferMap: type.ImportedModuleNameIdentiferMap,
+  codeType: CodeType
+): string => {
+  return "";
+};
 /**
  * ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形にする
  * @param statementList
