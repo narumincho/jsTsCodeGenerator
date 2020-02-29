@@ -678,7 +678,7 @@ const statementToTypeScriptCodeAsString = (
             indentString +
             (statement.isConst ? "const" : "let") +
             " " +
-            statement.name +
+            (statement.name as string) +
             "=" +
             exprToString(statement.expr, indent, collectedData, codeType) +
             ";"
@@ -717,7 +717,7 @@ const statementToTypeScriptCodeAsString = (
           return (
             indentString +
             "const " +
-            statement.name +
+            (statement.name as string) +
             "=(" +
             statement.parameterList.map(parameter => parameter.name).join(",") +
             ")=>" +
@@ -736,13 +736,13 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "for (let " +
-        statement.counterVariableName +
+        (statement.counterVariableName as string) +
         " = 0; " +
-        statement.counterVariableName +
+        (statement.counterVariableName as string) +
         " < " +
         exprToString(statement.untilExpr, indent, collectedData, codeType) +
         ";" +
-        statement.counterVariableName +
+        (statement.counterVariableName as string) +
         "+= 1)" +
         statementListToString(
           statement.statementList,
@@ -756,7 +756,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "for (const " +
-        statement.elementVariableName +
+        (statement.elementVariableName as string) +
         " of " +
         exprToString(statement.iterableExpr, indent, collectedData, codeType) +
         ")" +
@@ -897,7 +897,7 @@ export const typeToString = (
       );
 
     case data.Type_.EnumTagLiteral:
-      return type_.typeName + "." + type_.tagName;
+      return (type_.typeName as string) + "." + (type_.tagName as string);
 
     case data.Type_.Union:
       return type_.types
@@ -927,7 +927,7 @@ export const typeToString = (
         );
       }
 
-      return (nameSpaceIdentifer as string) + "." + type_.name;
+      return (nameSpaceIdentifer as string) + "." + (type_.name as string);
     }
 
     case data.Type_.BuiltIn:

@@ -376,8 +376,8 @@ export type Type =
     }
   | {
       _: Type_.EnumTagLiteral;
-      typeName: string;
-      tagName: string;
+      typeName: identifer.Identifer;
+      tagName: identifer.Identifer;
     }
   | {
       _: Type_.Union;
@@ -386,7 +386,7 @@ export type Type =
   | {
       _: Type_.ImportedType;
       moduleName: string;
-      name: string;
+      name: identifer.Identifer;
     }
   | { _: Type_.GlobalType; name: identifer.Identifer }
   | { _: Type_.BuiltIn; builtIn: BuiltInType };
@@ -1292,12 +1292,12 @@ export const typeFunction = (
  * @param tagName タグの名前 `Red`
  */
 export const typeEnumTagLiteral = (
-  typeName: string,
-  tagName: string
+  typeName: identifer.Identifer,
+  tagName: identifer.Identifer
 ): Type => ({
   _: Type_.EnumTagLiteral,
   typeName,
-  tagName: tagName
+  tagName
 });
 /**
  * ユニオン型 `a | b`
@@ -1322,12 +1322,15 @@ export const typeWithParameter = (
 
 /**
  * インポートされた外部の型
- * @param path インポートするモジュールのパス
+ * @param moduleName インポートするモジュールのパス
  * @param name 型名
  */
-export const typeImported = (path: string, name: string): Type => ({
+export const typeImported = (
+  moduleName: string,
+  name: identifer.Identifer
+): Type => ({
   _: Type_.ImportedType,
-  moduleName: path,
+  moduleName,
   name
 });
 
