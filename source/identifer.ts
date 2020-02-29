@@ -31,7 +31,8 @@ export const fromString = (word: string): Identifer => {
   return result as Identifer;
 };
 
-const escapeChar = (char: string): string => char.charCodeAt(0).toString(16);
+const escapeChar = (char: string): string =>
+  "$" + char.charCodeAt(0).toString(16);
 
 /**
  * JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
