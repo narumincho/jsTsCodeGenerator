@@ -596,7 +596,7 @@ export const statementListToString = (
     )
     .join("\n") +
   "\n" +
-  "  ".repeat(indent) +
+  indentNumberToString(indent) +
   "}";
 
 /**
@@ -609,7 +609,7 @@ const statementToTypeScriptCodeAsString = (
   collectedData: data.CollectedData,
   codeType: data.CodeType
 ): string => {
-  const indentString = "  ".repeat(indent);
+  const indentString = indentNumberToString(indent);
   switch (statement._) {
     case data.Statement_.EvaluateExpr:
       return (
@@ -789,8 +789,47 @@ const statementToTypeScriptCodeAsString = (
 
     case data.Statement_.Break:
       return indentString + "break;";
+
+    case "switch":
+      return switchToString(statement.switch_, indent, collectedData, codeType);
   }
 };
+
+const switchToString = (
+  switch_: data.Switch,
+  indent: number,
+  collectedData: data.CollectedData,
+  codeType: data.CodeType
+): string => {
+  const indentString = indentNumberToString(indent);
+  const caseIndentNumber = indent + 1;
+  const caseIndentString = indentNumberToString(caseIndentNumber);
+  return (
+    indentString +
+    "switch (" +
+    exprToString(switch_.expr, indent, collectedData, codeType) +
+    ") {\n" +
+    switch_.patternList
+      .map(
+        pattern =>
+          caseIndentString +
+          "case " +
+          stringLiteralValueToString(pattern.caseTag) +
+          ": " +
+          statementListToString(
+            pattern.statementList,
+            caseIndentNumber,
+            collectedData,
+            codeType
+          )
+      )
+      .join("\n") +
+    indentString +
+    "}"
+  );
+};
+
+const indentNumberToString = (indent: number): string => "  ".repeat(indent);
 
 export const builtInToString = (
   builtInObjects: data.BuiltInVariable

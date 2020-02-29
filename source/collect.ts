@@ -181,6 +181,16 @@ const collectStatement = (
 
     case data.Statement_.WhileTrue:
       collectStatementList(statement.statementList, scanData);
+      return;
+
+    case "switch":
+      collectExpr(statement.switch_.expr, scanData);
+      for (const pattern of statement.switch_.patternList) {
+        collectStatementList(pattern.statementList, scanData);
+        if (pattern.returnExpr !== null) {
+          collectExpr(pattern.returnExpr, scanData);
+        }
+      }
   }
 };
 

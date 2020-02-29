@@ -331,6 +331,10 @@ export type Statement =
     }
   | {
       _: Statement_.Break;
+    }
+  | {
+      _: "switch";
+      switch_: Switch;
     };
 
 export const enum Statement_ {
@@ -348,6 +352,17 @@ export const enum Statement_ {
   WhileTrue,
   Break
 }
+
+export type Switch = {
+  expr: Expr;
+  patternList: ReadonlyArray<Pattern>;
+};
+
+export type Pattern = {
+  caseTag: string;
+  statementList: ReadonlyArray<Statement>;
+  returnExpr: Expr | null;
+};
 
 /**
  * 型を表現する式
@@ -1064,6 +1079,14 @@ export const statementWhileTrue = (
  * whileのループから抜ける
  */
 export const statementBreak = (): Statement => ({ _: Statement_.Break });
+
+/**
+ * switch文
+ */
+export const statementSwitch = (switch_: Switch): Statement => ({
+  _: "switch",
+  switch_
+});
 
 type Literal =
   | number
