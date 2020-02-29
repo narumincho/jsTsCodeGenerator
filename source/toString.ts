@@ -152,7 +152,13 @@ const parameterListToDocument = (
 ): string =>
   parameterList
     .map(parameter =>
-      parameter.document === "" ? "" : "@param " + parameter.document + "\n"
+      parameter.document === ""
+        ? ""
+        : "@param " +
+          (parameter.name as string) +
+          " " +
+          parameter.document +
+          "\n"
     )
     .join("");
 
