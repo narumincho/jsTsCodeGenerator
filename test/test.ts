@@ -49,42 +49,43 @@ describe("test", () => {
     expect(nodeJsTypeScriptCode).toMatch("express");
   });
   it("not include revered word", () => {
-    expect(() => {
-      generator.generateCodeAsString(
-        {
-          exportDefinitionList: [
-            data.definitionFunction({
-              name: identifer.fromString("new"),
-              document: "newという名前の関数",
-              parameterList: [],
-              returnType: data.typeVoid,
-              statementList: []
-            })
-          ],
-          statementList: []
-        },
-        data.CodeType.TypeScript
-      );
-    }).toMatch(/new_/);
+    const codeAsString = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [
+          data.definitionFunction({
+            name: identifer.fromString("new"),
+            document: "newという名前の関数",
+            parameterList: [],
+            returnType: data.typeVoid,
+            statementList: []
+          })
+        ],
+        statementList: []
+      },
+      data.CodeType.TypeScript
+    );
+
+    console.log("new code", codeAsString);
+    expect(codeAsString).not.toMatch(/const new =/);
   });
   it("識別子として使えない文字は, 変更される", () => {
-    expect(() => {
-      generator.generateCodeAsString(
-        {
-          exportDefinitionList: [
-            data.definitionFunction({
-              name: identifer.fromString("0name"),
-              document: "0から始まる識別子",
-              parameterList: [],
-              returnType: data.typeVoid,
-              statementList: []
-            })
-          ],
-          statementList: []
-        },
-        data.CodeType.TypeScript
-      );
-    }).not.toMatch(/const 0name/);
+    const codeAsString = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [
+          data.definitionFunction({
+            name: identifer.fromString("0name"),
+            document: "0から始まる識別子",
+            parameterList: [],
+            returnType: data.typeVoid,
+            statementList: []
+          })
+        ],
+        statementList: []
+      },
+      data.CodeType.TypeScript
+    );
+    console.log(codeAsString);
+    expect(codeAsString).not.toMatch(/const 0name/);
   });
   it("識別子の生成で識別子に使えない文字が含まれているかどうか", () => {
     expect(() => {

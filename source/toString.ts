@@ -80,7 +80,8 @@ const typeAliasToString = (
 const enumToString = (enum_: data.Enum): string => {
   return (
     documentToString(enum_.document) +
-    "export const enum" +
+    "export const enum " +
+    (enum_.name as string) +
     " {\n" +
     enum_.tagList
       .map(tag => documentToString(tag.document) + "  " + (tag.name as string))
