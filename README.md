@@ -7,66 +7,63 @@
 
 [Definy](https://github.com/narumincho/Definy) や [call-on-http](https://github.com/narumincho/call-on-http) で TypeScript, JavaScript のコードを生成したかったので作った。
 
-- 外部に公開する部分の名前、ドキュメント、構造は維持する
-- 外部に公開しない部分の名前、ドキュメント、構造は維持しない
-- 入力値は、外部に公開しない(変数,関数)の(名前,ドキュメント,構造)は持たないので TypeScript の AST(抽象構文木)とは違う
-- 出力した形式は人間には読みづらい
-- コードのサイズが小さくなるように minify される
+- 入力値は, 構造化されているので TypeScript の AST(抽象構文木)とは違う
+- 出力した形式は人間にも読みやすい
 - Node.js でもブラウザでも動く
 - 入力のコードにはある程度の制限がかかる (全てには対応しない)
 
 ## sample code サンプルコード
 
 ```ts
-const expressType = typeExpr.importedTypeList("express", [
-  "Request",
-  "Response"
-] as const);
-const code: generator.Code = {
-  exportTypeAliasList: [],
-  exportConstEnumMap: new Map(),
-  exportFunctionList: [
-    generator.exportFunction({
-      name: "middleware",
+const serverCode: data.Code = {
+  exportDefinitionList: [
+    data.definitionFunction({
+      name: identifer.fromString("middleware"),
       document: "ミドルウェア",
       parameterList: [
         {
-          name: "request",
+          name: identifer.fromString("request"),
           document: "リクエスト",
-          typeExpr: expressType.Request
+          type_: data.typeImported("express", identifer.fromString("Request"))
         },
         {
-          name: "response",
+          name: identifer.fromString("response"),
           document: "レスポンス",
-          typeExpr: expressType.Response
+          type_: data.typeImported("express", identifer.fromString("Response"))
         }
       ],
-      returnType: null,
+      returnType: data.typeVoid,
       statementList: [
-        expr.variableDefinition(
-          ["accept"],
-          typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
-          expr.get(
-            expr.get(expr.localVariable(["request"]), "headers"),
+        data.statementVariableDefinition(
+          identifer.fromString("accept"),
+          data.typeUnion([data.typeString, data.typeUndefined]),
+          data.get(
+            data.get(data.variable(identifer.fromString("request")), "headers"),
             "accept"
           )
         ),
-        expr.ifStatement(
-          expr.logicalAnd(
-            expr.notEqual(
-              expr.localVariable(["accept"]),
-              expr.undefinedLiteral
+        data.statementIf(
+          data.logicalAnd(
+            data.notEqual(
+              data.variable(identifer.fromString("accept")),
+              data.undefinedLiteral
             ),
-            expr.callMethod(expr.localVariable(["accept"]), "includes", [
-              expr.stringLiteral("text/html")
-            ])
+            data.callMethod(
+              data.variable(identifer.fromString("accept")),
+              "includes",
+              [data.stringLiteral("text/html")]
+            )
           ),
           [
-            expr.evaluateExpr(
-              expr.callMethod(expr.localVariable(["response"]), "setHeader", [
-                expr.stringLiteral("content-type"),
-                expr.stringLiteral("text/html")
-              ])
+            data.statementEvaluateExpr(
+              data.callMethod(
+                data.variable(identifer.fromString("response")),
+                "setHeader",
+                [
+                  data.stringLiteral("content-type"),
+                  data.stringLiteral("text/html")
+                ]
+              )
             )
           ]
         )
@@ -75,34 +72,30 @@ const code: generator.Code = {
   ],
   statementList: []
 };
-const code = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
-console.log(code);
+const codeAsString = generator.generateCodeAsString(
+  serverCode,
+  data.CodeType.TypeScript
+);
+console.log(codeAsString);
 ```
 
 ### 出力 output
 
 ```ts
 import * as a from "express";
-
 /**
  * ミドルウェア
  * @param request リクエスト
  * @param response レスポンス
+ *
  */
 export const middleware = (request: a.Request, response: a.Response): void => {
-  const b: string | undefined = request.headers.accept;
-  if (b !== undefined && b.includes("text/html")) {
+  const accept: string | undefined = request.headers.accept;
+  if (accept !== undefined && accept.includes("text/html")) {
     response.setHeader("content-type", "text/html");
   }
 };
 ```
-
-## どのレベルまでやるか処理
-
-- 内部の(変数名、引数名)を自動で名前を決める
-- 外部に公開する(関数名、引数名)、オブジェクトのキーは変更しない
-- JavaScript 文法系統のものをここで処理する
-- JavaScript の Built in Object 等はここで持たない
 
 ## 対応する形式
 
