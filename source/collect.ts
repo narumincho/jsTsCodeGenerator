@@ -4,7 +4,7 @@ import * as data from "./data";
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  */
 export const collectCode = (code: data.Code): data.UsedNameAndModulePath => {
-  const scanData: data.UsedNameAndModulePath = data.init;
+  const scanData: data.UsedNameAndModulePath = data.collectedDataInit();
   for (const definition of code.exportDefinitionList) {
     scanDefinition(definition, scanData);
   }

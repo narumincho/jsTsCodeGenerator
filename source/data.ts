@@ -125,11 +125,11 @@ export type CollectedData = {
   importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
 };
 
-export const init: UsedNameAndModulePath = {
+export const collectedDataInit = (): UsedNameAndModulePath => ({
   usedNameSet: new Set(),
   modulePathList: new Set(),
   enumTagListMap: new Map()
-};
+});
 
 export type Enum = {
   readonly name: identifer.Identifer;
