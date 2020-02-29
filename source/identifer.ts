@@ -1,77 +1,39 @@
-const enum CheckIdentiferResult {
-  IsEmpty,
-  FirstCharInvalid,
-  CharInvalid,
-  Reserved
-}
+export type Identifer = string & { _identifer: never };
 
 /**
- * 識別子として使える文字かどうか調べ、使えなかったら例外を発生させる。日本語の識別子は使えないものとする
- * @param nameInEnglish 調べている場所 エラーメッセージのためのヒント 英語
- * @param nameInJapanese 調べている場所 エラーメッセージのためのヒント 日本語
- * @param word 識別子として使えるかどうか調べるワード
- * @throws 予約語だった場合
+ * 識別子を文字列から無理矢理でも生成する.
+ * 空文字だった場合は $00
+ * 識別子に使えない文字が含まれていた場合, 末尾に_がつくか, $マークでエンコードされる
+ * @param text
  */
-export const checkIdentiferThrow = (
-  nameInEnglish: string,
-  nameInJapanese: string,
-  word: string
-): void => {
-  const result = checkIdentifer(word);
-  if (result === null) {
-    return;
-  }
-  switch (result) {
-    case CheckIdentiferResult.IsEmpty:
-      throw new Error(`${nameInEnglish} is empty.
-${nameInJapanese}が空文字列で指定されています
-`);
-    case CheckIdentiferResult.FirstCharInvalid:
-      throw new Error(`${nameInEnglish} is use invalid char in first. word = ${word}
-${nameInJapanese}の先頭に識別子で使えない文字が使われています ワード = ${word}
-`);
-    case CheckIdentiferResult.CharInvalid:
-      throw new Error(`${nameInEnglish} is use invalid char. word = ${word}
-${nameInJapanese}に識別子で使えない文字が含まれています ワード = ${word}
-`);
-    case CheckIdentiferResult.Reserved:
-      throw new Error(
-        `${nameInEnglish} is revered or names that cannot be used in context. word = ${word}
-    ${nameInJapanese}が予約語か文脈によって使えない名前になっています ワード = ${word}`
-      );
-  }
-};
-
-/**
- *識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
- * @param word 識別子として使えるかどうか調べるワード
- */
-export const isIdentifer = (word: string): boolean =>
-  checkIdentifer(word) === null;
-
-export const checkIdentifer = (word: string): CheckIdentiferResult | null => {
+export const fromString = (word: string): Identifer => {
   if (word.length <= 0) {
-    return CheckIdentiferResult.IsEmpty;
+    return "$00" as Identifer;
   }
-  if (
-    !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(word[0])
-  ) {
-    return CheckIdentiferResult.FirstCharInvalid;
-  }
+  let result = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
+    word[0]
+  )
+    ? word[0]
+    : escapeChar(word[0]);
+
   for (let i = 1; i < word.length; i++) {
-    if (
-      !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
+    result =
+      result +
+      ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
         word[i]
       )
-    ) {
-      return CheckIdentiferResult.CharInvalid;
-    }
+        ? word[i]
+        : escapeChar(word[i]));
   }
   if (reservedByLanguageWordSet.has(word)) {
-    return CheckIdentiferResult.Reserved;
+    return (result + "_") as Identifer;
   }
-  return null;
+  return result as Identifer;
 };
+
+const escapeChar = (char: string): string =>
+  "$" + char.charCodeAt(0).toString(16);
+
 /**
  * JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
  */
@@ -172,7 +134,7 @@ export const initialIdentiferIndex = 0 as IdentiferIndex;
 export const createIdentifer = (
   identiferIndex: IdentiferIndex,
   reserved: ReadonlySet<string>
-): { identifer: string; nextIdentiferIndex: IdentiferIndex } => {
+): { identifer: Identifer; nextIdentiferIndex: IdentiferIndex } => {
   while (true) {
     const result = createIdentiferByIndex(identiferIndex);
     if (reserved.has(result) || reservedByLanguageWordSet.has(result)) {
@@ -180,7 +142,7 @@ export const createIdentifer = (
       continue;
     }
     return {
-      identifer: result,
+      identifer: result as Identifer,
       nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex
     };
   }
@@ -212,4 +174,29 @@ const createIdentiferByIndex = (index: number): string => {
     result = noHeadIdentiferCharTable[remainder] + result;
     index = quotient;
   }
+};
+
+/**
+ *識別子として使える文字かどうか調べる。日本語の識別子は使えないものとする
+ * @param word 識別子として使えるかどうか調べるワード
+ */
+export const isIdentifer = (word: string): boolean => {
+  if (word.length <= 0) {
+    return false;
+  }
+  if (
+    !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(word[0])
+  ) {
+    return false;
+  }
+  for (let i = 1; i < word.length; i++) {
+    if (
+      !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
+        word[i]
+      )
+    ) {
+      return false;
+    }
+  }
+  return !reservedByLanguageWordSet.has(word);
 };
