@@ -404,7 +404,8 @@ export type Type =
       name: identifer.Identifer;
     }
   | { _: Type_.GlobalType; name: identifer.Identifer }
-  | { _: Type_.BuiltIn; builtIn: BuiltInType };
+  | { _: Type_.BuiltIn; builtIn: BuiltInType }
+  | { _: "stringLiteral"; string_: string };
 
 export const enum Type_ {
   Number,
@@ -1372,6 +1373,14 @@ export const typeGlobal = (name: identifer.Identifer): Type => ({
 const builtInType = (builtIn: BuiltInType): Type => ({
   _: Type_.BuiltIn,
   builtIn
+});
+
+/**
+ * リテラル型
+ */
+export const typeStringLiteral = (string_: string): Type => ({
+  _: "stringLiteral",
+  string_
 });
 /* =======================================================
                       util

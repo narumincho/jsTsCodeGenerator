@@ -423,6 +423,9 @@ const exprToString = (
 const codeTypeSpace = (codeType: data.CodeType): string =>
   codeType === data.CodeType.TypeScript ? " " : "";
 
+/**
+ * 文字列を`"`で囲んでエスケープする
+ */
 const stringLiteralValueToString = (value: string): string => {
   return (
     '"' +
@@ -978,6 +981,9 @@ export const typeToString = (
 
     case data.Type_.BuiltIn:
       return builtInTypeToString(type_.builtIn);
+
+    case "stringLiteral":
+      return stringLiteralValueToString(type_.string_);
   }
 };
 
