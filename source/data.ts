@@ -8,7 +8,7 @@ export type Code = {
   /**
    * 外部に公開する定義
    */
-  readonly exportDefinition: ReadonlyArray<Definition>;
+  readonly exportDefinitionList: ReadonlyArray<Definition>;
   /**
    * 定義した後に実行するコード
    */

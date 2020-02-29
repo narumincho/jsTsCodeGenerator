@@ -5,7 +5,7 @@ import * as data from "./data";
  */
 export const collectCode = (code: data.Code): data.UsedNameAndModulePath => {
   const scanData: data.UsedNameAndModulePath = data.init;
-  for (const definition of code.exportDefinition) {
+  for (const definition of code.exportDefinitionList) {
     scanDefinition(definition, scanData);
   }
   return scanData;

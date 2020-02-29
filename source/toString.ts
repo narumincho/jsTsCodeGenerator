@@ -18,7 +18,7 @@ export const toString = (
       .join("\n") + "\n";
 
   const definitionCode =
-    code.exportDefinition
+    code.exportDefinitionList
       .map(definition =>
         definitionToString(definition, collectedData, codeType)
       )
