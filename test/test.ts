@@ -1,51 +1,44 @@
-import { performance } from "perf_hooks";
 import * as generator from "../source/main";
-import { expr, typeExpr } from "../source/main";
-import * as identifer from "../source/identifer";
+import { data, identifer } from "../source/main";
 
 describe("test", () => {
-  const expressType = typeExpr.importedTypeList("express", [
-    "Request",
-    "Response"
-  ] as const);
+  const expressRequest = data.typeImported(
+    "express",
+    identifer.fromString("Request")
+  );
+  const expressResponse = data.typeImported(
+    "express",
+    identifer.fromString("Response")
+  );
 
-  const sampleCode: generator.type.Code = {
-    exportDefinition: new Map(),
-    exportConstEnumMap: new Map(),
-    exportFunctionMap: new Map([
-      [
-        "middleware",
-        {
-          document: "ミドルウェア",
-          statementList: [],
-          parameterList: [
-            {
-              name: "request",
-              document: "expressのリクエスト",
-              typeExpr: expressType.Request
-            },
-            {
-              name: "response",
-              document: "expressのレスポンス",
-              typeExpr: expressType.Response
-            }
-          ],
-          returnType: null
-        }
-      ]
-    ]),
+  const sampleCode: data.Code = {
+    exportDefinitionList: [
+      data.definitionFunction({
+        name: identifer.fromString("middleware"),
+        parameterList: [
+          {
+            name: identifer.fromString("request"),
+            document: "expressのリクエスト",
+            type_: expressRequest
+          },
+          {
+            name: identifer.fromString("response"),
+            document: "expressのレスポンス",
+            type_: expressResponse
+          }
+        ],
+        document: "ミドルウェア",
+        returnType: data.typeVoid,
+        statementList: []
+      })
+    ],
     statementList: []
   };
-  const start = performance.now();
-  const nodeJsTypeScriptCode = generator.toNodeJsOrBrowserCodeAsTypeScript(
-    sampleCode
+  const nodeJsTypeScriptCode = generator.generateCodeAsString(
+    sampleCode,
+    data.CodeType.TypeScript
   );
-  const time = performance.now() - start;
-  console.log(time.toString() + "ms");
   console.log(nodeJsTypeScriptCode);
-  it("performance", () => {
-    expect(time).toBeLessThan(10000);
-  });
   it("return string", () => {
     expect(typeof nodeJsTypeScriptCode).toBe("string");
   });
@@ -57,44 +50,41 @@ describe("test", () => {
   });
   it("not include revered word", () => {
     expect(() => {
-      generator.toNodeJsOrBrowserCodeAsTypeScript({
-        exportDefinition: new Map(),
-        exportConstEnumMap: new Map(),
-        exportFunctionMap: new Map([
-          [
-            "new",
-            {
-              name: "new",
+      generator.generateCodeAsString(
+        {
+          exportDefinitionList: [
+            data.definitionFunction({
+              name: identifer.fromString("new"),
               document: "newという名前の関数",
               parameterList: [],
-              returnType: null,
+              returnType: data.typeVoid,
               statementList: []
-            }
-          ]
-        ]),
-        statementList: []
-      });
-    }).toThrow();
+            })
+          ],
+          statementList: []
+        },
+        data.CodeType.TypeScript
+      );
+    }).toMatch(/new_/);
   });
-  it("識別子として使えない文字はエラー", () => {
+  it("識別子として使えない文字は, 変更される", () => {
     expect(() => {
-      generator.toNodeJsOrBrowserCodeAsTypeScript({
-        exportDefinition: new Map(),
-        exportConstEnumMap: new Map(),
-        exportFunctionMap: new Map([
-          [
-            "0name",
-            {
+      generator.generateCodeAsString(
+        {
+          exportDefinitionList: [
+            data.definitionFunction({
+              name: identifer.fromString("0name"),
               document: "0から始まる識別子",
               parameterList: [],
-              returnType: null,
+              returnType: data.typeVoid,
               statementList: []
-            }
-          ]
-        ]),
-        statementList: []
-      });
-    }).toThrow();
+            })
+          ],
+          statementList: []
+        },
+        data.CodeType.TypeScript
+      );
+    }).not.toMatch(/const 0name/);
   });
   it("識別子の生成で識別子に使えない文字が含まれているかどうか", () => {
     expect(() => {
@@ -106,42 +96,34 @@ describe("test", () => {
           reserved
         );
         index = createIdentiferResult.nextIdentiferIndex;
-        identifer.checkIdentiferThrow(
-          "test",
-          "test",
-          createIdentiferResult.identifer
-        );
+        if (!identifer.isIdentifer(createIdentiferResult.identifer)) {
+          throw new Error(
+            "create not identifer. identifer=" +
+              (createIdentiferResult.identifer as string)
+          );
+        }
       }
     }).not.toThrow();
   });
   it("escape string literal", () => {
-    const nodeJsCode: generator.Code = {
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      exportFunctionMap: new Map([
-        [
-          "stringValue",
-          {
-            name: "stringValue",
-            document: "文字列リテラルでエスケープしているか調べる",
-            parameterList: [],
-            returnType: generator.typeExpr.typeString,
-            statementList: [
-              expr.returnStatement(
-                expr.stringLiteral(`
+    const nodeJsCode: data.Code = {
+      exportDefinitionList: [
+        data.definitionVariable({
+          name: identifer.fromString("stringValue"),
+          document: "文字列リテラルでエスケープしているか調べる",
+          type_: data.typeString,
+          expr: data.stringLiteral(`
 
-              改行
-              "ダブルクオーテーション"
-      `)
-              )
-            ]
-          }
-        ]
-      ]),
+          改行
+          "ダブルクオーテーション"
+  `)
+        })
+      ],
       statementList: []
     };
-    const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(
-      nodeJsCode
+    const codeAsString = generator.generateCodeAsString(
+      nodeJsCode,
+      data.CodeType.TypeScript
     );
     console.log(codeAsString);
     expect(codeAsString).toMatch(/\\"/);
@@ -149,116 +131,125 @@ describe("test", () => {
   });
 
   it("include function parameter name", () => {
-    const expressType = typeExpr.importedTypeList("express", [
-      "Request",
-      "Response"
-    ] as const);
-    const nodeJsCode: generator.Code = {
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      exportFunctionMap: new Map([
-        [
-          "middleware",
-          {
-            document: "ミドルウェア",
-            parameterList: [
-              {
-                name: "request",
-                document: "リクエスト",
-                typeExpr: expressType.Request
-              },
-              {
-                name: "response",
-                document: "レスポンス",
-                typeExpr: expressType.Response
-              }
-            ],
-            returnType: null,
-            statementList: [
-              expr.variableDefinition(
-                ["accept"],
-                typeExpr.union([typeExpr.typeString, typeExpr.typeUndefined]),
-                expr.get(
-                  expr.get(expr.localVariable(["request"]), "headers"),
-                  "accept"
+    const nodeJsCode: data.Code = {
+      exportDefinitionList: [
+        data.definitionFunction({
+          name: identifer.fromString("middleware"),
+          document: "ミドルウェア",
+          parameterList: [
+            {
+              name: identifer.fromString("request"),
+              document: "リクエスト",
+              type_: data.typeImported(
+                "express",
+                identifer.fromString("Request")
+              )
+            },
+            {
+              name: identifer.fromString("response"),
+              document: "レスポンス",
+              type_: data.typeImported(
+                "express",
+                identifer.fromString("Response")
+              )
+            }
+          ],
+          returnType: data.typeVoid,
+          statementList: [
+            data.statementVariableDefinition(
+              identifer.fromString("accept"),
+              data.typeUnion([data.typeString, data.typeUndefined]),
+              data.get(
+                data.get(
+                  data.variable(identifer.fromString("request")),
+                  "headers"
+                ),
+                "accept"
+              )
+            ),
+            data.statementIf(
+              data.logicalAnd(
+                data.notEqual(
+                  data.variable(identifer.fromString("accept")),
+                  data.undefinedLiteral
+                ),
+                data.callMethod(
+                  data.variable(identifer.fromString("accept")),
+                  "includes",
+                  [data.stringLiteral("text/html")]
                 )
               ),
-              expr.ifStatement(
-                expr.logicalAnd(
-                  expr.notEqual(
-                    expr.localVariable(["accept"]),
-                    expr.undefinedLiteral
-                  ),
-                  expr.callMethod(expr.localVariable(["accept"]), "includes", [
-                    expr.stringLiteral("text/html")
-                  ])
-                ),
-                [
-                  expr.evaluateExpr(
-                    expr.callMethod(
-                      expr.localVariable(["response"]),
-                      "setHeader",
-                      [
-                        expr.stringLiteral("content-type"),
-                        expr.stringLiteral("text/html")
-                      ]
-                    )
+              [
+                data.statementEvaluateExpr(
+                  data.callMethod(
+                    data.variable(identifer.fromString("response")),
+                    "setHeader",
+                    [
+                      data.stringLiteral("content-type"),
+                      data.stringLiteral("text/html")
+                    ]
                   )
-                ]
-              )
-            ]
-          }
-        ]
-      ]),
+                )
+              ]
+            )
+          ]
+        })
+      ],
       statementList: []
     };
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript(nodeJsCode);
+    const code = generator.generateCodeAsString(
+      nodeJsCode,
+      data.CodeType.TypeScript
+    );
     console.log(code);
     expect(code).toMatch("request");
   });
   it("get array index", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      exportFunctionMap: new Map([
-        [
-          "getZeroIndexElement",
-          {
+    const code = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [
+          data.definitionFunction({
+            name: identifer.fromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
             parameterList: [
               {
-                name: "array",
+                name: identifer.fromString("array"),
                 document: "Uint8Array",
-                typeExpr: typeExpr.uint8ArrayType
+                type_: data.uint8ArrayType
               }
             ],
-            returnType: typeExpr.typeNumber,
+            returnType: data.typeNumber,
             statementList: [
-              expr.returnStatement(
-                expr.getByExpr(expr.localVariable(["array"]), expr.literal(0))
+              data.statementReturn(
+                data.getByExpr(
+                  data.variable(identifer.fromString("array")),
+                  data.numberLiteral(0)
+                )
               )
             ]
-          }
-        ]
-      ]),
-      statementList: []
-    });
+          })
+        ],
+        statementList: []
+      },
+      data.CodeType.TypeScript
+    );
     console.log(code);
     expect(code).toMatch("[0]");
   });
-  const scopedCode = generator.toESModulesBrowserCode({
-    exportDefinition: new Map(),
-    exportFunctionMap: new Map(),
-    exportConstEnumMap: new Map(),
-    statementList: [
-      expr.variableDefinition(
-        ["sorena"],
-        typeExpr.typeString,
-        expr.stringLiteral("それな")
-      ),
-      expr.consoleLog(expr.localVariable(["sorena"]))
-    ]
-  });
+  const scopedCode = generator.generateCodeAsString(
+    {
+      exportDefinitionList: [],
+      statementList: [
+        data.statementLetVariableDefinition(
+          identifer.fromString("sorena"),
+          data.typeString,
+          data.stringLiteral("それな")
+        ),
+        data.consoleLog(data.variable(identifer.fromString("sorena")))
+      ]
+    },
+    data.CodeType.JavaScript
+  );
 
   it("statementList in { } scope curly braces", () => {
     console.log(scopedCode);
@@ -268,196 +259,225 @@ describe("test", () => {
     expect(scopedCode).not.toMatch("string");
   });
   it("type parameter", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportFunctionMap: new Map([
-        [
-          "sample",
-          {
+    const code = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [
+          data.definitionFunction({
+            name: identifer.fromString("sample"),
             document: "",
             parameterList: [],
-            returnType: typeExpr.promiseType(typeExpr.typeString),
+            returnType: data.promiseType(data.typeString),
             statementList: []
-          }
-        ]
-      ]),
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      statementList: []
-    });
+          })
+        ],
+        statementList: []
+      },
+      data.CodeType.TypeScript
+    );
     console.log(code);
     expect(code).toMatch("Promise<string>");
   });
   it("object literal key is escaped", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportFunctionMap: new Map(),
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      statementList: [
-        expr.evaluateExpr(
-          expr.objectLiteral(
-            new Map([
-              ["abc", expr.numberLiteral(3)],
-              ["a b c", expr.stringLiteral("separated")]
-            ])
+    const code = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [],
+        statementList: [
+          data.statementEvaluateExpr(
+            data.objectLiteral(
+              new Map([
+                ["abc", data.numberLiteral(3)],
+                ["a b c", data.stringLiteral("separated")]
+              ])
+            )
           )
-        )
-      ]
-    });
+        ]
+      },
+      data.CodeType.TypeScript
+    );
     console.log(code);
     expect(code).toMatch(/"a b c"/u);
   });
   it("binary operator combine", () => {
-    const code = generator.toESModulesBrowserCode({
-      exportFunctionMap: new Map(),
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      statementList: [
-        expr.evaluateExpr(
-          expr.equal(
-            expr.equal(
-              expr.addition(
-                expr.multiplication(
-                  expr.numberLiteral(3),
-                  expr.numberLiteral(9)
+    const code = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [],
+        statementList: [
+          data.statementEvaluateExpr(
+            data.equal(
+              data.equal(
+                data.addition(
+                  data.multiplication(
+                    data.numberLiteral(3),
+                    data.numberLiteral(9)
+                  ),
+                  data.multiplication(
+                    data.numberLiteral(7),
+                    data.numberLiteral(6)
+                  )
                 ),
-                expr.multiplication(
-                  expr.numberLiteral(7),
-                  expr.numberLiteral(6)
+                data.addition(
+                  data.addition(data.numberLiteral(2), data.numberLiteral(3)),
+                  data.addition(data.numberLiteral(5), data.numberLiteral(8))
                 )
               ),
-              expr.addition(
-                expr.addition(expr.numberLiteral(2), expr.numberLiteral(3)),
-                expr.addition(expr.numberLiteral(5), expr.numberLiteral(8))
+              data.multiplication(
+                data.numberLiteral(5),
+                data.addition(data.numberLiteral(7), data.numberLiteral(8))
               )
-            ),
-            expr.multiplication(
-              expr.numberLiteral(5),
-              expr.addition(expr.numberLiteral(7), expr.numberLiteral(8))
             )
           )
-        )
-      ]
-    });
+        ]
+      },
+      data.CodeType.JavaScript
+    );
     console.log(code);
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
   });
-  const constEnumCode: generator.Code = {
-    exportDefinition: new Map(),
-    exportConstEnumMap: new Map([
-      [
-        "Color",
-        new Map([
-          ["Red", 0],
-          ["Green", 1],
-          ["Blue", 2]
-        ])
-      ]
-    ]),
-    exportFunctionMap: new Map([
-      [
-        "red",
-        {
-          document: "赤",
-          parameterList: [],
-          returnType: typeExpr.enumTagLiteral("Color", "Red"),
-          statementList: [expr.returnStatement(expr.enumTag("Color", "Red"))]
-        }
-      ]
-    ]),
-    statementList: [expr.evaluateExpr(expr.enumTag("Color", "Red"))]
+  const constEnumCode: data.Code = {
+    exportDefinitionList: [
+      data.definitionEnum({
+        name: identifer.fromString("Color"),
+        document: "色",
+        tagList: [
+          {
+            name: identifer.fromString("Red"),
+            document: "赤"
+          },
+          {
+            name: identifer.fromString("Green"),
+            document: "緑"
+          },
+          {
+            name: identifer.fromString("Blue"),
+            document: "青"
+          }
+        ]
+      }),
+      data.definitionVariable({
+        name: identifer.fromString("red"),
+        document: "赤",
+        type_: data.typeEnumTagLiteral(
+          identifer.fromString("Color"),
+          identifer.fromString("Red")
+        ),
+        expr: data.enumTag(
+          identifer.fromString("Color"),
+          identifer.fromString("Red")
+        )
+      })
+    ],
+    statementList: []
   };
   it("export const enum in TypeScript", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript(constEnumCode);
+    const code = generator.generateCodeAsString(
+      constEnumCode,
+      data.CodeType.TypeScript
+    );
     console.log(code);
     expect(code).toMatch(
       /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue[\s\S]*Color.Red/u
     );
   });
   it("export const enum in JavaScript", () => {
-    const code = generator.toESModulesBrowserCode(constEnumCode);
+    const code = generator.generateCodeAsString(
+      constEnumCode,
+      data.CodeType.JavaScript
+    );
     console.log(code);
     expect(code).toMatch(/0/u);
   });
   it("object literal return need parenthesis", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      exportFunctionMap: new Map([
-        [
-          "returnObject",
-          {
+    const code = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [
+          data.definitionFunction({
+            name: identifer.fromString("returnObject"),
             document: "",
             parameterList: [],
-            returnType: typeExpr.object(
+            returnType: data.typeObject(
               new Map([
-                ["name", { typeExpr: typeExpr.typeString, document: "" }],
-                ["age", { typeExpr: typeExpr.typeNumber, document: "" }]
+                ["name", { type_: data.typeString, document: "" }],
+                ["age", { type_: data.typeNumber, document: "" }]
               ])
             ),
             statementList: [
-              expr.returnStatement(expr.literal({ name: "mac", age: 10 }))
+              data.statementReturn(data.literal({ name: "mac", age: 10 }))
             ]
-          }
-        ]
-      ]),
-      statementList: []
-    });
+          })
+        ],
+        statementList: []
+      },
+      data.CodeType.TypeScript
+    );
     console.log(code);
     expect(code).toMatch(/\(\{.*\}\)/);
   });
   it("let variable", () => {
-    const code = generator.toNodeJsOrBrowserCodeAsTypeScript({
-      exportDefinition: new Map(),
-      exportConstEnumMap: new Map(),
-      exportFunctionMap: new Map(),
-      statementList: [
-        expr.letVariableDefinition(
-          ["v"],
-          typeExpr.typeNumber,
-          expr.numberLiteral(10)
-        ),
-        expr.set(expr.localVariable(["v"]), null, expr.numberLiteral(30)),
-        expr.set(expr.localVariable(["v"]), "+", expr.numberLiteral(1))
-      ]
-    });
+    const v = identifer.fromString("v");
+    const code = generator.generateCodeAsString(
+      {
+        exportDefinitionList: [],
+        statementList: [
+          data.statementLetVariableDefinition(
+            v,
+            data.typeNumber,
+            data.numberLiteral(10)
+          ),
+          data.statementSet(data.variable(v), null, data.numberLiteral(30)),
+          data.statementSet(data.variable(v), "+", data.numberLiteral(1))
+        ]
+      },
+      data.CodeType.TypeScript
+    );
     console.log(code);
-    expect(code).toMatch(/let b: number = 10;[\n ]*b = 30;[\n ]*b \+= 1;/);
+    expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/);
   });
   it("enumTagLiteral", () => {
-    const code: generator.Code = {
-      exportConstEnumMap: new Map([["A", new Map([["B", 0]])]]),
-      exportFunctionMap: new Map(),
-      exportDefinition: new Map(),
+    const code: data.Code = {
+      exportDefinitionList: [
+        data.definitionEnum({
+          name: identifer.fromString("A"),
+          document: "",
+          tagList: [{ name: identifer.fromString("B"), document: "" }]
+        })
+      ],
       statementList: [
-        generator.expr.variableDefinition(
-          ["a"],
-          generator.typeExpr.enumTagLiteral("A", "B"),
-          generator.expr.enumTag("A", "B")
+        data.statementLetVariableDefinition(
+          identifer.fromString("a"),
+          data.typeEnumTagLiteral(
+            identifer.fromString("A"),
+            identifer.fromString("B")
+          ),
+          data.enumTag(identifer.fromString("A"), identifer.fromString("B"))
         )
       ]
     };
-    const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
+    const codeAsString = generator.generateCodeAsString(
+      code,
+      data.CodeType.TypeScript
+    );
     console.log(codeAsString);
     expect(codeAsString).toMatch(/A\.B/);
   });
   it("for of", () => {
-    const code: generator.Code = {
-      exportConstEnumMap: new Map(),
-      exportFunctionMap: new Map(),
-      exportDefinition: new Map(),
+    const code: data.Code = {
+      exportDefinitionList: [],
       statementList: [
-        expr.forOfStatement(
-          ["element"],
-          expr.arrayLiteral([
-            expr.numberLiteral(1),
-            expr.numberLiteral(2),
-            expr.numberLiteral(3)
+        data.statementForOf(
+          identifer.fromString("element"),
+          data.arrayLiteral([
+            data.numberLiteral(1),
+            data.numberLiteral(2),
+            data.numberLiteral(3)
           ]),
-          [expr.consoleLog(expr.localVariable(["element"]))]
+          [data.consoleLog(data.variable(identifer.fromString("element")))]
         )
       ]
     };
-    const codeAsString = generator.toNodeJsOrBrowserCodeAsTypeScript(code);
+    const codeAsString = generator.generateCodeAsString(
+      code,
+      data.CodeType.TypeScript
+    );
     console.log(codeAsString);
     expect(codeAsString).toMatch(/for .* of \[1, 2, 3\]/);
   });
