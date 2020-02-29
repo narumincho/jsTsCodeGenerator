@@ -69,6 +69,7 @@ export const definitionVariable = (variable: Variable): Definition => ({
 
 export type TypeAlias = {
   readonly name: identifer.Identifer;
+  readonly parameterList: ReadonlyArray<identifer.Identifer>;
   readonly document: string;
   readonly type_: Type;
 };
@@ -361,7 +362,7 @@ export type Switch = {
 export type Pattern = {
   caseTag: string;
   statementList: ReadonlyArray<Statement>;
-  returnExpr: Expr | null;
+  returnExpr: Expr;
 };
 
 /**
@@ -1376,7 +1377,7 @@ const builtInType = (builtIn: BuiltInType): Type => ({
 });
 
 /**
- * リテラル型
+ * 文字列リテラル型
  */
 export const typeStringLiteral = (string_: string): Type => ({
   _: "stringLiteral",
