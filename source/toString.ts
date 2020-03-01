@@ -212,25 +212,24 @@ const exprToString = (
           .map(element =>
             exprToString(element, indent, collectedData, codeType)
           )
-          .join("," + codeTypeSpace(codeType)) +
+          .join(", ") +
         "]"
       );
 
     case "ObjectLiteral":
       return (
-        "{" +
-        codeTypeSpace(codeType) +
+        "{ " +
         [...expr.memberList.entries()]
           .map(
             ([key, value]) =>
               (identifer.isIdentifer(key)
                 ? key
                 : stringLiteralValueToString(key)) +
-              (":" + codeTypeSpace(codeType)) +
+              ": " +
               exprToString(value, indent, collectedData, codeType)
           )
           .join(", ") +
-        codeTypeSpace(codeType) +
+        " " +
         "}"
       );
 
@@ -341,7 +340,7 @@ const exprToString = (
         "(" +
         expr.parameterList
           .map(e => exprToString(e, indent, collectedData, codeType))
-          .join("," + codeTypeSpace(codeType)) +
+          .join(", ") +
         ")"
       );
 
@@ -358,7 +357,7 @@ const exprToString = (
         "(" +
         expr.parameterList
           .map(e => exprToString(e, indent, collectedData, codeType))
-          .join("," + codeTypeSpace(codeType)) +
+          .join(", ") +
         ")"
       );
 
@@ -366,9 +365,6 @@ const exprToString = (
       return builtInToString(expr.builtIn);
   }
 };
-
-const codeTypeSpace = (codeType: data.CodeType): string =>
-  codeType === "TypeScript" ? " " : "";
 
 /**
  * 文字列を`"`で囲んでエスケープする
@@ -570,10 +566,9 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         exprToString(statement.targetObject, indent, collectedData, codeType) +
-        codeTypeSpace(codeType) +
+        " " +
         (statement.operator === null ? "" : statement.operator) +
-        "=" +
-        codeTypeSpace(codeType) +
+        "= " +
         exprToString(statement.expr, indent, collectedData, codeType) +
         ";"
       );
