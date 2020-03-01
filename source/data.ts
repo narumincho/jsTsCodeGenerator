@@ -84,9 +84,9 @@ export type Variable = {
  * 使われている名前, モジュールのパス
  * モジュールの識別子を作るのに使う
  */
-export type UsedNameAndModulePath = {
+export type UsedNameAndModulePathSet = {
   readonly usedNameSet: Set<identifer.Identifer>;
-  readonly modulePathList: Set<string>;
+  readonly modulePathSet: Set<string>;
 };
 
 export type ModulePathOrName = string & { _modulePathOrName: never };
@@ -97,11 +97,6 @@ export type ModulePathOrName = string & { _modulePathOrName: never };
 export type CollectedData = {
   importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
 };
-
-export const collectedDataInit = (): UsedNameAndModulePath => ({
-  usedNameSet: new Set(),
-  modulePathList: new Set()
-});
 
 export type UnaryOperator = "-" | "~" | "!";
 
@@ -177,9 +172,13 @@ export type Expr =
       name: identifer.Identifer;
     }
   | {
+      _: "GlobalObjects";
+      name: identifer.Identifer;
+    }
+  | {
       _: "ImportedVariable";
       moduleName: string;
-      name: string;
+      name: identifer.Identifer;
     }
   | {
       _: "Get";
@@ -195,10 +194,6 @@ export type Expr =
       _: "New";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
-    }
-  | {
-      _: "BuiltIn";
-      builtIn: BuiltInVariable;
     };
 
 /**
@@ -243,10 +238,7 @@ export type Statement =
     }
   | {
       _: "FunctionDefinition";
-      name: identifer.Identifer;
-      parameterList: ReadonlyArray<Parameter>;
-      returnType: Type;
-      statementList: ReadonlyArray<Statement>;
+      functionDefinition: FunctionDefinition;
     }
   | {
       _: "For";
@@ -272,6 +264,14 @@ export type Statement =
       switch_: Switch;
     };
 
+export type FunctionDefinition = {
+  name: identifer.Identifer;
+  parameterList: ReadonlyArray<ParameterWithDocument>;
+  typeParameterList: ReadonlyArray<identifer.Identifer>;
+  returnType: Type;
+  statementList: ReadonlyArray<Statement>;
+};
+
 export type Switch = {
   expr: Expr;
   patternList: ReadonlyArray<Pattern>;
@@ -280,7 +280,6 @@ export type Switch = {
 export type Pattern = {
   caseTag: string;
   statementList: ReadonlyArray<Statement>;
-  returnExpr: Expr;
 };
 
 /**
@@ -317,30 +316,9 @@ export type Type =
       moduleName: string;
       name: identifer.Identifer;
     }
-  | { _: "GlobalType"; name: identifer.Identifer }
-  | { _: "BuiltIn"; builtIn: BuiltInType }
+  | { _: "ScopeInFile"; name: identifer.Identifer }
+  | { _: "ScopeInGlobal"; name: identifer.Identifer }
   | { _: "StringLiteral"; string_: string };
-
-export type BuiltInVariable =
-  | "Object"
-  | "Number"
-  | "Math"
-  | "Date"
-  | "Uint8Array"
-  | "Map"
-  | "Set"
-  | "console";
-
-export type BuiltInType =
-  | "Array"
-  | "ReadonlyArray"
-  | "Uint8Array"
-  | "Promise"
-  | "Date"
-  | "Map"
-  | "ReadonlyMap"
-  | "Set"
-  | "ReadonlySet";
 
 /**
  * 数値リテラル `123`
@@ -741,7 +719,10 @@ export const newExpr = (
  * @param path モジュールのパス
  * @param name 変数名
  */
-export const importedVariable = (path: string, name: string): Expr => ({
+export const importedVariable = (
+  path: string,
+  name: identifer.Identifer
+): Expr => ({
   _: "ImportedVariable",
   name,
   moduleName: path
@@ -757,11 +738,19 @@ export const variable = (name: identifer.Identifer): Expr => ({
 });
 
 /**
- * 標準に入っている変数
+ * グローバルスコープに展開されたグローバルオブジェクトs windowは使えないので
+ * ```ts
+ * window.requestAnimationFrame(console.log)
+ * ```
+ * ではなく
+ * ```ts
+ * requestAnimationFrame(console.log)
+ * ```
+ * の用に使う
  */
-export const builtInVariable = (builtIn: BuiltInVariable): Expr => ({
-  _: "BuiltIn",
-  builtIn
+export const globalObjects = (name: identifer.Identifer): Expr => ({
+  _: "GlobalObjects",
+  name
 });
 
 /**
@@ -893,16 +882,10 @@ export const statementLetVariableDefinition = (
  * @param statementList 関数本体
  */
 export const statementFunctionDefinition = (
-  name: identifer.Identifer,
-  parameterList: ReadonlyArray<ParameterWithDocument>,
-  returnType: Type,
-  statementList: ReadonlyArray<Statement>
+  functionDefinition: FunctionDefinition
 ): Statement => ({
   _: "FunctionDefinition",
-  name,
-  parameterList,
-  returnType,
-  statementList
+  functionDefinition
 });
 
 /**
@@ -1035,17 +1018,6 @@ export const literal = (value: Literal): Expr => {
 
 /**
  * ```ts
- * Object.entries(parameter)
- * Object.keys(parameter)
- * ```
- */
-export const callObjectMethod = (
-  methodName: string,
-  parameterList: ReadonlyArray<Expr>
-): Expr => callMethod(builtInVariable("Object"), methodName, parameterList);
-
-/**
- * ```ts
  * Number.parseInt(parameter)
  * Number.isNaN(parameter)
  * ```
@@ -1053,7 +1025,12 @@ export const callObjectMethod = (
 export const callNumberMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr => callMethod(builtInVariable("Number"), methodName, parameterList);
+): Expr =>
+  callMethod(
+    globalObjects(identifer.fromString("Number")),
+    methodName,
+    parameterList
+  );
 
 /**
  * ```ts
@@ -1064,14 +1041,22 @@ export const callNumberMethod = (
 export const callMathMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr => callMethod(builtInVariable("Math"), methodName, parameterList);
+): Expr =>
+  callMethod(
+    globalObjects(identifer.fromString("Math")),
+    methodName,
+    parameterList
+  );
 
 /**
  * ```ts
  * new Date()
  * ```
  */
-export const newDate: Expr = newExpr(builtInVariable("Date"), []);
+export const newDate: Expr = newExpr(
+  globalObjects(identifer.fromString("Date")),
+  []
+);
 
 /**
  * ```ts
@@ -1079,7 +1064,9 @@ export const newDate: Expr = newExpr(builtInVariable("Date"), []);
  * ```
  */
 export const newUint8Array = (lengthOrIterable: Expr): Expr =>
-  newExpr(builtInVariable("Uint8Array"), [lengthOrIterable]);
+  newExpr(globalObjects(identifer.fromString("Uint8Array")), [
+    lengthOrIterable
+  ]);
 
 /**
  * ```ts
@@ -1087,7 +1074,7 @@ export const newUint8Array = (lengthOrIterable: Expr): Expr =>
  * ```
  */
 export const newMap = (initKeyValueList: Expr): Expr =>
-  newExpr(builtInVariable("Map"), [initKeyValueList]);
+  newExpr(globalObjects(identifer.fromString("Map")), [initKeyValueList]);
 
 /**
  * ```ts
@@ -1095,7 +1082,7 @@ export const newMap = (initKeyValueList: Expr): Expr =>
  * ```
  */
 export const newSet = (initValueList: Expr): Expr =>
-  newExpr(builtInVariable("Map"), [initValueList]);
+  newExpr(globalObjects(identifer.fromString("Set")), [initValueList]);
 
 /**
  * ```ts
@@ -1103,7 +1090,9 @@ export const newSet = (initValueList: Expr): Expr =>
  * ```
  */
 export const consoleLog = (expr: Expr): Statement =>
-  statementEvaluateExpr(callMethod(builtInVariable("console"), "log", [expr]));
+  statementEvaluateExpr(
+    callMethod(globalObjects(identifer.fromString("console")), "log", [expr])
+  );
 
 /**
  * プリミティブの型のnumber
@@ -1212,20 +1201,21 @@ export const typeImported = (
 });
 
 /**
- * グローバル空間の型
- * @param name 型名
+ * ファイル内で定義された型
+ * @param name 型の名前
  */
-export const typeGlobal = (name: identifer.Identifer): Type => ({
-  _: "GlobalType",
+export const typeScopeInFile = (name: identifer.Identifer): Type => ({
+  _: "ScopeInFile",
   name
 });
 
 /**
- * 標準に入っている型
+ * グローバル空間の型
+ * @param name 型の名前
  */
-const builtInType = (builtIn: BuiltInType): Type => ({
-  _: "BuiltIn",
-  builtIn
+export const typeScopeInGlobal = (name: identifer.Identifer): Type => ({
+  _: "ScopeInGlobal",
+  name
 });
 
 /**
@@ -1244,50 +1234,68 @@ export const typeStringLiteral = (string_: string): Type => ({
  * `Array<elementType>`
  */
 export const arrayType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("Array"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Array")), [
+    elementType
+  ]);
 
 /**
  * `ReadonlyArray<elementType>`
  */
 export const readonlyArrayType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("ReadonlyArray"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlyArray")), [
+    elementType
+  ]);
 
 /**
  * `Uint8Array`
  */
-export const uint8ArrayType: Type = builtInType("Uint8Array");
+export const uint8ArrayType: Type = typeScopeInGlobal(
+  identifer.fromString("Uint8Array")
+);
 
 /**
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: Type): Type =>
-  typeWithParameter(builtInType("Promise"), [returnType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Promise")), [
+    returnType
+  ]);
 
 /**
  * `Date`
  */
-export const dateType: Type = builtInType("Date");
+export const dateType: Type = typeScopeInGlobal(identifer.fromString("Date"));
 
 /**
  * `Map<keyType, valueType>`
  */
 export const mapType = (keyType: Type, valueType: Type): Type =>
-  typeWithParameter(builtInType("Map"), [keyType, valueType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Map")), [
+    keyType,
+    valueType
+  ]);
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
 export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
-  typeWithParameter(builtInType("ReadonlyMap"), [keyType, valueType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlyMap")), [
+    keyType,
+    valueType
+  ]);
 
 /**
  * `Set<elementType>`
  */
 export const setType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("Set"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Set")), [
+    elementType
+  ]);
 
 /**
  * `ReadonlySet<elementType>`
  */
 export const readonlySetType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("ReadonlySet"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlySet")), [
+    elementType
+  ]);

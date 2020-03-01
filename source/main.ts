@@ -11,7 +11,7 @@ export const generateCodeAsString = (
   codeType: data.CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const usedNameAndModulePath: data.UsedNameAndModulePath = collect.collectCode(
+  const usedNameAndModulePath: data.UsedNameAndModulePathSet = collect.collectInCode(
     code
   );
   // インポートしたモジュールの名前空間識別子を当てはめる
@@ -30,14 +30,14 @@ export const generateCodeAsString = (
 };
 
 const createImportedModuleName = (
-  usedNameAndModulePath: data.UsedNameAndModulePath,
+  usedNameAndModulePath: data.UsedNameAndModulePathSet,
   identiferIndex: identifer.IdentiferIndex
 ): {
   importedModuleNameMap: Map<string, identifer.Identifer>;
   nextIdentiferIndex: identifer.IdentiferIndex;
 } => {
   const importedModuleNameMap = new Map<string, identifer.Identifer>();
-  for (const modulePath of usedNameAndModulePath.modulePathList) {
+  for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,
       usedNameAndModulePath.usedNameSet

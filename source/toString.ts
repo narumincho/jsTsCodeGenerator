@@ -65,11 +65,7 @@ const typeAliasToString = (
     documentToString(typeAlias.document) +
     "export type " +
     (typeAlias.name as string) +
-    (typeAlias.parameterList.length === 0
-      ? ""
-      : "<" +
-        typeAlias.parameterList.map(parameter => parameter).join(", ") +
-        ">") +
+    typeParameterListToString(typeAlias.parameterList) +
     " = " +
     typeToString(typeAlias.type_, collectedData) +
     ";\n\n"
@@ -299,6 +295,9 @@ const exprToString = (
     case "Variable":
       return expr.name;
 
+    case "GlobalObjects":
+      return expr.name;
+
     case "ImportedVariable": {
       const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
         expr.moduleName
@@ -308,7 +307,7 @@ const exprToString = (
           "収集されなかった, モジュールがある moduleName=" + expr.moduleName
         );
       }
-      return (nameSpaceIdentifer as string) + "." + expr.name;
+      return (nameSpaceIdentifer as string) + "." + (expr.name as string);
     }
 
     case "Get":
@@ -360,9 +359,6 @@ const exprToString = (
           .join(", ") +
         ")"
       );
-
-    case "BuiltIn":
-      return builtInToString(expr.builtIn);
   }
 };
 
@@ -466,8 +462,8 @@ const exprCombineStrength = (expr: data.Expr): number => {
     case "UndefinedLiteral":
     case "ArrayLiteral":
     case "Variable":
+    case "GlobalObjects":
     case "ImportedVariable":
-    case "BuiltIn":
       return 23;
     case "Lambda":
       return 22;
@@ -622,28 +618,11 @@ const statementToTypeScriptCodeAsString = (
       );
 
     case "FunctionDefinition":
-      return (
-        indentString +
-        "const " +
-        (statement.name as string) +
-        " = (" +
-        statement.parameterList
-          .map(
-            parameter =>
-              (parameter.name as string) +
-              typeAnnotation(parameter.type_, codeType, collectedData)
-          )
-          .join(", ") +
-        ")" +
-        typeAnnotation(statement.returnType, codeType, collectedData) +
-        " => " +
-        lambdaBodyToString(
-          statement.statementList,
-          indent,
-          collectedData,
-          codeType
-        ) +
-        ";"
+      return functionDefinitionToString(
+        statement.functionDefinition,
+        indent,
+        collectedData,
+        codeType
       );
 
     case "For":
@@ -702,6 +681,39 @@ const statementToTypeScriptCodeAsString = (
   }
 };
 
+const functionDefinitionToString = (
+  functionDefinition: data.FunctionDefinition,
+  indent: number,
+  collectedData: data.CollectedData,
+  codeType: data.CodeType
+): string => {
+  return (
+    indentNumberToString(indent) +
+    "const " +
+    (functionDefinition.name as string) +
+    " = " +
+    typeParameterListToString(functionDefinition.typeParameterList) +
+    "(" +
+    functionDefinition.parameterList
+      .map(
+        parameter =>
+          (parameter.name as string) +
+          typeAnnotation(parameter.type_, codeType, collectedData)
+      )
+      .join(", ") +
+    ")" +
+    typeAnnotation(functionDefinition.returnType, codeType, collectedData) +
+    " => " +
+    lambdaBodyToString(
+      functionDefinition.statementList,
+      indent,
+      collectedData,
+      codeType
+    ) +
+    ";"
+  );
+};
+
 const switchToString = (
   switch_: data.Switch,
   indent: number,
@@ -724,9 +736,7 @@ const switchToString = (
           stringLiteralValueToString(pattern.caseTag) +
           ": " +
           statementListToString(
-            pattern.statementList.concat(
-              data.statementReturn(pattern.returnExpr)
-            ),
+            pattern.statementList,
             caseIndentNumber,
             collectedData,
             codeType
@@ -740,12 +750,6 @@ const switchToString = (
 };
 
 const indentNumberToString = (indent: number): string => "  ".repeat(indent);
-
-export const builtInToString = (
-  builtInObjects: data.BuiltInVariable
-): string => {
-  return builtInObjects;
-};
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
@@ -780,6 +784,18 @@ const functionTypeToString = (
   );
 };
 
+const typeParameterListToString = (
+  typeParameterList: ReadonlyArray<identifer.Identifer>
+): string => {
+  if (typeParameterList.length === 0) {
+    return "";
+  }
+  return "<" + typeParameterList.join(", ") + ">";
+};
+
+/**
+ * codeTypeがTypeScriptだった場合,`: string`のような型注釈をつける
+ */
 const typeAnnotation = (
   type_: data.Type,
   codeType: data.CodeType,
@@ -857,7 +873,10 @@ export const typeToString = (
         ">"
       );
 
-    case "GlobalType":
+    case "ScopeInFile":
+      return type_.name;
+
+    case "ScopeInGlobal":
       return type_.name;
 
     case "ImportedType": {
@@ -873,14 +892,7 @@ export const typeToString = (
       return (nameSpaceIdentifer as string) + "." + (type_.name as string);
     }
 
-    case "BuiltIn":
-      return builtInTypeToString(type_.builtIn);
-
     case "StringLiteral":
       return stringLiteralValueToString(type_.string_);
   }
-};
-
-const builtInTypeToString = (builtInType: data.BuiltInType): string => {
-  return builtInType;
 };
