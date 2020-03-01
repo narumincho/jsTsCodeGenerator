@@ -422,6 +422,20 @@ const collectInExpr = (
       }
       return data;
     }
+
+    case "TypeAssertion":
+      return concatCollectData(
+        collectInExpr(
+          expr.expr,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        ),
+        collectInType(
+          expr.type_,
+          rootScopeIdentiferSet.rootScopeTypeNameSet,
+          new Set()
+        )
+      );
   }
 };
 
@@ -743,6 +757,12 @@ const collectInType = (
         );
       }
       return data;
+
+    case "Intersection":
+      return concatCollectData(
+        collectInType(type_.left, rootScopeTypeNameSet, typeParameterSet),
+        collectInType(type_.right, rootScopeTypeNameSet, typeParameterSet)
+      );
 
     case "ImportedType":
       return {

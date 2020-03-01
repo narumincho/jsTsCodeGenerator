@@ -359,6 +359,13 @@ const exprToString = (
           .join(", ") +
         ")"
       );
+
+    case "TypeAssertion":
+      return (
+        exprToString(expr.expr, indent, collectedData, codeType) +
+        " as " +
+        typeToString(expr.type_, collectedData)
+      );
   }
 };
 
@@ -479,6 +486,8 @@ const exprCombineStrength = (expr: data.Expr): number => {
       return binaryOperatorCombineStrength(expr.operator);
     case "ConditionalOperator":
       return 4;
+    case "TypeAssertion":
+      return 3;
   }
 };
 
@@ -862,6 +871,13 @@ export const typeToString = (
       return type_.types
         .map(type_ => typeToString(type_, collectedData))
         .join(" | ");
+
+    case "Intersection":
+      return (
+        typeToString(type_.left, collectedData) +
+        " & " +
+        typeToString(type_.right, collectedData)
+      );
 
     case "WithTypeParameter":
       return (

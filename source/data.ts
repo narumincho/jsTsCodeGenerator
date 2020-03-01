@@ -194,6 +194,11 @@ export type Expr =
       _: "New";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
+    }
+  | {
+      _: "TypeAssertion";
+      expr: Expr;
+      type_: Type;
     };
 
 /**
@@ -310,6 +315,11 @@ export type Type =
   | {
       _: "Union";
       types: ReadonlyArray<Type>;
+    }
+  | {
+      _: "Intersection";
+      left: Type;
+      right: Type;
     }
   | {
       _: "ImportedType";
@@ -712,6 +722,12 @@ export const newExpr = (
   _: "New",
   expr,
   parameterList
+});
+
+export const typeAssertion = (expr: Expr, type_: Type): Expr => ({
+  _: "TypeAssertion",
+  expr,
+  type_
 });
 
 /**
@@ -1172,6 +1188,15 @@ export const typeFunction = (
 export const typeUnion = (types: ReadonlyArray<Type>): Type => ({
   _: "Union",
   types
+});
+
+/**
+ * 交差型 `left & right`
+ */
+export const typeIntersection = (left: Type, right: Type): Type => ({
+  _: "Intersection",
+  left,
+  right
 });
 
 /**

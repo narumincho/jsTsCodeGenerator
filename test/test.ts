@@ -511,4 +511,33 @@ describe("test", () => {
     console.log(codeAsString);
     expect(codeAsString).toMatch(/switch (.+) {\n +case .+:/);
   });
+  it("Type Assertion", () => {
+    const code: data.Code = {
+      exportDefinitionList: [],
+      statementList: [
+        data.statementEvaluateExpr(
+          data.typeAssertion(data.objectLiteral(new Map()), data.dateType)
+        )
+      ]
+    };
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/as Date/);
+  });
+  it("Type Intersection", () => {
+    const code: data.Code = {
+      exportDefinitionList: [
+        data.definitionTypeAlias({
+          name: identifer.fromString("SampleIntersectionType"),
+          document: "",
+          parameterList: [],
+          type_: data.typeIntersection(data.dateType, data.uint8ArrayType)
+        })
+      ],
+      statementList: []
+    };
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/Date & Uint8Array/);
+  });
 });
