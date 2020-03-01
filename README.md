@@ -20,6 +20,7 @@ const serverCode: data.Code = {
     data.definitionFunction({
       name: identifer.fromString("middleware"),
       document: "ミドルウェア",
+      typeParameterList: [],
       parameterList: [
         {
           name: identifer.fromString("request"),

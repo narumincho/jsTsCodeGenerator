@@ -69,6 +69,7 @@ export const definitionVariable = (variable: Variable): Definition => ({
 
 export type TypeAlias = {
   readonly name: identifer.Identifer;
+  readonly parameterList: ReadonlyArray<identifer.Identifer>;
   readonly document: string;
   readonly type_: Type;
 };
@@ -76,6 +77,7 @@ export type TypeAlias = {
 export type Function = {
   readonly name: identifer.Identifer;
   readonly document: string;
+  readonly typeParameterList: ReadonlyArray<identifer.Identifer>;
   readonly parameterList: ReadonlyArray<ParameterWithDocument>;
   readonly returnType: Type;
   readonly statementList: ReadonlyArray<Statement>;
@@ -331,6 +333,10 @@ export type Statement =
     }
   | {
       _: Statement_.Break;
+    }
+  | {
+      _: "switch";
+      switch_: Switch;
     };
 
 export const enum Statement_ {
@@ -348,6 +354,17 @@ export const enum Statement_ {
   WhileTrue,
   Break
 }
+
+export type Switch = {
+  expr: Expr;
+  patternList: ReadonlyArray<Pattern>;
+};
+
+export type Pattern = {
+  caseTag: string;
+  statementList: ReadonlyArray<Statement>;
+  returnExpr: Expr;
+};
 
 /**
  * 型を表現する式
@@ -389,7 +406,8 @@ export type Type =
       name: identifer.Identifer;
     }
   | { _: Type_.GlobalType; name: identifer.Identifer }
-  | { _: Type_.BuiltIn; builtIn: BuiltInType };
+  | { _: Type_.BuiltIn; builtIn: BuiltInType }
+  | { _: "stringLiteral"; string_: string };
 
 export const enum Type_ {
   Number,
@@ -1065,6 +1083,14 @@ export const statementWhileTrue = (
  */
 export const statementBreak = (): Statement => ({ _: Statement_.Break });
 
+/**
+ * switch文
+ */
+export const statementSwitch = (switch_: Switch): Statement => ({
+  _: "switch",
+  switch_
+});
+
 type Literal =
   | number
   | string
@@ -1349,6 +1375,14 @@ export const typeGlobal = (name: identifer.Identifer): Type => ({
 const builtInType = (builtIn: BuiltInType): Type => ({
   _: Type_.BuiltIn,
   builtIn
+});
+
+/**
+ * 文字列リテラル型
+ */
+export const typeStringLiteral = (string_: string): Type => ({
+  _: "stringLiteral",
+  string_
 });
 /* =======================================================
                       util
