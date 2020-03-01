@@ -84,9 +84,9 @@ export type Variable = {
  * 使われている名前, モジュールのパス
  * モジュールの識別子を作るのに使う
  */
-export type UsedNameAndModulePath = {
+export type UsedNameAndModulePathSet = {
   readonly usedNameSet: Set<identifer.Identifer>;
-  readonly modulePathList: Set<string>;
+  readonly modulePathSet: Set<string>;
 };
 
 export type ModulePathOrName = string & { _modulePathOrName: never };
@@ -97,11 +97,6 @@ export type ModulePathOrName = string & { _modulePathOrName: never };
 export type CollectedData = {
   importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
 };
-
-export const collectedDataInit = (): UsedNameAndModulePath => ({
-  usedNameSet: new Set(),
-  modulePathList: new Set()
-});
 
 export type UnaryOperator = "-" | "~" | "!";
 
