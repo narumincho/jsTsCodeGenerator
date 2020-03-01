@@ -194,6 +194,11 @@ export type Expr =
       _: "New";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
+    }
+  | {
+      _: "TypeAssertion";
+      expr: Expr;
+      type_: Type;
     };
 
 /**
@@ -712,6 +717,12 @@ export const newExpr = (
   _: "New",
   expr,
   parameterList
+});
+
+export const typeAssertion = (expr: Expr, type_: Type): Expr => ({
+  _: "TypeAssertion",
+  expr,
+  type_
 });
 
 /**

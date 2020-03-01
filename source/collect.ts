@@ -422,6 +422,20 @@ const collectInExpr = (
       }
       return data;
     }
+
+    case "TypeAssertion":
+      return concatCollectData(
+        collectInExpr(
+          expr.expr,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        ),
+        collectInType(
+          expr.type_,
+          rootScopeIdentiferSet.rootScopeTypeNameSet,
+          new Set()
+        )
+      );
   }
 };
 

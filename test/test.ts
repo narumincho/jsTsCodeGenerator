@@ -511,4 +511,17 @@ describe("test", () => {
     console.log(codeAsString);
     expect(codeAsString).toMatch(/switch (.+) {\n +case .+:/);
   });
+  it("Type Assertion", () => {
+    const code: data.Code = {
+      exportDefinitionList: [],
+      statementList: [
+        data.statementEvaluateExpr(
+          data.typeAssertion(data.objectLiteral(new Map()), data.dateType)
+        )
+      ]
+    };
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/as Date/);
+  });
 });
