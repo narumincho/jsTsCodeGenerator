@@ -275,7 +275,6 @@ export type Switch = {
 export type Pattern = {
   caseTag: string;
   statementList: ReadonlyArray<Statement>;
-  returnExpr: Expr;
 };
 
 /**

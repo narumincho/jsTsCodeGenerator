@@ -37,7 +37,7 @@ const createImportedModuleName = (
   nextIdentiferIndex: identifer.IdentiferIndex;
 } => {
   const importedModuleNameMap = new Map<string, identifer.Identifer>();
-  for (const modulePath of usedNameAndModulePath.sedNameSet) {
+  for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,
       usedNameAndModulePath.usedNameSet

@@ -724,9 +724,7 @@ const switchToString = (
           stringLiteralValueToString(pattern.caseTag) +
           ": " +
           statementListToString(
-            pattern.statementList.concat(
-              data.statementReturn(pattern.returnExpr)
-            ),
+            pattern.statementList,
             caseIndentNumber,
             collectedData,
             codeType

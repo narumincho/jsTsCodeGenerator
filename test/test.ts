@@ -1,5 +1,6 @@
 import * as generator from "../source/main";
 import { data, identifer } from "../source/main";
+import { statementListToString } from "../source/toString";
 
 describe("test", () => {
   const expressRequest = data.typeImported(
@@ -435,7 +436,9 @@ describe("test", () => {
                 [
                   "error",
                   {
-                    type_: data.typeScopeInGlobal(identifer.fromString("error")),
+                    type_: data.typeScopeInGlobal(
+                      identifer.fromString("error")
+                    ),
                     document: ""
                   }
                 ]
@@ -470,27 +473,33 @@ describe("test", () => {
               patternList: [
                 {
                   caseTag: "Ok",
-                  statementList: [],
-                  returnExpr: data.callMethod(
-                    data.get(
-                      data.variable(identifer.fromString("value")),
-                      "ok"
-                    ),
-                    "toString",
-                    []
-                  )
+                  statementList: [
+                    data.statementReturn(
+                      data.callMethod(
+                        data.get(
+                          data.variable(identifer.fromString("value")),
+                          "ok"
+                        ),
+                        "toString",
+                        []
+                      )
+                    )
+                  ]
                 },
                 {
                   caseTag: "Error",
-                  statementList: [],
-                  returnExpr: data.callMethod(
-                    data.get(
-                      data.variable(identifer.fromString("value")),
-                      "error"
-                    ),
-                    "toString",
-                    []
-                  )
+                  statementList: [
+                    data.statementReturn(
+                      data.callMethod(
+                        data.get(
+                          data.variable(identifer.fromString("value")),
+                          "error"
+                        ),
+                        "toString",
+                        []
+                      )
+                    )
+                  ]
                 }
               ]
             })
