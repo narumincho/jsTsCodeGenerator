@@ -73,10 +73,7 @@ const serverCode: data.Code = {
   ],
   statementList: []
 };
-const codeAsString = generator.generateCodeAsString(
-  serverCode,
-  data.CodeType.TypeScript
-);
+const codeAsString = generator.generateCodeAsString(serverCode, "TypeScript");
 console.log(codeAsString);
 ```
 
