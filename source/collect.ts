@@ -198,15 +198,55 @@ const collectInExpr = (
 ): data.UsedNameAndModulePathSet => {
   switch (expr._) {
     case "NumberLiteral":
-    case "UnaryOperator":
     case "StringLiteral":
     case "BooleanLiteral":
-    case "UndefinedLiteral":
     case "NullLiteral":
+    case "UndefinedLiteral":
       return {
         modulePathSet: new Set(),
         usedNameSet: new Set()
       };
+
+    case "UnaryOperator":
+      return collectInExpr(
+        expr.expr,
+        localVariableNameSetList,
+        rootScopeIdentiferSet
+      );
+
+    case "BinaryOperator":
+      return concatCollectData(
+        collectInExpr(
+          expr.left,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        ),
+        collectInExpr(
+          expr.right,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        )
+      );
+    case "ConditionalOperator":
+      return concatCollectData(
+        collectInExpr(
+          expr.condition,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        ),
+        concatCollectData(
+          collectInExpr(
+            expr.thenExpr,
+            localVariableNameSetList,
+            rootScopeIdentiferSet
+          ),
+          collectInExpr(
+            expr.elseExpr,
+            localVariableNameSetList,
+            rootScopeIdentiferSet
+          )
+        )
+      );
 
     case "ArrayLiteral": {
       let data: data.UsedNameAndModulePathSet = {
@@ -273,8 +313,13 @@ const collectInExpr = (
         usedNameSet: new Set([expr.name])
       };
 
+    case "GlobalObjects":
+      return {
+        modulePathSet: new Set(),
+        usedNameSet: new Set()
+      };
+
     case "ImportedVariable":
-      searchIdentiferOrThrow(localVariableNameSetList, expr.name);
       return {
         modulePathSet: new Set([expr.moduleName]),
         usedNameSet: new Set([expr.name])
@@ -337,9 +382,14 @@ const collectInExpr = (
 const collectStatementList = (
   statementList: ReadonlyArray<data.Statement>
 ): data.UsedNameAndModulePathSet => {
+  let data: data.UsedNameAndModulePathSet = {
+    modulePathSet: new Set(),
+    usedNameSet: new Set()
+  };
   for (const statement of statementList) {
-    collectStatement(statement, scanData);
+    data = concatCollectData(data, collectStatement(statement));
   }
+  return data;
 };
 
 const collectStatement = (
