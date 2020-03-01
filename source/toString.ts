@@ -212,25 +212,24 @@ const exprToString = (
           .map(element =>
             exprToString(element, indent, collectedData, codeType)
           )
-          .join("," + codeTypeSpace(codeType)) +
+          .join(", ") +
         "]"
       );
 
     case "ObjectLiteral":
       return (
-        "{" +
-        codeTypeSpace(codeType) +
+        "{ " +
         [...expr.memberList.entries()]
           .map(
             ([key, value]) =>
               (identifer.isIdentifer(key)
                 ? key
                 : stringLiteralValueToString(key)) +
-              (":" + codeTypeSpace(codeType)) +
+              ": " +
               exprToString(value, indent, collectedData, codeType)
           )
           .join(", ") +
-        codeTypeSpace(codeType) +
+        " " +
         "}"
       );
 
@@ -282,42 +281,20 @@ const exprToString = (
       );
 
     case "Lambda":
-      switch (codeType) {
-        case "TypeScript":
-          return (
-            "(" +
-            expr.parameterList
-              .map(
-                o =>
-                  (o.name as string) +
-                  ": " +
-                  typeToString(o.type_, collectedData)
-              )
-              .join(", ") +
-            "): " +
-            typeToString(expr.returnType, collectedData) +
-            "=>" +
-            lambdaBodyToString(
-              expr.statementList,
-              indent,
-              collectedData,
-              codeType
-            )
-          );
-        case "JavaScript":
-          return (
-            "(" +
-            expr.parameterList.map(o => o.name).join(",") +
-            ")=>" +
-            lambdaBodyToString(
-              expr.statementList,
-              indent,
-              collectedData,
-              codeType
-            )
-          );
-      }
-      break;
+      return (
+        "(" +
+        expr.parameterList
+          .map(
+            o =>
+              (o.name as string) +
+              typeAnnotation(o.type_, codeType, collectedData)
+          )
+          .join(", ") +
+        ")" +
+        typeAnnotation(expr.returnType, codeType, collectedData) +
+        " => " +
+        lambdaBodyToString(expr.statementList, indent, collectedData, codeType)
+      );
 
     case "Variable":
       return expr.name;
@@ -363,7 +340,7 @@ const exprToString = (
         "(" +
         expr.parameterList
           .map(e => exprToString(e, indent, collectedData, codeType))
-          .join("," + codeTypeSpace(codeType)) +
+          .join(", ") +
         ")"
       );
 
@@ -380,7 +357,7 @@ const exprToString = (
         "(" +
         expr.parameterList
           .map(e => exprToString(e, indent, collectedData, codeType))
-          .join("," + codeTypeSpace(codeType)) +
+          .join(", ") +
         ")"
       );
 
@@ -388,9 +365,6 @@ const exprToString = (
       return builtInToString(expr.builtIn);
   }
 };
-
-const codeTypeSpace = (codeType: data.CodeType): string =>
-  codeType === "TypeScript" ? " " : "";
 
 /**
  * 文字列を`"`で囲んでエスケープする
@@ -459,7 +433,9 @@ const binaryOperatorExprToString = (
       associativity === "RightToLeft")
       ? "(" + exprToString(left, indent, collectedData, codeType) + ")"
       : exprToString(left, indent, collectedData, codeType)) +
-    (codeType === "TypeScript" ? " " + operator + " " : operator) +
+    " " +
+    operator +
+    " " +
     (operatorExprCombineStrength > rightExprCombineStrength ||
     (operatorExprCombineStrength === rightExprCombineStrength &&
       associativity === "LeftToRight")
@@ -590,10 +566,9 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         exprToString(statement.targetObject, indent, collectedData, codeType) +
-        codeTypeSpace(codeType) +
+        " " +
         (statement.operator === null ? "" : statement.operator) +
-        "=" +
-        codeTypeSpace(codeType) +
+        "= " +
         exprToString(statement.expr, indent, collectedData, codeType) +
         ";"
       );
@@ -635,77 +610,41 @@ const statementToTypeScriptCodeAsString = (
       return indentString + "continue;";
 
     case "VariableDefinition":
-      switch (codeType) {
-        case "TypeScript":
-          return (
-            indentString +
-            (statement.isConst ? "const" : "let") +
-            " " +
-            (statement.name as string) +
-            ": " +
-            typeToString(statement.type_, collectedData) +
-            " = " +
-            exprToString(statement.expr, indent, collectedData, codeType) +
-            ";"
-          );
-        case "JavaScript":
-          return (
-            indentString +
-            (statement.isConst ? "const" : "let") +
-            " " +
-            (statement.name as string) +
-            "=" +
-            exprToString(statement.expr, indent, collectedData, codeType) +
-            ";"
-          );
-      }
-      break;
+      return (
+        indentString +
+        (statement.isConst ? "const" : "let") +
+        " " +
+        (statement.name as string) +
+        typeAnnotation(statement.type_, codeType, collectedData) +
+        " = " +
+        exprToString(statement.expr, indent, collectedData, codeType) +
+        ";"
+      );
 
     case "FunctionDefinition":
-      switch (codeType) {
-        case "TypeScript":
-          return (
-            indentString +
-            "const " +
-            (statement.name as string) +
-            " = (" +
-            statement.parameterList
-              .map(
-                parameter =>
-                  (parameter.name as string) +
-                  ": " +
-                  typeToString(parameter.type_, collectedData)
-              )
-              .join(", ") +
-            "): " +
-            typeToString(statement.returnType, collectedData) +
-            "=>" +
-            lambdaBodyToString(
-              statement.statementList,
-              indent,
-              collectedData,
-              codeType
-            ) +
-            ";"
-          );
-        case "JavaScript":
-          return (
-            indentString +
-            "const " +
-            (statement.name as string) +
-            "=(" +
-            statement.parameterList.map(parameter => parameter.name).join(",") +
-            ")=>" +
-            lambdaBodyToString(
-              statement.statementList,
-              indent,
-              collectedData,
-              codeType
-            ) +
-            ";"
-          );
-      }
-      break;
+      return (
+        indentString +
+        "const " +
+        (statement.name as string) +
+        " = (" +
+        statement.parameterList
+          .map(
+            parameter =>
+              (parameter.name as string) +
+              typeAnnotation(parameter.type_, codeType, collectedData)
+          )
+          .join(", ") +
+        ")" +
+        typeAnnotation(statement.returnType, codeType, collectedData) +
+        " => " +
+        lambdaBodyToString(
+          statement.statementList,
+          indent,
+          collectedData,
+          codeType
+        ) +
+        ";"
+      );
 
     case "For":
       return (
@@ -716,9 +655,9 @@ const statementToTypeScriptCodeAsString = (
         (statement.counterVariableName as string) +
         " < " +
         exprToString(statement.untilExpr, indent, collectedData, codeType) +
-        ";" +
+        "; " +
         (statement.counterVariableName as string) +
-        "+= 1)" +
+        " += 1)" +
         statementListToString(
           statement.statementList,
           indent,
@@ -840,6 +779,20 @@ const functionTypeToString = (
     typeToString(returnType, collectedData)
   );
 };
+
+const typeAnnotation = (
+  type_: data.Type,
+  codeType: data.CodeType,
+  collectedData: data.CollectedData
+): string => {
+  switch (codeType) {
+    case "JavaScript":
+      return "";
+    case "TypeScript":
+      return ": " + typeToString(type_, collectedData);
+  }
+};
+
 /**
  * 型の式をコードに変換する
  * @param type_ 型の式

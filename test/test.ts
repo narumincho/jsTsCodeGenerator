@@ -335,7 +335,7 @@ describe("test", () => {
       "JavaScript"
     );
     console.log(code);
-    expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
+    expect(code).toMatch("3 * 9 + 7 * 6 === 2 + 3 + (5 + 8) === 5 * (7 + 8)");
   });
   it("object literal return need parenthesis", () => {
     const code = generator.generateCodeAsString(
