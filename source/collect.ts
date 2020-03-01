@@ -7,16 +7,17 @@ import * as identifer from "./identifer";
 export const collectInCode = (
   code: data.Code
 ): data.UsedNameAndModulePathSet => {
-  let scanData: data.UsedNameAndModulePathSet = {
-    usedNameSet: new Set(),
-    modulePathSet: new Set()
-  };
   const rootScopeIdentiferSet = code.exportDefinitionList.reduce<
     RootScopeIdentiferSet
   >(collectDefinitionNameInDefinition, {
     rootScopeTypeNameSet: new Set(),
     rootScopeVariableName: new Set()
   });
+
+  let scanData: data.UsedNameAndModulePathSet = {
+    usedNameSet: new Set(),
+    modulePathSet: new Set()
+  };
   for (const definition of code.exportDefinitionList) {
     scanData = concatCollectData(
       scanData,
