@@ -65,11 +65,7 @@ const typeAliasToString = (
     documentToString(typeAlias.document) +
     "export type " +
     (typeAlias.name as string) +
-    (typeAlias.parameterList.length === 0
-      ? ""
-      : "<" +
-        typeAlias.parameterList.map(parameter => parameter).join(", ") +
-        ">") +
+    typeParameterListToString(typeAlias.parameterList) +
     " = " +
     typeToString(typeAlias.type_, collectedData) +
     ";\n\n"
@@ -622,28 +618,11 @@ const statementToTypeScriptCodeAsString = (
       );
 
     case "FunctionDefinition":
-      return (
-        indentString +
-        "const " +
-        (statement.name as string) +
-        " = (" +
-        statement.parameterList
-          .map(
-            parameter =>
-              (parameter.name as string) +
-              typeAnnotation(parameter.type_, codeType, collectedData)
-          )
-          .join(", ") +
-        ")" +
-        typeAnnotation(statement.returnType, codeType, collectedData) +
-        " => " +
-        lambdaBodyToString(
-          statement.statementList,
-          indent,
-          collectedData,
-          codeType
-        ) +
-        ";"
+      return functionDefinitionToString(
+        statement.functionDefinition,
+        indent,
+        collectedData,
+        codeType
       );
 
     case "For":
@@ -700,6 +679,39 @@ const statementToTypeScriptCodeAsString = (
     case "Switch":
       return switchToString(statement.switch_, indent, collectedData, codeType);
   }
+};
+
+const functionDefinitionToString = (
+  functionDefinition: data.FunctionDefinition,
+  indent: number,
+  collectedData: data.CollectedData,
+  codeType: data.CodeType
+): string => {
+  return (
+    indentNumberToString(indent) +
+    "const " +
+    (functionDefinition.name as string) +
+    " = " +
+    typeParameterListToString(functionDefinition.typeParameterList) +
+    "(" +
+    functionDefinition.parameterList
+      .map(
+        parameter =>
+          (parameter.name as string) +
+          typeAnnotation(parameter.type_, codeType, collectedData)
+      )
+      .join(", ") +
+    ")" +
+    typeAnnotation(functionDefinition.returnType, codeType, collectedData) +
+    " => " +
+    lambdaBodyToString(
+      functionDefinition.statementList,
+      indent,
+      collectedData,
+      codeType
+    ) +
+    ";"
+  );
 };
 
 const switchToString = (
@@ -772,6 +784,18 @@ const functionTypeToString = (
   );
 };
 
+const typeParameterListToString = (
+  typeParameterList: ReadonlyArray<identifer.Identifer>
+): string => {
+  if (typeParameterList.length === 0) {
+    return "";
+  }
+  return "<" + typeParameterList.join(", ") + ">";
+};
+
+/**
+ * codeTypeがTypeScriptだった場合,`: string`のような型注釈をつける
+ */
 const typeAnnotation = (
   type_: data.Type,
   codeType: data.CodeType,

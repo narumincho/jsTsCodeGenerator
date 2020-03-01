@@ -458,8 +458,10 @@ const collectNameInStatement = (
   for (const statement of statementList) {
     switch (statement._) {
       case "VariableDefinition":
-      case "FunctionDefinition":
         identiferSet.add(statement.name);
+        continue;
+      case "FunctionDefinition":
+        identiferSet.add(statement.functionDefinition.name);
     }
   }
   return identiferSet;
@@ -548,7 +550,7 @@ const collectInStatement = (
         usedNameSet: new Set()
       };
       const parameterNameSet: Set<identifer.Identifer> = new Set();
-      for (const parameter of statement.parameterList) {
+      for (const parameter of statement.functionDefinition.parameterList) {
         if (parameterNameSet.has(parameter.name)) {
           throw new Error(
             "ローカル内での関数定義のパラメーター名が重複しています parameterName=" +
@@ -561,7 +563,7 @@ const collectInStatement = (
           collectInType(
             parameter.type_,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            new Set()
+            new Set(statement.functionDefinition.typeParameterList)
           )
         );
       }
@@ -570,12 +572,12 @@ const collectInStatement = (
         data,
         concatCollectData(
           collectInType(
-            statement.returnType,
+            statement.functionDefinition.returnType,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
             new Set()
           ),
           collectStatementList(
-            statement.statementList,
+            statement.functionDefinition.statementList,
             localVariableNameSetList,
             rootScopeIdentiferSet,
             parameterNameSet

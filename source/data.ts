@@ -238,10 +238,7 @@ export type Statement =
     }
   | {
       _: "FunctionDefinition";
-      name: identifer.Identifer;
-      parameterList: ReadonlyArray<Parameter>;
-      returnType: Type;
-      statementList: ReadonlyArray<Statement>;
+      functionDefinition: FunctionDefinition;
     }
   | {
       _: "For";
@@ -266,6 +263,14 @@ export type Statement =
       _: "Switch";
       switch_: Switch;
     };
+
+export type FunctionDefinition = {
+  name: identifer.Identifer;
+  parameterList: ReadonlyArray<ParameterWithDocument>;
+  typeParameterList: ReadonlyArray<identifer.Identifer>;
+  returnType: Type;
+  statementList: ReadonlyArray<Statement>;
+};
 
 export type Switch = {
   expr: Expr;
@@ -877,16 +882,10 @@ export const statementLetVariableDefinition = (
  * @param statementList 関数本体
  */
 export const statementFunctionDefinition = (
-  name: identifer.Identifer,
-  parameterList: ReadonlyArray<ParameterWithDocument>,
-  returnType: Type,
-  statementList: ReadonlyArray<Statement>
+  functionDefinition: FunctionDefinition
 ): Statement => ({
   _: "FunctionDefinition",
-  name,
-  parameterList,
-  returnType,
-  statementList
+  functionDefinition
 });
 
 /**
