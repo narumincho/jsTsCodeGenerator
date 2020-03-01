@@ -71,6 +71,11 @@ const typeAliasToString = (
     documentToString(typeAlias.document) +
     "export type " +
     (typeAlias.name as string) +
+    (typeAlias.parameterList.length === 0
+      ? ""
+      : "<" +
+        typeAlias.parameterList.map(parameter => parameter).join(", ") +
+        ">") +
     " = " +
     typeToString(typeAlias.type_, collectedData) +
     ";\n\n"
