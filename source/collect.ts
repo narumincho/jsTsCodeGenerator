@@ -16,19 +16,12 @@ const scanDefinition = (
   scanData: data.UsedNameAndModulePath
 ): void => {
   switch (definition._) {
-    case data.Definition_.TypeAlias:
+    case "TypeAlias":
       scanData.usedNameSet.add(definition.typeAlias.name);
       collectType(definition.typeAlias.type_, scanData);
       return;
 
-    case data.Definition_.Enum:
-      scanData.enumTagListMap.set(
-        definition.enum_.name,
-        definition.enum_.tagList.map(tag => tag.name)
-      );
-      return;
-
-    case data.Definition_.Function:
+    case "Function":
       scanData.usedNameSet.add(definition.function_.name);
       for (const parameter of definition.function_.parameterList) {
         scanData.usedNameSet.add(parameter.name);
@@ -38,7 +31,7 @@ const scanDefinition = (
       collectStatementList(definition.function_.statementList, scanData);
       return;
 
-    case data.Definition_.Variable:
+    case "Variable":
       scanData.usedNameSet.add(definition.variable.name);
       collectType(definition.variable.type_, scanData);
       collectExpr(definition.variable.expr, scanData);
@@ -56,28 +49,27 @@ const collectExpr = (
   scanData: data.UsedNameAndModulePath
 ): void => {
   switch (expr._) {
-    case data.Expr_.NumberLiteral:
-    case data.Expr_.UnaryOperator:
-    case data.Expr_.StringLiteral:
-    case data.Expr_.BooleanLiteral:
-    case data.Expr_.UndefinedLiteral:
-    case data.Expr_.NullLiteral:
-    case data.Expr_.EnumTag:
+    case "NumberLiteral":
+    case "UnaryOperator":
+    case "StringLiteral":
+    case "BooleanLiteral":
+    case "UndefinedLiteral":
+    case "NullLiteral":
       return;
 
-    case data.Expr_.ArrayLiteral:
+    case "ArrayLiteral":
       for (const exprElement of expr.exprList) {
         collectExpr(exprElement, scanData);
       }
       return;
 
-    case data.Expr_.ObjectLiteral:
+    case "ObjectLiteral":
       for (const [, member] of expr.memberList) {
         collectExpr(member, scanData);
       }
       return;
 
-    case data.Expr_.Lambda:
+    case "Lambda":
       for (const oneParameter of expr.parameterList) {
         collectType(oneParameter.type_, scanData);
       }
@@ -85,27 +77,27 @@ const collectExpr = (
       collectStatementList(expr.statementList, scanData);
       return;
 
-    case data.Expr_.Variable:
+    case "Variable":
       scanData.usedNameSet.add(expr.name);
       return;
 
-    case data.Expr_.ImportedVariable:
+    case "ImportedVariable":
       scanData.modulePathList.add(expr.moduleName);
       return;
 
-    case data.Expr_.Get:
+    case "Get":
       collectExpr(expr.expr, scanData);
       collectExpr(expr.propertyName, scanData);
       return;
 
-    case data.Expr_.Call:
+    case "Call":
       collectExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
         collectExpr(parameter, scanData);
       }
       return;
 
-    case data.Expr_.New:
+    case "New":
       collectExpr(expr.expr, scanData);
       for (const parameter of expr.parameterList) {
         collectExpr(parameter, scanData);
@@ -128,40 +120,40 @@ const collectStatement = (
   scanData: data.UsedNameAndModulePath
 ): void => {
   switch (statement._) {
-    case data.Statement_.EvaluateExpr:
+    case "EvaluateExpr":
       collectExpr(statement.expr, scanData);
       return;
 
-    case data.Statement_.Set:
+    case "Set":
       collectExpr(statement.targetObject, scanData);
       collectExpr(statement.expr, scanData);
       return;
 
-    case data.Statement_.If:
+    case "If":
       collectExpr(statement.condition, scanData);
       collectStatementList(statement.thenStatementList, scanData);
       return;
 
-    case data.Statement_.ThrowError:
+    case "ThrowError":
       collectExpr(statement.errorMessage, scanData);
       return;
 
-    case data.Statement_.Return:
+    case "Return":
       collectExpr(statement.expr, scanData);
       return;
 
-    case data.Statement_.ReturnVoid:
+    case "ReturnVoid":
       return;
 
-    case data.Statement_.Continue:
+    case "Continue":
       return;
 
-    case data.Statement_.VariableDefinition:
+    case "VariableDefinition":
       collectExpr(statement.expr, scanData);
       collectType(statement.type_, scanData);
       return;
 
-    case data.Statement_.FunctionDefinition:
+    case "FunctionDefinition":
       for (const parameter of statement.parameterList) {
         collectType(parameter.type_, scanData);
       }
@@ -169,21 +161,21 @@ const collectStatement = (
       collectStatementList(statement.statementList, scanData);
       return;
 
-    case data.Statement_.For:
+    case "For":
       collectExpr(statement.untilExpr, scanData);
       collectStatementList(statement.statementList, scanData);
       return;
 
-    case data.Statement_.ForOf:
+    case "ForOf":
       collectExpr(statement.iterableExpr, scanData);
       collectStatementList(statement.statementList, scanData);
       return;
 
-    case data.Statement_.WhileTrue:
+    case "WhileTrue":
       collectStatementList(statement.statementList, scanData);
       return;
 
-    case "switch":
+    case "Switch":
       collectExpr(statement.switch_.expr, scanData);
       for (const pattern of statement.switch_.patternList) {
         collectStatementList(pattern.statementList, scanData);
@@ -226,45 +218,44 @@ const collectType = (
   scanData: data.UsedNameAndModulePath
 ): void => {
   switch (type_._) {
-    case data.Type_.Number:
-    case data.Type_.String:
-    case data.Type_.Boolean:
-    case data.Type_.Null:
-    case data.Type_.Undefined:
-    case data.Type_.EnumTagLiteral:
+    case "Number":
+    case "String":
+    case "Boolean":
+    case "Null":
+    case "Undefined":
       return;
 
-    case data.Type_.Object:
+    case "Object":
       for (const [, value] of type_.memberList) {
         collectType(value.type_, scanData);
       }
       return;
 
-    case data.Type_.Function:
+    case "Function":
       for (const parameter of type_.parameterList) {
         collectType(parameter, scanData);
       }
       collectType(type_.return, scanData);
       return;
 
-    case data.Type_.Union:
+    case "Union":
       for (const oneType of type_.types) {
         collectType(oneType, scanData);
       }
       return;
 
-    case data.Type_.WithTypeParameter:
+    case "WithTypeParameter":
       collectType(type_.type_, scanData);
       for (const parameter of type_.typeParameterList) {
         collectType(parameter, scanData);
       }
       return;
 
-    case data.Type_.ImportedType:
+    case "ImportedType":
       scanData.modulePathList.add(type_.moduleName);
       return;
 
-    case data.Type_.GlobalType:
+    case "GlobalType":
       scanData.usedNameSet.add(type_.name);
       return;
   }

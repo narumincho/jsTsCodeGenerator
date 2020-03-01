@@ -23,8 +23,7 @@ export const generateCodeAsString = (
   return toString.toString(
     code,
     {
-      importedModuleNameIdentiferMap: importedModuleNameMap,
-      enumTagListMap: usedNameAndModulePath.enumTagListMap
+      importedModuleNameIdentiferMap: importedModuleNameMap
     },
     codeType
   );

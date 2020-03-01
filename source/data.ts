@@ -18,52 +18,31 @@ export type Code = {
 /**
  * 出力するコードの種類
  */
-export const enum CodeType {
-  /** Enumの値は数値リテラルとして展開される. 型情報が出力されない */
-  JavaScript,
-  /** 型情報も出力される */
-  TypeScript
-}
+export type CodeType = "JavaScript" | "TypeScript";
 
 export type Definition =
-  | { _: Definition_.TypeAlias; typeAlias: TypeAlias }
+  | { _: "TypeAlias"; typeAlias: TypeAlias }
   | {
-      _: Definition_.Enum;
-      enum_: Enum;
-    }
-  | {
-      _: Definition_.Function;
+      _: "Function";
       function_: Function;
     }
   | {
-      _: Definition_.Variable;
+      _: "Variable";
       variable: Variable;
     };
 
-export const enum Definition_ {
-  TypeAlias,
-  Enum,
-  Function,
-  Variable
-}
-
 export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
-  _: Definition_.TypeAlias,
+  _: "TypeAlias",
   typeAlias
 });
 
-export const definitionEnum = (enum_: Enum): Definition => ({
-  _: Definition_.Enum,
-  enum_
-});
-
 export const definitionFunction = (function_: Function): Definition => ({
-  _: Definition_.Function,
+  _: "Function",
   function_
 });
 
 export const definitionVariable = (variable: Variable): Definition => ({
-  _: Definition_.Variable,
+  _: "Variable",
   variable
 });
 
@@ -108,41 +87,21 @@ export type Variable = {
 export type UsedNameAndModulePath = {
   readonly usedNameSet: Set<identifer.Identifer>;
   readonly modulePathList: Set<string>;
-  readonly enumTagListMap: Map<
-    identifer.Identifer,
-    ReadonlyArray<identifer.Identifer>
-  >;
 };
 
 export type ModulePathOrName = string & { _modulePathOrName: never };
 
 /**
- * Enumのタグの情報とモジュールの識別子の辞書
+ * モジュールの識別子の辞書
  */
 export type CollectedData = {
-  enumTagListMap: ReadonlyMap<
-    identifer.Identifer,
-    ReadonlyArray<identifer.Identifer>
-  >;
   importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
 };
 
 export const collectedDataInit = (): UsedNameAndModulePath => ({
   usedNameSet: new Set(),
-  modulePathList: new Set(),
-  enumTagListMap: new Map()
+  modulePathList: new Set()
 });
-
-export type Enum = {
-  readonly name: identifer.Identifer;
-  readonly document: string;
-  readonly tagList: ReadonlyArray<Tag>;
-};
-
-export type Tag = {
-  name: identifer.Identifer;
-  document: string;
-};
 
 export type UnaryOperator = "-" | "~" | "!";
 
@@ -167,193 +126,151 @@ export type BinaryOperator =
   | "||";
 
 export type Expr =
-  | { _: Expr_.NumberLiteral; value: number }
+  | { _: "NumberLiteral"; value: number }
   | {
-      _: Expr_.StringLiteral;
+      _: "StringLiteral";
       value: string;
     }
   | {
-      _: Expr_.BooleanLiteral;
+      _: "BooleanLiteral";
       value: boolean;
     }
   | {
-      _: Expr_.NullLiteral;
+      _: "NullLiteral";
     }
   | {
-      _: Expr_.UndefinedLiteral;
+      _: "UndefinedLiteral";
     }
   | {
-      _: Expr_.UnaryOperator;
+      _: "UnaryOperator";
       operator: UnaryOperator;
       expr: Expr;
     }
   | {
-      _: Expr_.BinaryOperator;
+      _: "BinaryOperator";
       operator: BinaryOperator;
       left: Expr;
       right: Expr;
     }
   | {
-      _: Expr_.ConditionalOperator;
+      _: "ConditionalOperator";
       condition: Expr;
       thenExpr: Expr;
       elseExpr: Expr;
     }
   | {
-      _: Expr_.ArrayLiteral;
+      _: "ArrayLiteral";
       exprList: ReadonlyArray<Expr>;
     }
   | {
-      _: Expr_.ObjectLiteral;
+      _: "ObjectLiteral";
       memberList: Map<string, Expr>;
     }
   | {
-      _: Expr_.Lambda;
+      _: "Lambda";
       parameterList: ReadonlyArray<Parameter>;
       returnType: Type;
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Expr_.Variable;
+      _: "Variable";
       name: identifer.Identifer;
     }
   | {
-      _: Expr_.ImportedVariable;
+      _: "ImportedVariable";
       moduleName: string;
       name: string;
     }
   | {
-      _: Expr_.Get;
+      _: "Get";
       expr: Expr;
       propertyName: Expr;
     }
   | {
-      _: Expr_.Call;
+      _: "Call";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
     }
   | {
-      _: Expr_.New;
+      _: "New";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
     }
   | {
-      _: Expr_.EnumTag;
-      typeName: identifer.Identifer;
-      tagName: identifer.Identifer;
-    }
-  | {
-      _: Expr_.BuiltIn;
+      _: "BuiltIn";
       builtIn: BuiltInVariable;
     };
-
-export const enum Expr_ {
-  NumberLiteral,
-  StringLiteral,
-  BooleanLiteral,
-  UndefinedLiteral,
-  NullLiteral,
-  ArrayLiteral,
-  ObjectLiteral,
-  UnaryOperator,
-  BinaryOperator,
-  ConditionalOperator,
-  Lambda,
-  Variable,
-  ImportedVariable,
-  Get,
-  Call,
-  New,
-  EnumTag,
-  BuiltIn
-}
 
 /**
  * 文
  */
 export type Statement =
   | {
-      _: Statement_.EvaluateExpr;
+      _: "EvaluateExpr";
       expr: Expr;
     }
   | {
-      _: Statement_.Set;
+      _: "Set";
       targetObject: Expr;
       operator: BinaryOperator | null;
       expr: Expr;
     }
   | {
-      _: Statement_.If;
+      _: "If";
       condition: Expr;
       thenStatementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.ThrowError;
+      _: "ThrowError";
       errorMessage: Expr;
     }
   | {
-      _: Statement_.Return;
+      _: "Return";
       expr: Expr;
     }
   | {
-      _: Statement_.ReturnVoid;
+      _: "ReturnVoid";
     }
   | {
-      _: Statement_.Continue;
+      _: "Continue";
     }
   | {
-      _: Statement_.VariableDefinition;
+      _: "VariableDefinition";
       name: identifer.Identifer;
       expr: Expr;
       type_: Type;
       isConst: boolean;
     }
   | {
-      _: Statement_.FunctionDefinition;
+      _: "FunctionDefinition";
       name: identifer.Identifer;
       parameterList: ReadonlyArray<Parameter>;
       returnType: Type;
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.For;
+      _: "For";
       counterVariableName: identifer.Identifer;
       untilExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.ForOf;
+      _: "ForOf";
       elementVariableName: identifer.Identifer;
       iterableExpr: Expr;
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.WhileTrue;
+      _: "WhileTrue";
       statementList: ReadonlyArray<Statement>;
     }
   | {
-      _: Statement_.Break;
+      _: "Break";
     }
   | {
-      _: "switch";
+      _: "Switch";
       switch_: Switch;
     };
-
-export const enum Statement_ {
-  EvaluateExpr,
-  Set,
-  If,
-  ThrowError,
-  Return,
-  ReturnVoid,
-  Continue,
-  VariableDefinition,
-  FunctionDefinition,
-  For,
-  ForOf,
-  WhileTrue,
-  Break
-}
 
 export type Switch = {
   expr: Expr;
@@ -370,93 +287,67 @@ export type Pattern = {
  * 型を表現する式
  */
 export type Type =
-  | { _: Type_.Number }
-  | { _: Type_.String }
-  | { _: Type_.Boolean }
-  | { _: Type_.Undefined }
-  | { _: Type_.Null }
-  | { _: Type_.Never }
-  | { _: Type_.Void }
+  | { _: "Number" }
+  | { _: "String" }
+  | { _: "Boolean" }
+  | { _: "Undefined" }
+  | { _: "Null" }
+  | { _: "Never" }
+  | { _: "Void" }
   | {
-      _: Type_.Object;
+      _: "Object";
       memberList: Map<string, { type_: Type; document: string }>;
     }
   | {
-      _: Type_.Function;
+      _: "Function";
       parameterList: ReadonlyArray<Type>;
       return: Type;
     }
   | {
-      _: Type_.WithTypeParameter;
+      _: "WithTypeParameter";
       type_: Type;
       typeParameterList: ReadonlyArray<Type>;
     }
   | {
-      _: Type_.EnumTagLiteral;
-      typeName: identifer.Identifer;
-      tagName: identifer.Identifer;
-    }
-  | {
-      _: Type_.Union;
+      _: "Union";
       types: ReadonlyArray<Type>;
     }
   | {
-      _: Type_.ImportedType;
+      _: "ImportedType";
       moduleName: string;
       name: identifer.Identifer;
     }
-  | { _: Type_.GlobalType; name: identifer.Identifer }
-  | { _: Type_.BuiltIn; builtIn: BuiltInType }
-  | { _: "stringLiteral"; string_: string };
+  | { _: "GlobalType"; name: identifer.Identifer }
+  | { _: "BuiltIn"; builtIn: BuiltInType }
+  | { _: "StringLiteral"; string_: string };
 
-export const enum Type_ {
-  Number,
-  String,
-  Boolean,
-  Undefined,
-  Null,
-  Never,
-  Void,
-  Object,
-  Function,
-  FunctionReturnVoid,
-  EnumTagLiteral,
-  Union,
-  WithTypeParameter,
-  ImportedType,
-  GlobalType,
-  BuiltIn
-}
+export type BuiltInVariable =
+  | "Object"
+  | "Number"
+  | "Math"
+  | "Date"
+  | "Uint8Array"
+  | "Map"
+  | "Set"
+  | "console";
 
-export const enum BuiltInVariable {
-  Object,
-  Number,
-  Math,
-  Date,
-  Uint8Array,
-  Map,
-  Set,
-  console
-}
-
-export const enum BuiltInType {
-  Array,
-  ReadonlyArray,
-  Uint8Array,
-  Promise,
-  Date,
-  Map,
-  ReadonlyMap,
-  Set,
-  ReadonlySet
-}
+export type BuiltInType =
+  | "Array"
+  | "ReadonlyArray"
+  | "Uint8Array"
+  | "Promise"
+  | "Date"
+  | "Map"
+  | "ReadonlyMap"
+  | "Set"
+  | "ReadonlySet";
 
 /**
  * 数値リテラル `123`
  * @param value 値
  */
 export const numberLiteral = (value: number): Expr => ({
-  _: Expr_.NumberLiteral,
+  _: "NumberLiteral",
   value: value
 });
 
@@ -465,7 +356,7 @@ export const numberLiteral = (value: number): Expr => ({
  * @param string 文字列。エスケープする必要はない
  */
 export const stringLiteral = (string: string): Expr => ({
-  _: Expr_.StringLiteral,
+  _: "StringLiteral",
   value: string
 });
 
@@ -474,7 +365,7 @@ export const stringLiteral = (string: string): Expr => ({
  * @param value trueかfalse
  */
 export const booleanLiteral = (value: boolean): Expr => ({
-  _: Expr_.BooleanLiteral,
+  _: "BooleanLiteral",
   value
 });
 
@@ -482,14 +373,14 @@ export const booleanLiteral = (value: boolean): Expr => ({
  *  undefinedリテラル
  */
 export const undefinedLiteral: Expr = {
-  _: Expr_.UndefinedLiteral
+  _: "UndefinedLiteral"
 };
 
 /**
  * nullリテラル
  */
 export const nullLiteral: Expr = {
-  _: Expr_.NullLiteral
+  _: "NullLiteral"
 };
 
 /**
@@ -497,7 +388,7 @@ export const nullLiteral: Expr = {
  * @param expr 式
  */
 export const minus = (expr: Expr): Expr => ({
-  _: Expr_.UnaryOperator,
+  _: "UnaryOperator",
   operator: "-",
   expr
 });
@@ -507,7 +398,7 @@ export const minus = (expr: Expr): Expr => ({
  * @param expr 式
  */
 export const bitwiseNot = (expr: Expr): Expr => ({
-  _: Expr_.UnaryOperator,
+  _: "UnaryOperator",
   operator: "~",
   expr
 });
@@ -518,7 +409,7 @@ export const bitwiseNot = (expr: Expr): Expr => ({
  * @param right 右辺
  */
 export const logicalNot = (expr: Expr): Expr => ({
-  _: Expr_.UnaryOperator,
+  _: "UnaryOperator",
   operator: "!",
   expr
 });
@@ -529,7 +420,7 @@ export const logicalNot = (expr: Expr): Expr => ({
  * @param right
  */
 export const exponentiation = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "**",
   left,
   right
@@ -541,7 +432,7 @@ export const exponentiation = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const multiplication = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "*",
   left: left,
   right: right
@@ -553,7 +444,7 @@ export const multiplication = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const division = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "/",
   left: left,
   right: right
@@ -565,7 +456,7 @@ export const division = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const modulo = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "%",
   left,
   right
@@ -577,7 +468,7 @@ export const modulo = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const addition = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "+",
   left: left,
   right: right
@@ -589,7 +480,7 @@ export const addition = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const subtraction = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "-",
   left: left,
   right: right
@@ -601,7 +492,7 @@ export const subtraction = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const leftShift = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "<<",
   left,
   right
@@ -613,7 +504,7 @@ export const leftShift = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const signedRightShift = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: ">>",
   left,
   right
@@ -625,7 +516,7 @@ export const signedRightShift = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const unsignedRightShift = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: ">>>",
   left,
   right
@@ -637,7 +528,7 @@ export const unsignedRightShift = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const lessThan = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "<",
   left,
   right
@@ -649,7 +540,7 @@ export const lessThan = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const lessThanOrEqual = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "<=",
   left,
   right
@@ -660,7 +551,7 @@ export const lessThanOrEqual = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const equal = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "===",
   left,
   right
@@ -672,7 +563,7 @@ export const equal = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const notEqual = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "!==",
   left,
   right
@@ -684,14 +575,14 @@ export const notEqual = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const bitwiseAnd = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "&",
   left,
   right
 });
 
 export const bitwiseXOr = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "^",
   left,
   right
@@ -703,7 +594,7 @@ export const bitwiseXOr = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const bitwiseOr = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "|",
   left,
   right
@@ -715,7 +606,7 @@ export const bitwiseOr = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const logicalAnd = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "&&",
   left,
   right
@@ -727,7 +618,7 @@ export const logicalAnd = (left: Expr, right: Expr): Expr => ({
  * @param right 右辺
  */
 export const logicalOr = (left: Expr, right: Expr): Expr => ({
-  _: Expr_.BinaryOperator,
+  _: "BinaryOperator",
   operator: "||",
   left,
   right
@@ -744,7 +635,7 @@ export const conditionalOperator = (
   thenExpr: Expr,
   elseExpr: Expr
 ): Expr => ({
-  _: Expr_.ConditionalOperator,
+  _: "ConditionalOperator",
   condition,
   thenExpr,
   elseExpr
@@ -754,7 +645,7 @@ export const conditionalOperator = (
  * 配列リテラル `[1, 2, 3]`
  */
 export const arrayLiteral = (exprList: ReadonlyArray<Expr>): Expr => ({
-  _: Expr_.ArrayLiteral,
+  _: "ArrayLiteral",
   exprList
 });
 
@@ -764,7 +655,7 @@ export const arrayLiteral = (exprList: ReadonlyArray<Expr>): Expr => ({
  */
 export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
   return {
-    _: Expr_.ObjectLiteral,
+    _: "ObjectLiteral",
     memberList: memberMap
   };
 };
@@ -780,7 +671,7 @@ export const lambda = (
   returnType: Type,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
-  _: Expr_.Lambda,
+  _: "Lambda",
   parameterList,
   returnType,
   statementList
@@ -792,7 +683,7 @@ export const lambda = (
  * @param propertyName プロパティ名の式
  */
 export const getByExpr = (expr: Expr, propertyName: Expr): Expr => ({
-  _: Expr_.Get,
+  _: "Get",
   expr,
   propertyName
 });
@@ -803,7 +694,7 @@ export const getByExpr = (expr: Expr, propertyName: Expr): Expr => ({
  * @param propertyName プロパティ名
  */
 export const get = (expr: Expr, propertyName: string): Expr => ({
-  _: Expr_.Get,
+  _: "Get",
   expr,
   propertyName: stringLiteral(propertyName)
 });
@@ -814,7 +705,7 @@ export const get = (expr: Expr, propertyName: string): Expr => ({
  * @param parameterList パラメーターのリスト
  */
 export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
-  _: Expr_.Call,
+  _: "Call",
   expr,
   parameterList
 });
@@ -840,7 +731,7 @@ export const newExpr = (
   expr: Expr,
   parameterList: ReadonlyArray<Expr>
 ): Expr => ({
-  _: Expr_.New,
+  _: "New",
   expr,
   parameterList
 });
@@ -851,7 +742,7 @@ export const newExpr = (
  * @param name 変数名
  */
 export const importedVariable = (path: string, name: string): Expr => ({
-  _: Expr_.ImportedVariable,
+  _: "ImportedVariable",
   name,
   moduleName: path
 });
@@ -861,29 +752,15 @@ export const importedVariable = (path: string, name: string): Expr => ({
  * @param name 変数名
  */
 export const variable = (name: identifer.Identifer): Expr => ({
-  _: Expr_.Variable,
+  _: "Variable",
   name
-});
-
-/**
- * 列挙型の値を取得する。`Color.Red`
- * @param typeName 型の名前
- * @param tagName タグの名前
- */
-export const enumTag = (
-  typeName: identifer.Identifer,
-  tagName: identifer.Identifer
-): Expr => ({
-  _: Expr_.EnumTag,
-  typeName,
-  tagName: tagName
 });
 
 /**
  * 標準に入っている変数
  */
 export const builtInVariable = (builtIn: BuiltInVariable): Expr => ({
-  _: Expr_.BuiltIn,
+  _: "BuiltIn",
   builtIn
 });
 
@@ -893,7 +770,7 @@ export const builtInVariable = (builtIn: BuiltInVariable): Expr => ({
  * @param expr 式
  */
 export const statementEvaluateExpr = (expr: Expr): Statement => ({
-  _: Statement_.EvaluateExpr,
+  _: "EvaluateExpr",
   expr
 });
 
@@ -915,7 +792,7 @@ export const statementSet = (
   operator: BinaryOperator | null,
   expr: Expr
 ): Statement => ({
-  _: Statement_.Set,
+  _: "Set",
   targetObject,
   operator,
   expr
@@ -930,7 +807,7 @@ export const statementIf = (
   condition: Expr,
   thenStatementList: ReadonlyArray<Statement>
 ): Statement => ({
-  _: Statement_.If,
+  _: "If",
   condition,
   thenStatementList
 });
@@ -940,7 +817,7 @@ export const statementIf = (
  * @param errorMessage エラーメッセージ
  */
 export const statementThrowError = (errorMessage: Expr): Statement => ({
-  _: Statement_.ThrowError,
+  _: "ThrowError",
   errorMessage
 });
 
@@ -949,7 +826,7 @@ export const statementThrowError = (errorMessage: Expr): Statement => ({
  * @param expr 関数が返す値
  */
 export const statementReturn = (expr: Expr): Statement => ({
-  _: Statement_.Return,
+  _: "Return",
   expr
 });
 
@@ -958,7 +835,7 @@ export const statementReturn = (expr: Expr): Statement => ({
  * 戻り値がvoidの関数を早く抜ける
  */
 export const statementReturnVoid: Statement = {
-  _: Statement_.ReturnVoid
+  _: "ReturnVoid"
 };
 
 /**
@@ -966,7 +843,7 @@ export const statementReturnVoid: Statement = {
  * forの繰り返しを次に進める
  */
 export const statementContinue = (): Statement => ({
-  _: Statement_.Continue
+  _: "Continue"
 });
 
 /**
@@ -981,7 +858,7 @@ export const statementVariableDefinition = (
   type_: Type,
   expr: Expr
 ): Statement => ({
-  _: Statement_.VariableDefinition,
+  _: "VariableDefinition",
   name,
   expr,
   type_,
@@ -1000,7 +877,7 @@ export const statementLetVariableDefinition = (
   type_: Type,
   expr: Expr
 ): Statement => ({
-  _: Statement_.VariableDefinition,
+  _: "VariableDefinition",
   name,
   expr,
   type_,
@@ -1021,7 +898,7 @@ export const statementFunctionDefinition = (
   returnType: Type,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
-  _: Statement_.FunctionDefinition,
+  _: "FunctionDefinition",
   name,
   parameterList,
   returnType,
@@ -1042,7 +919,7 @@ export const statementFor = (
   untilExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
-  _: Statement_.For,
+  _: "For",
   counterVariableName,
   statementList,
   untilExpr
@@ -1060,7 +937,7 @@ export const statementForOf = (
   iterableExpr: Expr,
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
-  _: Statement_.ForOf,
+  _: "ForOf",
   elementVariableName,
   iterableExpr,
   statementList
@@ -1073,7 +950,7 @@ export const statementForOf = (
 export const statementWhileTrue = (
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
-  _: Statement_.WhileTrue,
+  _: "WhileTrue",
   statementList
 });
 
@@ -1081,13 +958,13 @@ export const statementWhileTrue = (
  * break;
  * whileのループから抜ける
  */
-export const statementBreak = (): Statement => ({ _: Statement_.Break });
+export const statementBreak = (): Statement => ({ _: "Break" });
 
 /**
  * switch文
  */
 export const statementSwitch = (switch_: Switch): Statement => ({
-  _: "switch",
+  _: "Switch",
   switch_
 });
 
@@ -1165,12 +1042,7 @@ export const literal = (value: Literal): Expr => {
 export const callObjectMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr =>
-  callMethod(
-    builtInVariable(BuiltInVariable.Object),
-    methodName,
-    parameterList
-  );
+): Expr => callMethod(builtInVariable("Object"), methodName, parameterList);
 
 /**
  * ```ts
@@ -1181,12 +1053,7 @@ export const callObjectMethod = (
 export const callNumberMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr =>
-  callMethod(
-    builtInVariable(BuiltInVariable.Number),
-    methodName,
-    parameterList
-  );
+): Expr => callMethod(builtInVariable("Number"), methodName, parameterList);
 
 /**
  * ```ts
@@ -1197,15 +1064,14 @@ export const callNumberMethod = (
 export const callMathMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr =>
-  callMethod(builtInVariable(BuiltInVariable.Math), methodName, parameterList);
+): Expr => callMethod(builtInVariable("Math"), methodName, parameterList);
 
 /**
  * ```ts
  * new Date()
  * ```
  */
-export const newDate: Expr = newExpr(builtInVariable(BuiltInVariable.Date), []);
+export const newDate: Expr = newExpr(builtInVariable("Date"), []);
 
 /**
  * ```ts
@@ -1213,7 +1079,7 @@ export const newDate: Expr = newExpr(builtInVariable(BuiltInVariable.Date), []);
  * ```
  */
 export const newUint8Array = (lengthOrIterable: Expr): Expr =>
-  newExpr(builtInVariable(BuiltInVariable.Uint8Array), [lengthOrIterable]);
+  newExpr(builtInVariable("Uint8Array"), [lengthOrIterable]);
 
 /**
  * ```ts
@@ -1221,7 +1087,7 @@ export const newUint8Array = (lengthOrIterable: Expr): Expr =>
  * ```
  */
 export const newMap = (initKeyValueList: Expr): Expr =>
-  newExpr(builtInVariable(BuiltInVariable.Map), [initKeyValueList]);
+  newExpr(builtInVariable("Map"), [initKeyValueList]);
 
 /**
  * ```ts
@@ -1229,7 +1095,7 @@ export const newMap = (initKeyValueList: Expr): Expr =>
  * ```
  */
 export const newSet = (initValueList: Expr): Expr =>
-  newExpr(builtInVariable(BuiltInVariable.Map), [initValueList]);
+  newExpr(builtInVariable("Map"), [initValueList]);
 
 /**
  * ```ts
@@ -1237,57 +1103,55 @@ export const newSet = (initValueList: Expr): Expr =>
  * ```
  */
 export const consoleLog = (expr: Expr): Statement =>
-  statementEvaluateExpr(
-    callMethod(builtInVariable(BuiltInVariable.console), "log", [expr])
-  );
+  statementEvaluateExpr(callMethod(builtInVariable("console"), "log", [expr]));
 
 /**
  * プリミティブの型のnumber
  */
 export const typeNumber: Type = {
-  _: Type_.Number
+  _: "Number"
 };
 
 /**
  * プリミティブの型のstring
  */
 export const typeString: Type = {
-  _: Type_.String
+  _: "String"
 };
 
 /**
  * プリミティブの型のboolean
  */
 export const typeBoolean: Type = {
-  _: Type_.Boolean
+  _: "Boolean"
 };
 
 /**
  * プリミティブの型のundefined
  */
 export const typeUndefined: Type = {
-  _: Type_.Undefined
+  _: "Undefined"
 };
 
 /**
  * プリミティブの型のnull
  */
 export const typeNull: Type = {
-  _: Type_.Null
+  _: "Null"
 };
 
 /**
  * never型
  */
 export const typeNever: Type = {
-  _: Type_.Never
+  _: "Never"
 };
 
 /**
  * void型
  */
 export const typeVoid: Type = {
-  _: Type_.Void
+  _: "Void"
 };
 
 /**
@@ -1296,7 +1160,7 @@ export const typeVoid: Type = {
 export const typeObject = (
   memberList: Map<string, { type_: Type; document: string }>
 ): Type => ({
-  _: Type_.Object,
+  _: "Object",
   memberList: memberList
 });
 
@@ -1307,30 +1171,17 @@ export const typeFunction = (
   parameter: ReadonlyArray<Type>,
   returnType: Type
 ): Type => ({
-  _: Type_.Function,
+  _: "Function",
   parameterList: parameter,
   return: returnType
 });
 
 /**
- * Enumのリテラル型 `Color.Red`
- * @param typeName 型の名前 `Color`
- * @param tagName タグの名前 `Red`
- */
-export const typeEnumTagLiteral = (
-  typeName: identifer.Identifer,
-  tagName: identifer.Identifer
-): Type => ({
-  _: Type_.EnumTagLiteral,
-  typeName,
-  tagName
-});
-/**
  * ユニオン型 `a | b`
  * @param types 型のリスト
  */
 export const typeUnion = (types: ReadonlyArray<Type>): Type => ({
-  _: Type_.Union,
+  _: "Union",
   types
 });
 
@@ -1341,7 +1192,7 @@ export const typeWithParameter = (
   type_: Type,
   typeParameterList: ReadonlyArray<Type>
 ): Type => ({
-  _: Type_.WithTypeParameter,
+  _: "WithTypeParameter",
   type_,
   typeParameterList
 });
@@ -1355,7 +1206,7 @@ export const typeImported = (
   moduleName: string,
   name: identifer.Identifer
 ): Type => ({
-  _: Type_.ImportedType,
+  _: "ImportedType",
   moduleName,
   name
 });
@@ -1365,7 +1216,7 @@ export const typeImported = (
  * @param name 型名
  */
 export const typeGlobal = (name: identifer.Identifer): Type => ({
-  _: Type_.GlobalType,
+  _: "GlobalType",
   name
 });
 
@@ -1373,7 +1224,7 @@ export const typeGlobal = (name: identifer.Identifer): Type => ({
  * 標準に入っている型
  */
 const builtInType = (builtIn: BuiltInType): Type => ({
-  _: Type_.BuiltIn,
+  _: "BuiltIn",
   builtIn
 });
 
@@ -1381,7 +1232,7 @@ const builtInType = (builtIn: BuiltInType): Type => ({
  * 文字列リテラル型
  */
 export const typeStringLiteral = (string_: string): Type => ({
-  _: "stringLiteral",
+  _: "StringLiteral",
   string_
 });
 /* =======================================================
@@ -1393,50 +1244,50 @@ export const typeStringLiteral = (string_: string): Type => ({
  * `Array<elementType>`
  */
 export const arrayType = (elementType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.Array), [elementType]);
+  typeWithParameter(builtInType("Array"), [elementType]);
 
 /**
  * `ReadonlyArray<elementType>`
  */
 export const readonlyArrayType = (elementType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.ReadonlyArray), [elementType]);
+  typeWithParameter(builtInType("ReadonlyArray"), [elementType]);
 
 /**
  * `Uint8Array`
  */
-export const uint8ArrayType: Type = builtInType(BuiltInType.Uint8Array);
+export const uint8ArrayType: Type = builtInType("Uint8Array");
 
 /**
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.Promise), [returnType]);
+  typeWithParameter(builtInType("Promise"), [returnType]);
 
 /**
  * `Date`
  */
-export const dateType: Type = builtInType(BuiltInType.Date);
+export const dateType: Type = builtInType("Date");
 
 /**
  * `Map<keyType, valueType>`
  */
 export const mapType = (keyType: Type, valueType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.Map), [keyType, valueType]);
+  typeWithParameter(builtInType("Map"), [keyType, valueType]);
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
 export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.ReadonlyMap), [keyType, valueType]);
+  typeWithParameter(builtInType("ReadonlyMap"), [keyType, valueType]);
 
 /**
  * `Set<elementType>`
  */
 export const setType = (elementType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.Set), [elementType]);
+  typeWithParameter(builtInType("Set"), [elementType]);
 
 /**
  * `ReadonlySet<elementType>`
  */
 export const readonlySetType = (elementType: Type): Type =>
-  typeWithParameter(builtInType(BuiltInType.ReadonlySet), [elementType]);
+  typeWithParameter(builtInType("ReadonlySet"), [elementType]);

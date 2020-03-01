@@ -37,7 +37,7 @@ describe("test", () => {
   };
   const nodeJsTypeScriptCode = generator.generateCodeAsString(
     sampleCode,
-    data.CodeType.TypeScript
+    "TypeScript"
   );
   console.log(nodeJsTypeScriptCode);
   it("return string", () => {
@@ -64,7 +64,7 @@ describe("test", () => {
         ],
         statementList: []
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
 
     console.log("new code", codeAsString);
@@ -85,7 +85,7 @@ describe("test", () => {
         ],
         statementList: []
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(codeAsString);
     expect(codeAsString).not.toMatch(/const 0name/);
@@ -127,7 +127,7 @@ describe("test", () => {
     };
     const codeAsString = generator.generateCodeAsString(
       nodeJsCode,
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(codeAsString);
     expect(codeAsString).toMatch(/\\"/);
@@ -202,10 +202,7 @@ describe("test", () => {
       ],
       statementList: []
     };
-    const code = generator.generateCodeAsString(
-      nodeJsCode,
-      data.CodeType.TypeScript
-    );
+    const code = generator.generateCodeAsString(nodeJsCode, "TypeScript");
     console.log(code);
     expect(code).toMatch("request");
   });
@@ -237,7 +234,7 @@ describe("test", () => {
         ],
         statementList: []
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(code);
     expect(code).toMatch("[0]");
@@ -254,7 +251,7 @@ describe("test", () => {
         data.consoleLog(data.variable(identifer.fromString("sorena")))
       ]
     },
-    data.CodeType.JavaScript
+    "JavaScript"
   );
 
   it("statementList in { } scope curly braces", () => {
@@ -279,7 +276,7 @@ describe("test", () => {
         ],
         statementList: []
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(code);
     expect(code).toMatch("Promise<string>");
@@ -299,7 +296,7 @@ describe("test", () => {
           )
         ]
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(code);
     expect(code).toMatch(/"a b c"/u);
@@ -335,63 +332,10 @@ describe("test", () => {
           )
         ]
       },
-      data.CodeType.JavaScript
+      "JavaScript"
     );
     console.log(code);
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
-  });
-  const constEnumCode: data.Code = {
-    exportDefinitionList: [
-      data.definitionEnum({
-        name: identifer.fromString("Color"),
-        document: "色",
-        tagList: [
-          {
-            name: identifer.fromString("Red"),
-            document: "赤"
-          },
-          {
-            name: identifer.fromString("Green"),
-            document: "緑"
-          },
-          {
-            name: identifer.fromString("Blue"),
-            document: "青"
-          }
-        ]
-      }),
-      data.definitionVariable({
-        name: identifer.fromString("red"),
-        document: "赤",
-        type_: data.typeEnumTagLiteral(
-          identifer.fromString("Color"),
-          identifer.fromString("Red")
-        ),
-        expr: data.enumTag(
-          identifer.fromString("Color"),
-          identifer.fromString("Red")
-        )
-      })
-    ],
-    statementList: []
-  };
-  it("export const enum in TypeScript", () => {
-    const code = generator.generateCodeAsString(
-      constEnumCode,
-      data.CodeType.TypeScript
-    );
-    console.log(code);
-    expect(code).toMatch(
-      /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue[\s\S]*Color.Red/u
-    );
-  });
-  it("export const enum in JavaScript", () => {
-    const code = generator.generateCodeAsString(
-      constEnumCode,
-      data.CodeType.JavaScript
-    );
-    console.log(code);
-    expect(code).toMatch(/0/u);
   });
   it("object literal return need parenthesis", () => {
     const code = generator.generateCodeAsString(
@@ -415,7 +359,7 @@ describe("test", () => {
         ],
         statementList: []
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(code);
     expect(code).toMatch(/\(\{.*\}\)/);
@@ -435,37 +379,10 @@ describe("test", () => {
           data.statementSet(data.variable(v), "+", data.numberLiteral(1))
         ]
       },
-      data.CodeType.TypeScript
+      "TypeScript"
     );
     console.log(code);
     expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/);
-  });
-  it("enumTagLiteral", () => {
-    const code: data.Code = {
-      exportDefinitionList: [
-        data.definitionEnum({
-          name: identifer.fromString("A"),
-          document: "",
-          tagList: [{ name: identifer.fromString("B"), document: "" }]
-        })
-      ],
-      statementList: [
-        data.statementLetVariableDefinition(
-          identifer.fromString("a"),
-          data.typeEnumTagLiteral(
-            identifer.fromString("A"),
-            identifer.fromString("B")
-          ),
-          data.enumTag(identifer.fromString("A"), identifer.fromString("B"))
-        )
-      ]
-    };
-    const codeAsString = generator.generateCodeAsString(
-      code,
-      data.CodeType.TypeScript
-    );
-    console.log(codeAsString);
-    expect(codeAsString).toMatch(/A\.B/);
   });
   it("for of", () => {
     const code: data.Code = {
@@ -482,10 +399,7 @@ describe("test", () => {
         )
       ]
     };
-    const codeAsString = generator.generateCodeAsString(
-      code,
-      data.CodeType.TypeScript
-    );
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
     expect(codeAsString).toMatch(/for .* of \[1, 2, 3\]/);
   });
@@ -585,10 +499,7 @@ describe("test", () => {
       ],
       statementList: []
     };
-    const codeAsString = generator.generateCodeAsString(
-      code,
-      data.CodeType.TypeScript
-    );
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
     expect(codeAsString).toMatch(/switch (.+) {\n +case .+:/);
   });
