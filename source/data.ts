@@ -317,6 +317,11 @@ export type Type =
       types: ReadonlyArray<Type>;
     }
   | {
+      _: "Intersection";
+      left: Type;
+      right: Type;
+    }
+  | {
       _: "ImportedType";
       moduleName: string;
       name: identifer.Identifer;
@@ -1183,6 +1188,15 @@ export const typeFunction = (
 export const typeUnion = (types: ReadonlyArray<Type>): Type => ({
   _: "Union",
   types
+});
+
+/**
+ * 交差型 `left & right`
+ */
+export const typeIntersection = (left: Type, right: Type): Type => ({
+  _: "Intersection",
+  left,
+  right
 });
 
 /**

@@ -872,6 +872,13 @@ export const typeToString = (
         .map(type_ => typeToString(type_, collectedData))
         .join(" | ");
 
+    case "Intersection":
+      return (
+        typeToString(type_.left, collectedData) +
+        " & " +
+        typeToString(type_.right, collectedData)
+      );
+
     case "WithTypeParameter":
       return (
         typeToString(type_.type_, collectedData) +
