@@ -552,22 +552,30 @@ describe("test", () => {
           returnType: data.typeString,
           statementList: [
             data.statementSwitch({
-              expr: data.variable(identifer.fromString("value")),
+              expr: data.get(data.variable(identifer.fromString("value")), "_"),
               patternList: [
                 {
                   caseTag: "Ok",
                   statementList: [],
-                  returnExpr: data.get(
-                    data.variable(identifer.fromString("value")),
-                    "ok"
+                  returnExpr: data.callMethod(
+                    data.get(
+                      data.variable(identifer.fromString("value")),
+                      "ok"
+                    ),
+                    "toString",
+                    []
                   )
                 },
                 {
                   caseTag: "Error",
                   statementList: [],
-                  returnExpr: data.get(
-                    data.variable(identifer.fromString("value")),
-                    "error"
+                  returnExpr: data.callMethod(
+                    data.get(
+                      data.variable(identifer.fromString("value")),
+                      "error"
+                    ),
+                    "toString",
+                    []
                   )
                 }
               ]
@@ -581,5 +589,7 @@ describe("test", () => {
       code,
       data.CodeType.TypeScript
     );
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/switch (.+) {\n +case .+:/);
   });
 });

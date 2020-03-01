@@ -842,6 +842,7 @@ const switchToString = (
           )
       )
       .join("\n") +
+    "\n" +
     indentString +
     "}"
   );
