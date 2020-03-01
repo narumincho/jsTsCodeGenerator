@@ -178,7 +178,7 @@ export type Expr =
   | {
       _: "ImportedVariable";
       moduleName: string;
-      name: string;
+      name: identifer.Identifer;
     }
   | {
       _: "Get";
@@ -741,7 +741,10 @@ export const newExpr = (
  * @param path モジュールのパス
  * @param name 変数名
  */
-export const importedVariable = (path: string, name: string): Expr => ({
+export const importedVariable = (
+  path: string,
+  name: identifer.Identifer
+): Expr => ({
   _: "ImportedVariable",
   name,
   moduleName: path

@@ -172,10 +172,18 @@ const collectInVariableDefinition = (
   variable: data.Variable,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
-  scanData.usedNameSet.add(definition.variable.name);
-  collectType(definition.variable.type_, scanData);
-  collectExpr(definition.variable.expr, scanData);
-  return scanData;
+  let collectData: data.UsedNameAndModulePathSet = {
+    modulePathSet: new Set(),
+    usedNameSet: new Set([variable.name])
+  };
+  collectData = concatCollectData(
+    collectData,
+    collectType(variable.type_, rootScopeIdentiferSet.rootScopeTypeNameSet, [])
+  );
+  return concatCollectData(
+    collectData,
+    collectInExpr(variable.expr, [], rootScopeIdentiferSet)
+  );
 };
 
 /**
@@ -183,9 +191,10 @@ const collectInVariableDefinition = (
  * @param expr 式
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
-const collectExpr = (
+const collectInExpr = (
   expr: data.Expr,
-  scanData: data.UsedNameAndModulePathSet
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
   switch (expr._) {
     case "NumberLiteral":
@@ -194,54 +203,137 @@ const collectExpr = (
     case "BooleanLiteral":
     case "UndefinedLiteral":
     case "NullLiteral":
-      return;
+      return {
+        modulePathSet: new Set(),
+        usedNameSet: new Set()
+      };
 
-    case "ArrayLiteral":
-      for (const exprElement of expr.exprList) {
-        collectExpr(exprElement, scanData);
+    case "ArrayLiteral": {
+      let data: data.UsedNameAndModulePathSet = {
+        modulePathSet: new Set(),
+        usedNameSet: new Set()
+      };
+      for (const element of expr.exprList) {
+        data = concatCollectData(
+          data,
+          collectInExpr(
+            element,
+            localVariableNameSetList,
+            rootScopeIdentiferSet
+          )
+        );
       }
-      return;
+      return data;
+    }
 
-    case "ObjectLiteral":
+    case "ObjectLiteral": {
+      let data: data.UsedNameAndModulePathSet = {
+        modulePathSet: new Set(),
+        usedNameSet: new Set()
+      };
       for (const [, member] of expr.memberList) {
-        collectExpr(member, scanData);
+        data = concatCollectData(
+          data,
+          collectInExpr(member, localVariableNameSetList, rootScopeIdentiferSet)
+        );
       }
-      return;
+      return data;
+    }
 
-    case "Lambda":
+    case "Lambda": {
+      let data: data.UsedNameAndModulePathSet = {
+        modulePathSet: new Set(),
+        usedNameSet: new Set()
+      };
       for (const oneParameter of expr.parameterList) {
-        collectType(oneParameter.type_, scanData);
+        data = concatCollectData(
+          data,
+          collectType(
+            oneParameter.type_,
+            rootScopeIdentiferSet.rootScopeTypeNameSet,
+            []
+          )
+        );
       }
-      collectType(expr.returnType, scanData);
-      collectStatementList(expr.statementList, scanData);
-      return;
+      data = concatCollectData(
+        data,
+        collectType(
+          expr.returnType,
+          rootScopeIdentiferSet.rootScopeTypeNameSet,
+          []
+        )
+      );
+      return concatCollectData(data, collectStatementList(expr.statementList));
+    }
 
     case "Variable":
-      scanData.usedNameSet.add(expr.name);
-      return;
+      searchIdentiferOrThrow(localVariableNameSetList, expr.name);
+      return {
+        modulePathSet: new Set(),
+        usedNameSet: new Set([expr.name])
+      };
 
     case "ImportedVariable":
-      scanData.sedNameSet.add(expr.moduleName);
-      return;
+      searchIdentiferOrThrow(localVariableNameSetList, expr.name);
+      return {
+        modulePathSet: new Set([expr.moduleName]),
+        usedNameSet: new Set([expr.name])
+      };
 
     case "Get":
-      collectExpr(expr.expr, scanData);
-      collectExpr(expr.propertyName, scanData);
-      return;
+      return concatCollectData(
+        collectInExpr(
+          expr.expr,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        ),
+        collectInExpr(
+          expr.propertyName,
+          localVariableNameSetList,
+          rootScopeIdentiferSet
+        )
+      );
 
-    case "Call":
-      collectExpr(expr.expr, scanData);
+    case "Call": {
+      let data: data.UsedNameAndModulePathSet = collectInExpr(
+        expr.expr,
+        localVariableNameSetList,
+        rootScopeIdentiferSet
+      );
       for (const parameter of expr.parameterList) {
-        collectExpr(parameter, scanData);
+        data = concatCollectData(
+          data,
+          collectInExpr(
+            parameter,
+            localVariableNameSetList,
+            rootScopeIdentiferSet
+          )
+        );
       }
-      return;
+      return data;
+    }
 
-    case "New":
-      collectExpr(expr.expr, scanData);
+    case "New": {
+      let data: data.UsedNameAndModulePathSet = collectInExpr(
+        expr.expr,
+        localVariableNameSetList,
+        rootScopeIdentiferSet
+      );
       for (const parameter of expr.parameterList) {
-        collectExpr(parameter, scanData);
+        data = concatCollectData(
+          data,
+          collectInExpr(
+            parameter,
+            localVariableNameSetList,
+            rootScopeIdentiferSet
+          )
+        );
       }
-      return;
+      return data;
+    }
+
+    case "BuiltIn":
+      return {};
   }
 };
 
@@ -258,25 +350,25 @@ const collectStatement = (
 ): data.UsedNameAndModulePathSet => {
   switch (statement._) {
     case "EvaluateExpr":
-      collectExpr(statement.expr, scanData);
+      collectInExpr(statement.expr, scanData);
       return;
 
     case "Set":
-      collectExpr(statement.targetObject, scanData);
-      collectExpr(statement.expr, scanData);
+      collectInExpr(statement.targetObject, scanData);
+      collectInExpr(statement.expr, scanData);
       return;
 
     case "If":
-      collectExpr(statement.condition, scanData);
+      collectInExpr(statement.condition, scanData);
       collectStatementList(statement.thenStatementList, scanData);
       return;
 
     case "ThrowError":
-      collectExpr(statement.errorMessage, scanData);
+      collectInExpr(statement.errorMessage, scanData);
       return;
 
     case "Return":
-      collectExpr(statement.expr, scanData);
+      collectInExpr(statement.expr, scanData);
       return;
 
     case "ReturnVoid":
@@ -286,7 +378,7 @@ const collectStatement = (
       return;
 
     case "VariableDefinition":
-      collectExpr(statement.expr, scanData);
+      collectInExpr(statement.expr, scanData);
       collectType(statement.type_, scanData);
       return;
 
@@ -299,12 +391,12 @@ const collectStatement = (
       return;
 
     case "For":
-      collectExpr(statement.untilExpr, scanData);
+      collectInExpr(statement.untilExpr, scanData);
       collectStatementList(statement.statementList, scanData);
       return;
 
     case "ForOf":
-      collectExpr(statement.iterableExpr, scanData);
+      collectInExpr(statement.iterableExpr, scanData);
       collectStatementList(statement.statementList, scanData);
       return;
 
@@ -313,11 +405,11 @@ const collectStatement = (
       return;
 
     case "Switch":
-      collectExpr(statement.switch_.expr, scanData);
+      collectInExpr(statement.switch_.expr, scanData);
       for (const pattern of statement.switch_.patternList) {
         collectStatementList(pattern.statementList, scanData);
         if (pattern.returnExpr !== null) {
-          collectExpr(pattern.returnExpr, scanData);
+          collectInExpr(pattern.returnExpr, scanData);
         }
       }
   }
@@ -325,12 +417,12 @@ const collectStatement = (
 
 const searchIdentiferOrThrow = (
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  oldName: string
+  variableName: string
 ): void => {
   for (let i = 0; i < localVariableNameSetList.length; i++) {
     if (
       localVariableNameSetList[localVariableNameSetList.length - 1 - i].has(
-        oldName
+        variableName
       )
     ) {
       return;
@@ -338,7 +430,7 @@ const searchIdentiferOrThrow = (
   }
   throw new Error(
     "存在しない変数を指定されました name=" +
-      oldName +
+      variableName +
       " 存在している変数 =" +
       [...localVariableNameSetList.entries()]
         .map(scope => "[" + scope.join(",") + "]")
