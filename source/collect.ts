@@ -21,13 +21,6 @@ const scanDefinition = (
       collectType(definition.typeAlias.type_, scanData);
       return;
 
-    case "Enum":
-      scanData.enumTagListMap.set(
-        definition.enum_.name,
-        definition.enum_.tagList.map(tag => tag.name)
-      );
-      return;
-
     case "Function":
       scanData.usedNameSet.add(definition.function_.name);
       for (const parameter of definition.function_.parameterList) {
@@ -62,7 +55,6 @@ const collectExpr = (
     case "BooleanLiteral":
     case "UndefinedLiteral":
     case "NullLiteral":
-    case "EnumTag":
       return;
 
     case "ArrayLiteral":
@@ -231,7 +223,6 @@ const collectType = (
     case "Boolean":
     case "Null":
     case "Undefined":
-    case "EnumTagLiteral":
       return;
 
     case "Object":

@@ -23,10 +23,6 @@ export type CodeType = "JavaScript" | "TypeScript";
 export type Definition =
   | { _: "TypeAlias"; typeAlias: TypeAlias }
   | {
-      _: "Enum";
-      enum_: Enum;
-    }
-  | {
       _: "Function";
       function_: Function;
     }
@@ -38,11 +34,6 @@ export type Definition =
 export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
   _: "TypeAlias",
   typeAlias
-});
-
-export const definitionEnum = (enum_: Enum): Definition => ({
-  _: "Enum",
-  enum_
 });
 
 export const definitionFunction = (function_: Function): Definition => ({
@@ -96,41 +87,21 @@ export type Variable = {
 export type UsedNameAndModulePath = {
   readonly usedNameSet: Set<identifer.Identifer>;
   readonly modulePathList: Set<string>;
-  readonly enumTagListMap: Map<
-    identifer.Identifer,
-    ReadonlyArray<identifer.Identifer>
-  >;
 };
 
 export type ModulePathOrName = string & { _modulePathOrName: never };
 
 /**
- * Enumのタグの情報とモジュールの識別子の辞書
+ * モジュールの識別子の辞書
  */
 export type CollectedData = {
-  enumTagListMap: ReadonlyMap<
-    identifer.Identifer,
-    ReadonlyArray<identifer.Identifer>
-  >;
   importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
 };
 
 export const collectedDataInit = (): UsedNameAndModulePath => ({
   usedNameSet: new Set(),
-  modulePathList: new Set(),
-  enumTagListMap: new Map()
+  modulePathList: new Set()
 });
-
-export type Enum = {
-  readonly name: identifer.Identifer;
-  readonly document: string;
-  readonly tagList: ReadonlyArray<Tag>;
-};
-
-export type Tag = {
-  name: identifer.Identifer;
-  document: string;
-};
 
 export type UnaryOperator = "-" | "~" | "!";
 
@@ -224,11 +195,6 @@ export type Expr =
       _: "New";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
-    }
-  | {
-      _: "EnumTag";
-      typeName: identifer.Identifer;
-      tagName: identifer.Identifer;
     }
   | {
       _: "BuiltIn";
@@ -341,11 +307,6 @@ export type Type =
       _: "WithTypeParameter";
       type_: Type;
       typeParameterList: ReadonlyArray<Type>;
-    }
-  | {
-      _: "EnumTagLiteral";
-      typeName: identifer.Identifer;
-      tagName: identifer.Identifer;
     }
   | {
       _: "Union";
@@ -796,20 +757,6 @@ export const variable = (name: identifer.Identifer): Expr => ({
 });
 
 /**
- * 列挙型の値を取得する。`Color.Red`
- * @param typeName 型の名前
- * @param tagName タグの名前
- */
-export const enumTag = (
-  typeName: identifer.Identifer,
-  tagName: identifer.Identifer
-): Expr => ({
-  _: "EnumTag",
-  typeName,
-  tagName: tagName
-});
-
-/**
  * 標準に入っている変数
  */
 export const builtInVariable = (builtIn: BuiltInVariable): Expr => ({
@@ -1229,19 +1176,6 @@ export const typeFunction = (
   return: returnType
 });
 
-/**
- * Enumのリテラル型 `Color.Red`
- * @param typeName 型の名前 `Color`
- * @param tagName タグの名前 `Red`
- */
-export const typeEnumTagLiteral = (
-  typeName: identifer.Identifer,
-  tagName: identifer.Identifer
-): Type => ({
-  _: "EnumTagLiteral",
-  typeName,
-  tagName
-});
 /**
  * ユニオン型 `a | b`
  * @param types 型のリスト

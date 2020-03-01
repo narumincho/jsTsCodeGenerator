@@ -49,12 +49,6 @@ const definitionToString = (
       }
       return typeAliasToString(definition.typeAlias, collectedData);
 
-    case "Enum":
-      if (codeType === "JavaScript") {
-        return "";
-      }
-      return enumToString(definition.enum_);
-
     case "Function":
       return functionToString(definition.function_, collectedData, codeType);
 
@@ -79,19 +73,6 @@ const typeAliasToString = (
     " = " +
     typeToString(typeAlias.type_, collectedData) +
     ";\n\n"
-  );
-};
-
-const enumToString = (enum_: data.Enum): string => {
-  return (
-    documentToString(enum_.document) +
-    "export const enum " +
-    (enum_.name as string) +
-    " {\n" +
-    enum_.tagList
-      .map(tag => documentToString(tag.document) + "  " + (tag.name as string))
-      .join(",\n") +
-    "\n}\n\n"
   );
 };
 
@@ -403,28 +384,6 @@ const exprToString = (
         ")"
       );
 
-    case "EnumTag":
-      switch (codeType) {
-        case "JavaScript": {
-          const tagList = collectedData.enumTagListMap.get(expr.typeName);
-          if (tagList === undefined) {
-            throw new Error(
-              "Enumの型を収集できなかった enum type name =" +
-                (expr.typeName as string)
-            );
-          }
-          return (
-            tagList.indexOf(expr.tagName).toString() +
-            "/* " +
-            (expr.tagName as string) +
-            " */"
-          );
-        }
-        case "TypeScript":
-          return (expr.typeName as string) + "." + (expr.tagName as string);
-      }
-      break;
-
     case "BuiltIn":
       return builtInToString(expr.builtIn);
   }
@@ -541,7 +500,6 @@ const exprCombineStrength = (expr: data.Expr): number => {
     case "Get":
     case "Call":
     case "New":
-    case "EnumTag":
       return 20;
     case "UnaryOperator":
       return 17;
@@ -930,9 +888,6 @@ export const typeToString = (
         type_.return,
         collectedData
       );
-
-    case "EnumTagLiteral":
-      return (type_.typeName as string) + "." + (type_.tagName as string);
 
     case "Union":
       return type_.types

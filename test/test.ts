@@ -337,53 +337,6 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("3*9+7*6===2+3+(5+8)===5*(7+8)");
   });
-  const constEnumCode: data.Code = {
-    exportDefinitionList: [
-      data.definitionEnum({
-        name: identifer.fromString("Color"),
-        document: "色",
-        tagList: [
-          {
-            name: identifer.fromString("Red"),
-            document: "赤"
-          },
-          {
-            name: identifer.fromString("Green"),
-            document: "緑"
-          },
-          {
-            name: identifer.fromString("Blue"),
-            document: "青"
-          }
-        ]
-      }),
-      data.definitionVariable({
-        name: identifer.fromString("red"),
-        document: "赤",
-        type_: data.typeEnumTagLiteral(
-          identifer.fromString("Color"),
-          identifer.fromString("Red")
-        ),
-        expr: data.enumTag(
-          identifer.fromString("Color"),
-          identifer.fromString("Red")
-        )
-      })
-    ],
-    statementList: []
-  };
-  it("export const enum in TypeScript", () => {
-    const code = generator.generateCodeAsString(constEnumCode, "TypeScript");
-    console.log(code);
-    expect(code).toMatch(
-      /export const enum Color[\s\S]*Red[\s\S]*Green[\s\S]*Blue[\s\S]*Color.Red/u
-    );
-  });
-  it("export const enum in JavaScript", () => {
-    const code = generator.generateCodeAsString(constEnumCode, "JavaScript");
-    console.log(code);
-    expect(code).toMatch(/0/u);
-  });
   it("object literal return need parenthesis", () => {
     const code = generator.generateCodeAsString(
       {
@@ -430,30 +383,6 @@ describe("test", () => {
     );
     console.log(code);
     expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/);
-  });
-  it("enumTagLiteral", () => {
-    const code: data.Code = {
-      exportDefinitionList: [
-        data.definitionEnum({
-          name: identifer.fromString("A"),
-          document: "",
-          tagList: [{ name: identifer.fromString("B"), document: "" }]
-        })
-      ],
-      statementList: [
-        data.statementLetVariableDefinition(
-          identifer.fromString("a"),
-          data.typeEnumTagLiteral(
-            identifer.fromString("A"),
-            identifer.fromString("B")
-          ),
-          data.enumTag(identifer.fromString("A"), identifer.fromString("B"))
-        )
-      ]
-    };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
-    console.log(codeAsString);
-    expect(codeAsString).toMatch(/A\.B/);
   });
   it("for of", () => {
     const code: data.Code = {
