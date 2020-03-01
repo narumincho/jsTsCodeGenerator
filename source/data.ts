@@ -77,6 +77,7 @@ export type TypeAlias = {
 export type Function = {
   readonly name: identifer.Identifer;
   readonly document: string;
+  readonly typeParameterList: ReadonlyArray<identifer.Identifer>;
   readonly parameterList: ReadonlyArray<ParameterWithDocument>;
   readonly returnType: Type;
   readonly statementList: ReadonlyArray<Statement>;

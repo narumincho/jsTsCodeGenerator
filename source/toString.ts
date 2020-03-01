@@ -108,7 +108,15 @@ const functionToString = (
     ) +
     "export const " +
     (function_.name as string) +
-    " = (" +
+    " = " +
+    (function_.typeParameterList.length === 0
+      ? ""
+      : "<" +
+        function_.typeParameterList
+          .map(typeParameter => typeParameter as string)
+          .join(", ") +
+        ">") +
+    "(" +
     function_.parameterList
       .map(
         parameter =>

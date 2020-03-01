@@ -15,6 +15,7 @@ describe("test", () => {
     exportDefinitionList: [
       data.definitionFunction({
         name: identifer.fromString("middleware"),
+        typeParameterList: [],
         parameterList: [
           {
             name: identifer.fromString("request"),
@@ -55,6 +56,7 @@ describe("test", () => {
           data.definitionFunction({
             name: identifer.fromString("new"),
             document: "newという名前の関数",
+            typeParameterList: [],
             parameterList: [],
             returnType: data.typeVoid,
             statementList: []
@@ -75,6 +77,7 @@ describe("test", () => {
           data.definitionFunction({
             name: identifer.fromString("0name"),
             document: "0から始まる識別子",
+            typeParameterList: [],
             parameterList: [],
             returnType: data.typeVoid,
             statementList: []
@@ -137,6 +140,7 @@ describe("test", () => {
         data.definitionFunction({
           name: identifer.fromString("middleware"),
           document: "ミドルウェア",
+          typeParameterList: [],
           parameterList: [
             {
               name: identifer.fromString("request"),
@@ -212,6 +216,7 @@ describe("test", () => {
           data.definitionFunction({
             name: identifer.fromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
+            typeParameterList: [],
             parameterList: [
               {
                 name: identifer.fromString("array"),
@@ -266,6 +271,7 @@ describe("test", () => {
           data.definitionFunction({
             name: identifer.fromString("sample"),
             document: "",
+            typeParameterList: [],
             parameterList: [],
             returnType: data.promiseType(data.typeString),
             statementList: []
@@ -394,6 +400,7 @@ describe("test", () => {
           data.definitionFunction({
             name: identifer.fromString("returnObject"),
             document: "",
+            typeParameterList: [],
             parameterList: [],
             returnType: data.typeObject(
               new Map([
@@ -481,5 +488,98 @@ describe("test", () => {
     );
     console.log(codeAsString);
     expect(codeAsString).toMatch(/for .* of \[1, 2, 3\]/);
+  });
+  it("switch", () => {
+    const code: data.Code = {
+      exportDefinitionList: [
+        data.definitionTypeAlias({
+          name: identifer.fromString("Result"),
+          document: "Result型",
+          parameterList: [
+            identifer.fromString("error"),
+            identifer.fromString("ok")
+          ],
+          type_: data.typeUnion([
+            data.typeObject(
+              new Map([
+                ["_", { type_: data.typeStringLiteral("Ok"), document: "" }],
+                [
+                  "ok",
+                  {
+                    type_: data.typeGlobal(identifer.fromString("ok")),
+                    document: ""
+                  }
+                ]
+              ])
+            ),
+            data.typeObject(
+              new Map([
+                [
+                  "_",
+                  { type_: data.typeStringLiteral("Error"), document: "Error" }
+                ],
+                [
+                  "error",
+                  {
+                    type_: data.typeGlobal(identifer.fromString("error")),
+                    document: ""
+                  }
+                ]
+              ])
+            )
+          ])
+        }),
+        data.definitionFunction({
+          name: identifer.fromString("switchSample"),
+          document: "switch文のテスト",
+          typeParameterList: [
+            identifer.fromString("ok"),
+            identifer.fromString("error")
+          ],
+          parameterList: [
+            {
+              name: identifer.fromString("value"),
+              document: "",
+              type_: data.typeWithParameter(
+                data.typeGlobal(identifer.fromString("Result")),
+                [
+                  data.typeGlobal(identifer.fromString("ok")),
+                  data.typeGlobal(identifer.fromString("error"))
+                ]
+              )
+            }
+          ],
+          returnType: data.typeString,
+          statementList: [
+            data.statementSwitch({
+              expr: data.variable(identifer.fromString("value")),
+              patternList: [
+                {
+                  caseTag: "Ok",
+                  statementList: [],
+                  returnExpr: data.get(
+                    data.variable(identifer.fromString("value")),
+                    "ok"
+                  )
+                },
+                {
+                  caseTag: "Error",
+                  statementList: [],
+                  returnExpr: data.get(
+                    data.variable(identifer.fromString("value")),
+                    "error"
+                  )
+                }
+              ]
+            })
+          ]
+        })
+      ],
+      statementList: []
+    };
+    const codeAsString = generator.generateCodeAsString(
+      code,
+      data.CodeType.TypeScript
+    );
   });
 });
