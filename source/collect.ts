@@ -331,9 +331,6 @@ const collectInExpr = (
       }
       return data;
     }
-
-    case "BuiltIn":
-      return {};
   }
 };
 
@@ -533,9 +530,6 @@ const collectType = (
         modulePathSet: new Set(),
         usedNameSet: new Set([type_.name])
       };
-
-    case "BuiltIn":
-      return data;
 
     case "StringLiteral":
       return data;

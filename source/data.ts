@@ -194,10 +194,6 @@ export type Expr =
       _: "New";
       expr: Expr;
       parameterList: ReadonlyArray<Expr>;
-    }
-  | {
-      _: "BuiltIn";
-      builtIn: BuiltInVariable;
     };
 
 /**
@@ -319,27 +315,6 @@ export type Type =
   | { _: "ScopeInFile"; name: identifer.Identifer }
   | { _: "ScopeInGlobal"; name: identifer.Identifer }
   | { _: "StringLiteral"; string_: string };
-
-export type BuiltInVariable =
-  | "Object"
-  | "Number"
-  | "Math"
-  | "Date"
-  | "Uint8Array"
-  | "Map"
-  | "Set"
-  | "console";
-
-export type BuiltInType =
-  | "Array"
-  | "ReadonlyArray"
-  | "Uint8Array"
-  | "Promise"
-  | "Date"
-  | "Map"
-  | "ReadonlyMap"
-  | "Set"
-  | "ReadonlySet";
 
 /**
  * 数値リテラル `123`
@@ -775,14 +750,6 @@ export const globalObjects = (name: identifer.Identifer): Expr => ({
 });
 
 /**
- * 標準に入っている変数
- */
-export const builtInVariable = (builtIn: BuiltInVariable): Expr => ({
-  _: "BuiltIn",
-  builtIn
-});
-
-/**
  * expr;
  * 式を評価する
  * @param expr 式
@@ -1053,17 +1020,6 @@ export const literal = (value: Literal): Expr => {
 
 /**
  * ```ts
- * Object.entries(parameter)
- * Object.keys(parameter)
- * ```
- */
-export const callObjectMethod = (
-  methodName: string,
-  parameterList: ReadonlyArray<Expr>
-): Expr => callMethod(builtInVariable("Object"), methodName, parameterList);
-
-/**
- * ```ts
  * Number.parseInt(parameter)
  * Number.isNaN(parameter)
  * ```
@@ -1071,7 +1027,12 @@ export const callObjectMethod = (
 export const callNumberMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr => callMethod(builtInVariable("Number"), methodName, parameterList);
+): Expr =>
+  callMethod(
+    globalObjects(identifer.fromString("Number")),
+    methodName,
+    parameterList
+  );
 
 /**
  * ```ts
@@ -1082,14 +1043,22 @@ export const callNumberMethod = (
 export const callMathMethod = (
   methodName: string,
   parameterList: ReadonlyArray<Expr>
-): Expr => callMethod(builtInVariable("Math"), methodName, parameterList);
+): Expr =>
+  callMethod(
+    globalObjects(identifer.fromString("Math")),
+    methodName,
+    parameterList
+  );
 
 /**
  * ```ts
  * new Date()
  * ```
  */
-export const newDate: Expr = newExpr(builtInVariable("Date"), []);
+export const newDate: Expr = newExpr(
+  globalObjects(identifer.fromString("Date")),
+  []
+);
 
 /**
  * ```ts
@@ -1097,7 +1066,9 @@ export const newDate: Expr = newExpr(builtInVariable("Date"), []);
  * ```
  */
 export const newUint8Array = (lengthOrIterable: Expr): Expr =>
-  newExpr(builtInVariable("Uint8Array"), [lengthOrIterable]);
+  newExpr(globalObjects(identifer.fromString("Uint8Array")), [
+    lengthOrIterable
+  ]);
 
 /**
  * ```ts
@@ -1105,7 +1076,7 @@ export const newUint8Array = (lengthOrIterable: Expr): Expr =>
  * ```
  */
 export const newMap = (initKeyValueList: Expr): Expr =>
-  newExpr(builtInVariable("Map"), [initKeyValueList]);
+  newExpr(globalObjects(identifer.fromString("Map")), [initKeyValueList]);
 
 /**
  * ```ts
@@ -1113,7 +1084,7 @@ export const newMap = (initKeyValueList: Expr): Expr =>
  * ```
  */
 export const newSet = (initValueList: Expr): Expr =>
-  newExpr(builtInVariable("Map"), [initValueList]);
+  newExpr(globalObjects(identifer.fromString("Set")), [initValueList]);
 
 /**
  * ```ts
@@ -1121,7 +1092,9 @@ export const newSet = (initValueList: Expr): Expr =>
  * ```
  */
 export const consoleLog = (expr: Expr): Statement =>
-  statementEvaluateExpr(callMethod(builtInVariable("console"), "log", [expr]));
+  statementEvaluateExpr(
+    callMethod(globalObjects(identifer.fromString("console")), "log", [expr])
+  );
 
 /**
  * プリミティブの型のnumber

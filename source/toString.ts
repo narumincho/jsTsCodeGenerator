@@ -311,7 +311,7 @@ const exprToString = (
           "収集されなかった, モジュールがある moduleName=" + expr.moduleName
         );
       }
-      return (nameSpaceIdentifer as string) + "." + expr.name;
+      return (nameSpaceIdentifer as string) + "." + (expr.name as string);
     }
 
     case "Get":
@@ -363,9 +363,6 @@ const exprToString = (
           .join(", ") +
         ")"
       );
-
-    case "BuiltIn":
-      return builtInToString(expr.builtIn);
   }
 };
 
@@ -471,7 +468,6 @@ const exprCombineStrength = (expr: data.Expr): number => {
     case "Variable":
     case "GlobalObjects":
     case "ImportedVariable":
-    case "BuiltIn":
       return 23;
     case "Lambda":
       return 22;
@@ -745,12 +741,6 @@ const switchToString = (
 
 const indentNumberToString = (indent: number): string => "  ".repeat(indent);
 
-export const builtInToString = (
-  builtInObjects: data.BuiltInVariable
-): string => {
-  return builtInObjects;
-};
-
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   parameterTypeList: ReadonlyArray<data.Type>,
@@ -861,7 +851,10 @@ export const typeToString = (
         ">"
       );
 
-    case "GlobalType":
+    case "ScopeInFile":
+      return type_.name;
+
+    case "ScopeInGlobal":
       return type_.name;
 
     case "ImportedType": {
@@ -877,14 +870,7 @@ export const typeToString = (
       return (nameSpaceIdentifer as string) + "." + (type_.name as string);
     }
 
-    case "BuiltIn":
-      return builtInTypeToString(type_.builtIn);
-
     case "StringLiteral":
       return stringLiteralValueToString(type_.string_);
   }
-};
-
-const builtInTypeToString = (builtInType: data.BuiltInType): string => {
-  return builtInType;
 };
