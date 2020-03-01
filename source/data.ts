@@ -318,7 +318,6 @@ export type Type =
     }
   | { _: "ScopeInFile"; name: identifer.Identifer }
   | { _: "ScopeInGlobal"; name: identifer.Identifer }
-  | { _: "BuiltIn"; builtIn: BuiltInType }
   | { _: "StringLiteral"; string_: string };
 
 export type BuiltInVariable =
@@ -1249,14 +1248,6 @@ export const typeScopeInGlobal = (name: identifer.Identifer): Type => ({
 });
 
 /**
- * 標準に入っている型
- */
-const builtInType = (builtIn: BuiltInType): Type => ({
-  _: "BuiltIn",
-  builtIn
-});
-
-/**
  * 文字列リテラル型
  */
 export const typeStringLiteral = (string_: string): Type => ({
@@ -1272,50 +1263,68 @@ export const typeStringLiteral = (string_: string): Type => ({
  * `Array<elementType>`
  */
 export const arrayType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("Array"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Array")), [
+    elementType
+  ]);
 
 /**
  * `ReadonlyArray<elementType>`
  */
 export const readonlyArrayType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("ReadonlyArray"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlyArray")), [
+    elementType
+  ]);
 
 /**
  * `Uint8Array`
  */
-export const uint8ArrayType: Type = builtInType("Uint8Array");
+export const uint8ArrayType: Type = typeScopeInGlobal(
+  identifer.fromString("Uint8Array")
+);
 
 /**
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: Type): Type =>
-  typeWithParameter(builtInType("Promise"), [returnType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Promise")), [
+    returnType
+  ]);
 
 /**
  * `Date`
  */
-export const dateType: Type = builtInType("Date");
+export const dateType: Type = typeScopeInGlobal(identifer.fromString("Date"));
 
 /**
  * `Map<keyType, valueType>`
  */
 export const mapType = (keyType: Type, valueType: Type): Type =>
-  typeWithParameter(builtInType("Map"), [keyType, valueType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Map")), [
+    keyType,
+    valueType
+  ]);
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
 export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
-  typeWithParameter(builtInType("ReadonlyMap"), [keyType, valueType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlyMap")), [
+    keyType,
+    valueType
+  ]);
 
 /**
  * `Set<elementType>`
  */
 export const setType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("Set"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("Set")), [
+    elementType
+  ]);
 
 /**
  * `ReadonlySet<elementType>`
  */
 export const readonlySetType = (elementType: Type): Type =>
-  typeWithParameter(builtInType("ReadonlySet"), [elementType]);
+  typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlySet")), [
+    elementType
+  ]);
