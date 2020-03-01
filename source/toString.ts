@@ -299,6 +299,9 @@ const exprToString = (
     case "Variable":
       return expr.name;
 
+    case "GlobalObjects":
+      return expr.name;
+
     case "ImportedVariable": {
       const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
         expr.moduleName
@@ -466,6 +469,7 @@ const exprCombineStrength = (expr: data.Expr): number => {
     case "UndefinedLiteral":
     case "ArrayLiteral":
     case "Variable":
+    case "GlobalObjects":
     case "ImportedVariable":
     case "BuiltIn":
       return 23;

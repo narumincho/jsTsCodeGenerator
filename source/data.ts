@@ -177,6 +177,10 @@ export type Expr =
       name: identifer.Identifer;
     }
   | {
+      _: "GlobalObjects";
+      name: identifer.Identifer;
+    }
+  | {
       _: "ImportedVariable";
       moduleName: string;
       name: string;
@@ -753,6 +757,22 @@ export const importedVariable = (path: string, name: string): Expr => ({
  */
 export const variable = (name: identifer.Identifer): Expr => ({
   _: "Variable",
+  name
+});
+
+/**
+ * グローバルスコープに展開されたグローバルオブジェクトs windowは使えないので
+ * ```ts
+ * window.requestAnimationFrame(console.log)
+ * ```
+ * ではなく
+ * ```ts
+ * requestAnimationFrame(console.log)
+ * ```
+ * の用に使う
+ */
+export const globalObjects = (name: identifer.Identifer): Expr => ({
+  _: "GlobalObjects",
   name
 });
 
