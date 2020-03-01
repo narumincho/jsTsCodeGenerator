@@ -420,7 +420,7 @@ describe("test", () => {
                 [
                   "ok",
                   {
-                    type_: data.typeGlobal(identifer.fromString("ok")),
+                    type_: data.typeScopeInGlobal(identifer.fromString("ok")),
                     document: ""
                   }
                 ]
@@ -435,7 +435,7 @@ describe("test", () => {
                 [
                   "error",
                   {
-                    type_: data.typeGlobal(identifer.fromString("error")),
+                    type_: data.typeScopeInGlobal(identifer.fromString("error")),
                     document: ""
                   }
                 ]
@@ -455,10 +455,10 @@ describe("test", () => {
               name: identifer.fromString("value"),
               document: "",
               type_: data.typeWithParameter(
-                data.typeGlobal(identifer.fromString("Result")),
+                data.typeScopeInGlobal(identifer.fromString("Result")),
                 [
-                  data.typeGlobal(identifer.fromString("ok")),
-                  data.typeGlobal(identifer.fromString("error"))
+                  data.typeScopeInGlobal(identifer.fromString("ok")),
+                  data.typeScopeInGlobal(identifer.fromString("error"))
                 ]
               )
             }

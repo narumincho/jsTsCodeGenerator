@@ -321,7 +321,8 @@ export type Type =
       moduleName: string;
       name: identifer.Identifer;
     }
-  | { _: "GlobalType"; name: identifer.Identifer }
+  | { _: "ScopeInFile"; name: identifer.Identifer }
+  | { _: "ScopeInGlobal"; name: identifer.Identifer }
   | { _: "BuiltIn"; builtIn: BuiltInType }
   | { _: "StringLiteral"; string_: string };
 
@@ -1232,11 +1233,20 @@ export const typeImported = (
 });
 
 /**
- * グローバル空間の型
- * @param name 型名
+ * ファイル内で定義された型
+ * @param name 型の名前
  */
-export const typeGlobal = (name: identifer.Identifer): Type => ({
-  _: "GlobalType",
+export const typeScopeInFile = (name: identifer.Identifer): Type => ({
+  _: "ScopeInFile",
+  name
+});
+
+/**
+ * グローバル空間の型
+ * @param name 型の名前
+ */
+export const typeScopeInGlobal = (name: identifer.Identifer): Type => ({
+  _: "ScopeInGlobal",
   name
 });
 
