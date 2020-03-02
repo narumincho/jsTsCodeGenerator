@@ -109,7 +109,10 @@ const collectInDefinition = (
       );
 
     case "Function":
-      return collectInFunction(definition.function_, rootScopeIdentiferSet);
+      return collectInFunctionDefinition(
+        definition.function_,
+        rootScopeIdentiferSet
+      );
 
     case "Variable":
       return collectInVariableDefinition(
@@ -128,15 +131,13 @@ const collectInTypeAlias = (
       usedNameSet: new Set([typeAlias.name]),
       modulePathSet: new Set()
     },
-    collectInType(
-      typeAlias.type_,
-      rootScopeTypeNameSet,
+    collectInType(typeAlias.type_, rootScopeTypeNameSet, [
       new Set(typeAlias.parameterList)
-    )
+    ])
   );
 };
 
-const collectInFunction = (
+const collectInFunctionDefinition = (
   function_: data.Function,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
@@ -165,7 +166,7 @@ const collectInFunction = (
         collectInType(
           parameter.type_,
           rootScopeIdentiferSet.rootScopeTypeNameSet,
-          new Set(function_.typeParameterList)
+          [new Set(function_.typeParameterList)]
         )
       )
     );
@@ -175,7 +176,7 @@ const collectInFunction = (
     collectInType(
       function_.returnType,
       rootScopeIdentiferSet.rootScopeTypeNameSet,
-      new Set(function_.typeParameterList)
+      [new Set(function_.typeParameterList)]
     )
   );
   collectData = concatCollectData(
@@ -183,6 +184,7 @@ const collectInFunction = (
     collectStatementList(
       function_.statementList,
       [],
+      [new Set(function_.typeParameterList)],
       rootScopeIdentiferSet,
       parameterNameSet
     )
@@ -200,15 +202,13 @@ const collectInVariableDefinition = (
   };
   collectData = concatCollectData(
     collectData,
-    collectInType(
-      variable.type_,
-      rootScopeIdentiferSet.rootScopeTypeNameSet,
+    collectInType(variable.type_, rootScopeIdentiferSet.rootScopeTypeNameSet, [
       new Set()
-    )
+    ])
   );
   return concatCollectData(
     collectData,
-    collectInExpr(variable.expr, [], rootScopeIdentiferSet)
+    collectInExpr(variable.expr, [], [], rootScopeIdentiferSet)
   );
 };
 
@@ -220,6 +220,7 @@ const collectInVariableDefinition = (
 const collectInExpr = (
   expr: data.Expr,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
   switch (expr._) {
@@ -237,6 +238,7 @@ const collectInExpr = (
       return collectInExpr(
         expr.expr,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
 
@@ -245,11 +247,13 @@ const collectInExpr = (
         collectInExpr(
           expr.left,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectInExpr(
           expr.right,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         )
       );
@@ -258,17 +262,20 @@ const collectInExpr = (
         collectInExpr(
           expr.condition,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         concatCollectData(
           collectInExpr(
             expr.thenExpr,
             localVariableNameSetList,
+            typeParameterSetList,
             rootScopeIdentiferSet
           ),
           collectInExpr(
             expr.elseExpr,
             localVariableNameSetList,
+            typeParameterSetList,
             rootScopeIdentiferSet
           )
         )
@@ -285,6 +292,7 @@ const collectInExpr = (
           collectInExpr(
             element,
             localVariableNameSetList,
+            typeParameterSetList,
             rootScopeIdentiferSet
           )
         );
@@ -300,7 +308,12 @@ const collectInExpr = (
       for (const [, member] of expr.memberList) {
         data = concatCollectData(
           data,
-          collectInExpr(member, localVariableNameSetList, rootScopeIdentiferSet)
+          collectInExpr(
+            member,
+            localVariableNameSetList,
+            typeParameterSetList,
+            rootScopeIdentiferSet
+          )
         );
       }
       return data;
@@ -325,7 +338,7 @@ const collectInExpr = (
           collectInType(
             oneParameter.type_,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            new Set()
+            typeParameterSetList
           )
         );
       }
@@ -334,7 +347,7 @@ const collectInExpr = (
         collectInType(
           expr.returnType,
           rootScopeIdentiferSet.rootScopeTypeNameSet,
-          new Set()
+          typeParameterSetList
         )
       );
       return concatCollectData(
@@ -342,6 +355,7 @@ const collectInExpr = (
         collectStatementList(
           expr.statementList,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet,
           parameterNameSet
         )
@@ -376,11 +390,13 @@ const collectInExpr = (
         collectInExpr(
           expr.expr,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectInExpr(
           expr.propertyName,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         )
       );
@@ -389,6 +405,7 @@ const collectInExpr = (
       let data: data.UsedNameAndModulePathSet = collectInExpr(
         expr.expr,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
       for (const parameter of expr.parameterList) {
@@ -397,6 +414,7 @@ const collectInExpr = (
           collectInExpr(
             parameter,
             localVariableNameSetList,
+            typeParameterSetList,
             rootScopeIdentiferSet
           )
         );
@@ -408,6 +426,7 @@ const collectInExpr = (
       let data: data.UsedNameAndModulePathSet = collectInExpr(
         expr.expr,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
       for (const parameter of expr.parameterList) {
@@ -416,6 +435,7 @@ const collectInExpr = (
           collectInExpr(
             parameter,
             localVariableNameSetList,
+            typeParameterSetList,
             rootScopeIdentiferSet
           )
         );
@@ -428,12 +448,13 @@ const collectInExpr = (
         collectInExpr(
           expr.expr,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectInType(
           expr.type_,
           rootScopeIdentiferSet.rootScopeTypeNameSet,
-          new Set()
+          typeParameterSetList
         )
       );
   }
@@ -442,6 +463,7 @@ const collectInExpr = (
 const collectStatementList = (
   statementList: ReadonlyArray<data.Statement>,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet,
   parameterNameSet: ReadonlySet<identifer.Identifer>
 ): data.UsedNameAndModulePathSet => {
@@ -459,6 +481,7 @@ const collectStatementList = (
       collectInStatement(
         statement,
         localVariableNameSetList.concat(localVariableNameSet),
+        typeParameterSetList,
         rootScopeIdentiferSet
       )
     );
@@ -485,6 +508,7 @@ const collectNameInStatement = (
 const collectInStatement = (
   statement: data.Statement,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
   switch (statement._) {
@@ -492,6 +516,7 @@ const collectInStatement = (
       return collectInExpr(
         statement.expr,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
 
@@ -500,11 +525,13 @@ const collectInStatement = (
         collectInExpr(
           statement.targetObject,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectInExpr(
           statement.expr,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         )
       );
@@ -514,11 +541,13 @@ const collectInStatement = (
         collectInExpr(
           statement.condition,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectStatementList(
           statement.thenStatementList,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet,
           new Set()
         )
@@ -528,6 +557,7 @@ const collectInStatement = (
       return collectInExpr(
         statement.errorMessage,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
 
@@ -535,6 +565,7 @@ const collectInStatement = (
       return collectInExpr(
         statement.expr,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
 
@@ -550,12 +581,13 @@ const collectInStatement = (
         collectInExpr(
           statement.expr,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectInType(
           statement.type_,
           rootScopeIdentiferSet.rootScopeTypeNameSet,
-          new Set()
+          typeParameterSetList
         )
       );
 
@@ -578,7 +610,9 @@ const collectInStatement = (
           collectInType(
             parameter.type_,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            new Set(statement.functionDefinition.typeParameterList)
+            typeParameterSetList.concat(
+              new Set(statement.functionDefinition.typeParameterList)
+            )
           )
         );
       }
@@ -589,11 +623,16 @@ const collectInStatement = (
           collectInType(
             statement.functionDefinition.returnType,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            new Set()
+            typeParameterSetList.concat(
+              new Set(statement.functionDefinition.typeParameterList)
+            )
           ),
           collectStatementList(
             statement.functionDefinition.statementList,
             localVariableNameSetList,
+            typeParameterSetList.concat(
+              new Set(statement.functionDefinition.typeParameterList)
+            ),
             rootScopeIdentiferSet,
             parameterNameSet
           )
@@ -606,11 +645,13 @@ const collectInStatement = (
         collectInExpr(
           statement.untilExpr,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectStatementList(
           statement.statementList,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet,
           new Set([statement.counterVariableName])
         )
@@ -621,11 +662,13 @@ const collectInStatement = (
         collectInExpr(
           statement.iterableExpr,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet
         ),
         collectStatementList(
           statement.statementList,
           localVariableNameSetList,
+          typeParameterSetList,
           rootScopeIdentiferSet,
           new Set([statement.elementVariableName])
         )
@@ -635,6 +678,7 @@ const collectInStatement = (
       return collectStatementList(
         statement.statementList,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet,
         new Set()
       );
@@ -648,6 +692,7 @@ const collectInStatement = (
       let data: data.UsedNameAndModulePathSet = collectInExpr(
         statement.switch_.expr,
         localVariableNameSetList,
+        typeParameterSetList,
         rootScopeIdentiferSet
       );
       for (const pattern of statement.switch_.patternList) {
@@ -656,6 +701,7 @@ const collectInStatement = (
           collectStatementList(
             pattern.statementList,
             localVariableNameSetList,
+            typeParameterSetList,
             rootScopeIdentiferSet,
             new Set()
           )
@@ -686,10 +732,15 @@ const checkVariableIsDefinedOrThrow = (
   throw new Error(
     "存在しない変数を指定されました name=" +
       (variableName as string) +
-      " 存在している変数 =" +
+      " スコープ内に存在している変数 =[ " +
       localVariableNameSetList
         .map(scope => "[" + [...scope].join(",") + "]")
-        .join(",")
+        .join(",") +
+      " ]" +
+      "ファイルの直下に存在している変数 =" +
+      "[" +
+      [...rootScopeNameSet].join(",") +
+      "]"
   );
 };
 
@@ -701,7 +752,7 @@ const checkVariableIsDefinedOrThrow = (
 const collectInType = (
   type_: data.Type,
   rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>,
-  typeParameterSet: ReadonlySet<identifer.Identifer>
+  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>
 ): data.UsedNameAndModulePathSet => {
   let data: data.UsedNameAndModulePathSet = {
     modulePathSet: new Set(),
@@ -719,7 +770,7 @@ const collectInType = (
 
     case "Object":
       for (const [, value] of type_.memberList) {
-        collectInType(value.type_, rootScopeTypeNameSet, typeParameterSet);
+        collectInType(value.type_, rootScopeTypeNameSet, typeParameterSetList);
       }
       return data;
 
@@ -727,24 +778,24 @@ const collectInType = (
       for (const parameter of type_.parameterList) {
         data = concatCollectData(
           data,
-          collectInType(parameter, rootScopeTypeNameSet, typeParameterSet)
+          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
         );
       }
       data = concatCollectData(
         data,
-        collectInType(type_.return, rootScopeTypeNameSet, typeParameterSet)
+        collectInType(type_.return, rootScopeTypeNameSet, typeParameterSetList)
       );
       return data;
 
     case "WithTypeParameter":
       data = concatCollectData(
         data,
-        collectInType(type_.type_, rootScopeTypeNameSet, typeParameterSet)
+        collectInType(type_.type_, rootScopeTypeNameSet, typeParameterSetList)
       );
       for (const parameter of type_.typeParameterList) {
         data = concatCollectData(
           data,
-          collectInType(parameter, rootScopeTypeNameSet, typeParameterSet)
+          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
         );
       }
       return data;
@@ -753,15 +804,15 @@ const collectInType = (
       for (const oneType of type_.types) {
         data = concatCollectData(
           data,
-          collectInType(oneType, rootScopeTypeNameSet, typeParameterSet)
+          collectInType(oneType, rootScopeTypeNameSet, typeParameterSetList)
         );
       }
       return data;
 
     case "Intersection":
       return concatCollectData(
-        collectInType(type_.left, rootScopeTypeNameSet, typeParameterSet),
-        collectInType(type_.right, rootScopeTypeNameSet, typeParameterSet)
+        collectInType(type_.left, rootScopeTypeNameSet, typeParameterSetList),
+        collectInType(type_.right, rootScopeTypeNameSet, typeParameterSetList)
       );
 
     case "ImportedType":
@@ -771,24 +822,16 @@ const collectInType = (
       };
 
     case "ScopeInFile":
-      if (
-        !rootScopeTypeNameSet.has(type_.name) &&
-        !typeParameterSet.has(type_.name)
-      ) {
-        throw new Error(
-          "このファイルに存在しない型を指定された typeName=" +
-            (type_.name as string) +
-            "このファイルに存在する型=[" +
-            [...rootScopeTypeNameSet].join(",") +
-            "] 型変数=[" +
-            [...typeParameterSet].join(",") +
-            "]"
-        );
-      }
+      checkTypeIsDefinedOrThrow(
+        rootScopeTypeNameSet,
+        typeParameterSetList,
+        type_.name
+      );
       return {
         modulePathSet: new Set(),
         usedNameSet: new Set([type_.name])
       };
+
     case "ScopeInGlobal":
       return {
         modulePathSet: new Set(),
@@ -798,6 +841,35 @@ const collectInType = (
     case "StringLiteral":
       return data;
   }
+};
+
+const checkTypeIsDefinedOrThrow = (
+  rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  typeName: identifer.Identifer
+): void => {
+  for (let i = 0; i < typeParameterSetList.length; i++) {
+    if (
+      typeParameterSetList[typeParameterSetList.length - 1 - i].has(typeName)
+    ) {
+      return;
+    }
+  }
+  if (rootScopeTypeNameSet.has(typeName)) {
+    return;
+  }
+  throw new Error(
+    "存在しない型変数を指定されました typeName=" +
+      (typeName as string) +
+      " 存在している変数 =[ " +
+      typeParameterSetList
+        .map(scope => "[ " + [...scope].join(",") + " ]")
+        .join(",") +
+      "]" +
+      "ファイルの直下に存在している型 =[ " +
+      [...rootScopeTypeNameSet].join(",") +
+      " ]"
+  );
 };
 
 const concatCollectData = (
