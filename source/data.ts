@@ -854,7 +854,7 @@ export const statementContinue = (): Statement => ({
 /**
  * `const a: type_ = expr`
  * ローカル変数の定義。変数名は自動で決まる
- * @param name 名前 (出力時には短い名前に変換される。この名前には`!`を使えない)
+ * @param name 名前
  * @param type_ 型
  * @param expr 式
  */
