@@ -79,9 +79,7 @@ const functionToString = (
 ): string => {
   return (
     documentToString(
-      function_.document +
-        "\n" +
-        parameterListToDocument(function_.parameterList)
+      function_.document + parameterListToDocument(function_.parameterList)
     ) +
     "export const " +
     (function_.name as string) +
@@ -127,30 +125,31 @@ const variableToString = (
   );
 };
 
-const documentToString = (document: string): string =>
-  document === ""
+const documentToString = (document: string): string => {
+  const documentTrimmed = document.trim();
+  return documentTrimmed === ""
     ? ""
     : "/**\n" +
-      document
-        .split("\n")
-        .map(line => (line === "" ? " *" : " * " + line))
-        .join("\n") +
-      "\n */\n";
+        documentTrimmed
+          .split("\n")
+          .map(line => (line === "" ? " *" : " * " + line))
+          .join("\n") +
+        "\n */\n";
+};
 
 const parameterListToDocument = (
   parameterList: ReadonlyArray<data.ParameterWithDocument>
 ): string =>
-  parameterList
-    .map(parameter =>
-      parameter.document === ""
-        ? ""
-        : "@param " +
-          (parameter.name as string) +
-          " " +
-          parameter.document +
-          "\n"
-    )
-    .join("");
+  parameterList.length === 0
+    ? ""
+    : "\n" +
+      parameterList
+        .map(parameter =>
+          parameter.document === ""
+            ? ""
+            : "@param " + (parameter.name as string) + " " + parameter.document
+        )
+        .join("\n");
 
 /**
  * ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形にする
