@@ -155,11 +155,11 @@ export type Expr =
     }
   | {
       _: "ArrayLiteral";
-      exprList: ReadonlyArray<Expr>;
+      itemList: ReadonlyArray<ArrayItem>;
     }
   | {
       _: "ObjectLiteral";
-      memberList: Map<string, Expr>;
+      memberList: ReadonlyArray<Member>;
     }
   | {
       _: "Lambda";
@@ -276,6 +276,15 @@ export type FunctionDefinition = {
   returnType: Type;
   statementList: ReadonlyArray<Statement>;
 };
+
+export type ArrayItem = { expr: Expr; spread: boolean };
+
+export type Member =
+  | {
+      _: "Spread";
+      expr: Expr;
+    }
+  | { _: "KeyValue"; key: string; value: Expr };
 
 export type Switch = {
   expr: Expr;
@@ -632,21 +641,32 @@ export const conditionalOperator = (
 /**
  * 配列リテラル `[1, 2, 3]`
  */
-export const arrayLiteral = (exprList: ReadonlyArray<Expr>): Expr => ({
+export const arrayLiteral = (itemList: ReadonlyArray<ArrayItem>): Expr => ({
   _: "ArrayLiteral",
-  exprList
+  itemList
 });
 
 /**
  * オブジェクトリテラル
  * 順番は保証されないので、副作用の含んだ式を入れないこと
  */
-export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
+export const objectLiteral = (memberList: ReadonlyArray<Member>): Expr => {
   return {
     _: "ObjectLiteral",
-    memberList: memberMap
+    memberList: memberList
   };
 };
+
+export const memberSpread = (expr: Expr): Member => ({
+  _: "Spread",
+  expr
+});
+
+export const memberKeyValue = (key: string, value: Expr): Member => ({
+  _: "KeyValue",
+  key,
+  value
+});
 
 /**
  * ラムダ式
@@ -966,66 +986,6 @@ export const statementSwitch = (switch_: Switch): Statement => ({
   _: "Switch",
   switch_
 });
-
-type Literal =
-  | number
-  | string
-  | boolean
-  | undefined
-  | null
-  | { [key in string]: Expr | Literal };
-
-/**
- * 直接JavaScriptのデータからリテラルを生成する。
- * ただし "_"のキーを持つオブジェクトはこの方法では作れない。`objectLiteral`を使おう
- * @param value
- */
-export const literal = (value: Literal): Expr => {
-  if (typeof value === "number") {
-    return numberLiteral(value);
-  }
-  if (typeof value === "string") {
-    return stringLiteral(value);
-  }
-  if (typeof value === "boolean") {
-    return booleanLiteral(value);
-  }
-  if (value === undefined) {
-    return undefinedLiteral;
-  }
-  if (value === null) {
-    return nullLiteral;
-  }
-  const objectLiteralMemberMap = new Map<string, Expr>();
-  for (const [valueKey, valueValue] of Object.entries(value)) {
-    if (typeof valueValue === "number") {
-      objectLiteralMemberMap.set(valueKey, numberLiteral(valueValue));
-      continue;
-    }
-    if (typeof valueValue === "string") {
-      objectLiteralMemberMap.set(valueKey, stringLiteral(valueValue));
-      continue;
-    }
-    if (typeof valueValue === "boolean") {
-      objectLiteralMemberMap.set(valueKey, booleanLiteral(valueValue));
-      continue;
-    }
-    if (valueValue === undefined) {
-      objectLiteralMemberMap.set(valueKey, undefinedLiteral);
-      continue;
-    }
-    if (valueValue === null) {
-      objectLiteralMemberMap.set(valueKey, nullLiteral);
-      continue;
-    }
-    if (typeof valueValue._ === "number") {
-      objectLiteralMemberMap.set(valueKey, valueValue as Expr);
-    } else {
-      objectLiteralMemberMap.set(valueKey, literal(valueValue as Literal));
-    }
-  }
-  return objectLiteral(objectLiteralMemberMap);
-};
 
 /* =======================================================
                       util
