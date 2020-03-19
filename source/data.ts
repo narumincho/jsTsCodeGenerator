@@ -159,7 +159,7 @@ export type Expr =
     }
   | {
       _: "ObjectLiteral";
-      memberList: Map<string, Expr>;
+      memberList: ReadonlyArray<Member>;
     }
   | {
       _: "Lambda";
@@ -278,6 +278,13 @@ export type FunctionDefinition = {
 };
 
 export type ArrayItem = { expr: Expr; spread: boolean };
+
+export type Member =
+  | {
+      _: "Spread";
+      expr: Expr;
+    }
+  | { _: "KeyValue"; key: string; value: Expr };
 
 export type Switch = {
   expr: Expr;
@@ -643,12 +650,23 @@ export const arrayLiteral = (itemList: ReadonlyArray<ArrayItem>): Expr => ({
  * オブジェクトリテラル
  * 順番は保証されないので、副作用の含んだ式を入れないこと
  */
-export const objectLiteral = (memberMap: Map<string, Expr>): Expr => {
+export const objectLiteral = (memberList: ReadonlyArray<Member>): Expr => {
   return {
     _: "ObjectLiteral",
-    memberList: memberMap
+    memberList: memberList
   };
 };
+
+export const memberSpread = (expr: Expr): Member => ({
+  _: "Spread",
+  expr
+});
+
+export const memberKeyValue = (key: string, value: Expr): Member => ({
+  _: "KeyValue",
+  key,
+  value
+});
 
 /**
  * ラムダ式

@@ -214,20 +214,11 @@ const exprToString = (
       );
 
     case "ObjectLiteral":
-      return (
-        "{ " +
-        [...expr.memberList.entries()]
-          .map(
-            ([key, value]) =>
-              (identifer.isIdentifer(key)
-                ? key
-                : stringLiteralValueToString(key)) +
-              ": " +
-              exprToString(value, indent, collectedData, codeType)
-          )
-          .join(", ") +
-        " " +
-        "}"
+      return objectLiteralToString(
+        expr.memberList,
+        indent,
+        collectedData,
+        codeType
       );
 
     case "UnaryOperator":
@@ -368,6 +359,37 @@ const exprToString = (
         typeToString(expr.type_, collectedData)
       );
   }
+};
+
+const objectLiteralToString = (
+  memberList: ReadonlyArray<data.Member>,
+  indent: number,
+  collectedData: data.CollectedData,
+  codeType: data.CodeType
+): string => {
+  return (
+    "{ " +
+    memberList
+      .map(member => {
+        switch (member._) {
+          case "Spread":
+            return (
+              "..." + exprToString(member.expr, indent, collectedData, codeType)
+            );
+          case "KeyValue":
+            return (
+              (identifer.isIdentifer(member.key)
+                ? member.key
+                : stringLiteralValueToString(member.key)) +
+              ": " +
+              exprToString(member.value, indent, collectedData, codeType)
+            );
+        }
+      })
+      .join(", ") +
+    " " +
+    "}"
+  );
 };
 
 /**

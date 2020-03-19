@@ -287,12 +287,10 @@ describe("test", () => {
         exportDefinitionList: [],
         statementList: [
           data.statementEvaluateExpr(
-            data.objectLiteral(
-              new Map([
-                ["abc", data.numberLiteral(3)],
-                ["a b c", data.stringLiteral("separated")]
-              ])
-            )
+            data.objectLiteral([
+              data.memberKeyValue("abc", data.numberLiteral(3)),
+              data.memberKeyValue("a b c", data.stringLiteral("separated"))
+            ])
           )
         ]
       },
@@ -353,7 +351,12 @@ describe("test", () => {
               ])
             ),
             statementList: [
-              data.statementReturn(data.literal({ name: "mac", age: 10 }))
+              data.statementReturn(
+                data.objectLiteral([
+                  data.memberKeyValue("name", data.stringLiteral("mac")),
+                  data.memberKeyValue("age", data.numberLiteral(10))
+                ])
+              )
             ]
           })
         ],
@@ -523,7 +526,7 @@ describe("test", () => {
       exportDefinitionList: [],
       statementList: [
         data.statementEvaluateExpr(
-          data.typeAssertion(data.objectLiteral(new Map()), data.dateType)
+          data.typeAssertion(data.objectLiteral([]), data.dateType)
         )
       ]
     };
@@ -546,5 +549,47 @@ describe("test", () => {
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
     expect(codeAsString).toMatch(/Date & Uint8Array/);
+  });
+
+  it("object literal spread syntax", () => {
+    const code: data.Code = {
+      exportDefinitionList: [],
+      statementList: [
+        data.statementVariableDefinition(
+          identifer.fromString("value"),
+          data.typeObject(
+            new Map([
+              [
+                "a",
+                {
+                  type_: data.typeString,
+                  document: ""
+                }
+              ],
+              [
+                "b",
+                {
+                  type_: data.typeNumber,
+                  document: ""
+                }
+              ]
+            ])
+          ),
+          data.objectLiteral([
+            data.memberKeyValue("a", data.stringLiteral("aValue")),
+            data.memberKeyValue("b", data.numberLiteral(123))
+          ])
+        ),
+        data.consoleLog(
+          data.objectLiteral([
+            data.memberSpread(data.variable(identifer.fromString("value"))),
+            data.memberKeyValue("b", data.numberLiteral(987))
+          ])
+        )
+      ]
+    };
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/{ *\.\.\.value *, *b: 987 }/);
   });
 });

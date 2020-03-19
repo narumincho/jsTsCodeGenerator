@@ -305,16 +305,30 @@ const collectInExpr = (
         modulePathSet: new Set(),
         usedNameSet: new Set()
       };
-      for (const [, member] of expr.memberList) {
-        data = concatCollectData(
-          data,
-          collectInExpr(
-            member,
-            localVariableNameSetList,
-            typeParameterSetList,
-            rootScopeIdentiferSet
-          )
-        );
+      for (const member of expr.memberList) {
+        switch (member._) {
+          case "Spread":
+            data = concatCollectData(
+              data,
+              collectInExpr(
+                member.expr,
+                localVariableNameSetList,
+                typeParameterSetList,
+                rootScopeIdentiferSet
+              )
+            );
+            break;
+          case "KeyValue":
+            data = concatCollectData(
+              data,
+              collectInExpr(
+                member.value,
+                localVariableNameSetList,
+                typeParameterSetList,
+                rootScopeIdentiferSet
+              )
+            );
+        }
       }
       return data;
     }
