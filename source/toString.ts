@@ -203,9 +203,11 @@ const exprToString = (
     case "ArrayLiteral":
       return (
         "[" +
-        expr.exprList
-          .map(element =>
-            exprToString(element, indent, collectedData, codeType)
+        expr.itemList
+          .map(
+            item =>
+              (item.spread ? "..." : "") +
+              exprToString(item.expr, indent, collectedData, codeType)
           )
           .join(", ") +
         "]"

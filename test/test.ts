@@ -391,9 +391,16 @@ describe("test", () => {
         data.statementForOf(
           identifer.fromString("element"),
           data.arrayLiteral([
-            data.numberLiteral(1),
-            data.numberLiteral(2),
-            data.numberLiteral(3)
+            { expr: data.numberLiteral(1), spread: false },
+            { expr: data.numberLiteral(2), spread: false },
+            {
+              expr: data.arrayLiteral([
+                { expr: data.numberLiteral(3), spread: false },
+                { expr: data.numberLiteral(4), spread: false },
+                { expr: data.numberLiteral(5), spread: false }
+              ]),
+              spread: true
+            }
           ]),
           [data.consoleLog(data.variable(identifer.fromString("element")))]
         )
@@ -401,7 +408,7 @@ describe("test", () => {
     };
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/for .* of \[1, 2, 3\]/);
+    expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/);
   });
   it("switch", () => {
     const code: data.Code = {

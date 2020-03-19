@@ -286,11 +286,11 @@ const collectInExpr = (
         modulePathSet: new Set(),
         usedNameSet: new Set()
       };
-      for (const element of expr.exprList) {
+      for (const { expr: item } of expr.itemList) {
         data = concatCollectData(
           data,
           collectInExpr(
-            element,
+            item,
             localVariableNameSetList,
             typeParameterSetList,
             rootScopeIdentiferSet

@@ -155,7 +155,7 @@ export type Expr =
     }
   | {
       _: "ArrayLiteral";
-      exprList: ReadonlyArray<Expr>;
+      itemList: ReadonlyArray<ArrayItem>;
     }
   | {
       _: "ObjectLiteral";
@@ -276,6 +276,8 @@ export type FunctionDefinition = {
   returnType: Type;
   statementList: ReadonlyArray<Statement>;
 };
+
+export type ArrayItem = { expr: Expr; spread: boolean };
 
 export type Switch = {
   expr: Expr;
@@ -632,9 +634,9 @@ export const conditionalOperator = (
 /**
  * 配列リテラル `[1, 2, 3]`
  */
-export const arrayLiteral = (exprList: ReadonlyArray<Expr>): Expr => ({
+export const arrayLiteral = (itemList: ReadonlyArray<ArrayItem>): Expr => ({
   _: "ArrayLiteral",
-  exprList
+  itemList
 });
 
 /**
