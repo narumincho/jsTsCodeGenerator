@@ -33,17 +33,17 @@ export type Definition =
 
 export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
   _: "TypeAlias",
-  typeAlias
+  typeAlias,
 });
 
 export const definitionFunction = (function_: Function): Definition => ({
   _: "Function",
-  function_
+  function_,
 });
 
 export const definitionVariable = (variable: Variable): Definition => ({
   _: "Variable",
-  variable
+  variable,
 });
 
 export type TypeAlias = {
@@ -345,7 +345,7 @@ export type Type =
  */
 export const numberLiteral = (value: number): Expr => ({
   _: "NumberLiteral",
-  value: value
+  value: value,
 });
 
 /**
@@ -354,7 +354,7 @@ export const numberLiteral = (value: number): Expr => ({
  */
 export const stringLiteral = (string: string): Expr => ({
   _: "StringLiteral",
-  value: string
+  value: string,
 });
 
 /**
@@ -363,21 +363,21 @@ export const stringLiteral = (string: string): Expr => ({
  */
 export const booleanLiteral = (value: boolean): Expr => ({
   _: "BooleanLiteral",
-  value
+  value,
 });
 
 /**
  *  undefinedリテラル
  */
 export const undefinedLiteral: Expr = {
-  _: "UndefinedLiteral"
+  _: "UndefinedLiteral",
 };
 
 /**
  * nullリテラル
  */
 export const nullLiteral: Expr = {
-  _: "NullLiteral"
+  _: "NullLiteral",
 };
 
 /**
@@ -387,7 +387,7 @@ export const nullLiteral: Expr = {
 export const minus = (expr: Expr): Expr => ({
   _: "UnaryOperator",
   operator: "-",
-  expr
+  expr,
 });
 
 /**
@@ -397,7 +397,7 @@ export const minus = (expr: Expr): Expr => ({
 export const bitwiseNot = (expr: Expr): Expr => ({
   _: "UnaryOperator",
   operator: "~",
-  expr
+  expr,
 });
 
 /**
@@ -408,7 +408,7 @@ export const bitwiseNot = (expr: Expr): Expr => ({
 export const logicalNot = (expr: Expr): Expr => ({
   _: "UnaryOperator",
   operator: "!",
-  expr
+  expr,
 });
 
 /**
@@ -420,7 +420,7 @@ export const exponentiation = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "**",
   left,
-  right
+  right,
 });
 
 /**
@@ -432,7 +432,7 @@ export const multiplication = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "*",
   left: left,
-  right: right
+  right: right,
 });
 
 /**
@@ -444,7 +444,7 @@ export const division = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "/",
   left: left,
-  right: right
+  right: right,
 });
 
 /**
@@ -456,7 +456,7 @@ export const modulo = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "%",
   left,
-  right
+  right,
 });
 
 /**
@@ -468,7 +468,7 @@ export const addition = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "+",
   left: left,
-  right: right
+  right: right,
 });
 
 /**
@@ -480,7 +480,7 @@ export const subtraction = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "-",
   left: left,
-  right: right
+  right: right,
 });
 
 /**
@@ -492,7 +492,7 @@ export const leftShift = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "<<",
   left,
-  right
+  right,
 });
 
 /**
@@ -504,7 +504,7 @@ export const signedRightShift = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: ">>",
   left,
-  right
+  right,
 });
 
 /**
@@ -516,7 +516,7 @@ export const unsignedRightShift = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: ">>>",
   left,
-  right
+  right,
 });
 
 /**
@@ -528,7 +528,7 @@ export const lessThan = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "<",
   left,
-  right
+  right,
 });
 
 /**
@@ -540,7 +540,7 @@ export const lessThanOrEqual = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "<=",
   left,
-  right
+  right,
 });
 /**
  * 等号 `a === b`
@@ -551,7 +551,7 @@ export const equal = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "===",
   left,
-  right
+  right,
 });
 
 /**
@@ -563,7 +563,7 @@ export const notEqual = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "!==",
   left,
-  right
+  right,
 });
 
 /**
@@ -575,14 +575,14 @@ export const bitwiseAnd = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "&",
   left,
-  right
+  right,
 });
 
 export const bitwiseXOr = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "^",
   left,
-  right
+  right,
 });
 
 /**
@@ -594,7 +594,7 @@ export const bitwiseOr = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "|",
   left,
-  right
+  right,
 });
 
 /**
@@ -606,7 +606,7 @@ export const logicalAnd = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "&&",
   left,
-  right
+  right,
 });
 
 /**
@@ -618,7 +618,7 @@ export const logicalOr = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "||",
   left,
-  right
+  right,
 });
 
 /**
@@ -635,7 +635,7 @@ export const conditionalOperator = (
   _: "ConditionalOperator",
   condition,
   thenExpr,
-  elseExpr
+  elseExpr,
 });
 
 /**
@@ -643,7 +643,7 @@ export const conditionalOperator = (
  */
 export const arrayLiteral = (itemList: ReadonlyArray<ArrayItem>): Expr => ({
   _: "ArrayLiteral",
-  itemList
+  itemList,
 });
 
 /**
@@ -653,19 +653,19 @@ export const arrayLiteral = (itemList: ReadonlyArray<ArrayItem>): Expr => ({
 export const objectLiteral = (memberList: ReadonlyArray<Member>): Expr => {
   return {
     _: "ObjectLiteral",
-    memberList: memberList
+    memberList: memberList,
   };
 };
 
 export const memberSpread = (expr: Expr): Member => ({
   _: "Spread",
-  expr
+  expr,
 });
 
 export const memberKeyValue = (key: string, value: Expr): Member => ({
   _: "KeyValue",
   key,
-  value
+  value,
 });
 
 /**
@@ -682,7 +682,7 @@ export const lambda = (
   _: "Lambda",
   parameterList,
   returnType,
-  statementList
+  statementList,
 });
 
 /**
@@ -693,7 +693,7 @@ export const lambda = (
 export const getByExpr = (expr: Expr, propertyName: Expr): Expr => ({
   _: "Get",
   expr,
-  propertyName
+  propertyName,
 });
 
 /**
@@ -704,7 +704,7 @@ export const getByExpr = (expr: Expr, propertyName: Expr): Expr => ({
 export const get = (expr: Expr, propertyName: string): Expr => ({
   _: "Get",
   expr,
-  propertyName: stringLiteral(propertyName)
+  propertyName: stringLiteral(propertyName),
 });
 
 /**
@@ -715,7 +715,7 @@ export const get = (expr: Expr, propertyName: string): Expr => ({
 export const call = (expr: Expr, parameterList: ReadonlyArray<Expr>): Expr => ({
   _: "Call",
   expr,
-  parameterList
+  parameterList,
 });
 
 /**
@@ -741,13 +741,13 @@ export const newExpr = (
 ): Expr => ({
   _: "New",
   expr,
-  parameterList
+  parameterList,
 });
 
 export const typeAssertion = (expr: Expr, type_: Type): Expr => ({
   _: "TypeAssertion",
   expr,
-  type_
+  type_,
 });
 
 /**
@@ -761,7 +761,7 @@ export const importedVariable = (
 ): Expr => ({
   _: "ImportedVariable",
   name,
-  moduleName: path
+  moduleName: path,
 });
 
 /**
@@ -770,7 +770,7 @@ export const importedVariable = (
  */
 export const variable = (name: identifer.Identifer): Expr => ({
   _: "Variable",
-  name
+  name,
 });
 
 /**
@@ -786,7 +786,7 @@ export const variable = (name: identifer.Identifer): Expr => ({
  */
 export const globalObjects = (name: identifer.Identifer): Expr => ({
   _: "GlobalObjects",
-  name
+  name,
 });
 
 /**
@@ -796,7 +796,7 @@ export const globalObjects = (name: identifer.Identifer): Expr => ({
  */
 export const statementEvaluateExpr = (expr: Expr): Statement => ({
   _: "EvaluateExpr",
-  expr
+  expr,
 });
 
 /**
@@ -820,7 +820,7 @@ export const statementSet = (
   _: "Set",
   targetObject,
   operator,
-  expr
+  expr,
 });
 
 /**
@@ -834,7 +834,7 @@ export const statementIf = (
 ): Statement => ({
   _: "If",
   condition,
-  thenStatementList
+  thenStatementList,
 });
 
 /**
@@ -843,7 +843,7 @@ export const statementIf = (
  */
 export const statementThrowError = (errorMessage: Expr): Statement => ({
   _: "ThrowError",
-  errorMessage
+  errorMessage,
 });
 
 /**
@@ -852,7 +852,7 @@ export const statementThrowError = (errorMessage: Expr): Statement => ({
  */
 export const statementReturn = (expr: Expr): Statement => ({
   _: "Return",
-  expr
+  expr,
 });
 
 /**
@@ -860,7 +860,7 @@ export const statementReturn = (expr: Expr): Statement => ({
  * 戻り値がvoidの関数を早く抜ける
  */
 export const statementReturnVoid: Statement = {
-  _: "ReturnVoid"
+  _: "ReturnVoid",
 };
 
 /**
@@ -868,7 +868,7 @@ export const statementReturnVoid: Statement = {
  * forの繰り返しを次に進める
  */
 export const statementContinue = (): Statement => ({
-  _: "Continue"
+  _: "Continue",
 });
 
 /**
@@ -887,7 +887,7 @@ export const statementVariableDefinition = (
   name,
   expr,
   type_,
-  isConst: true
+  isConst: true,
 });
 
 /**
@@ -906,7 +906,7 @@ export const statementLetVariableDefinition = (
   name,
   expr,
   type_,
-  isConst: false
+  isConst: false,
 });
 
 /**
@@ -921,7 +921,7 @@ export const statementFunctionDefinition = (
   functionDefinition: FunctionDefinition
 ): Statement => ({
   _: "FunctionDefinition",
-  functionDefinition
+  functionDefinition,
 });
 
 /**
@@ -941,7 +941,7 @@ export const statementFor = (
   _: "For",
   counterVariableName,
   statementList,
-  untilExpr
+  untilExpr,
 });
 
 /**
@@ -959,7 +959,7 @@ export const statementForOf = (
   _: "ForOf",
   elementVariableName,
   iterableExpr,
-  statementList
+  statementList,
 });
 
 /**
@@ -970,7 +970,7 @@ export const statementWhileTrue = (
   statementList: ReadonlyArray<Statement>
 ): Statement => ({
   _: "WhileTrue",
-  statementList
+  statementList,
 });
 
 /**
@@ -984,7 +984,7 @@ export const statementBreak = (): Statement => ({ _: "Break" });
  */
 export const statementSwitch = (switch_: Switch): Statement => ({
   _: "Switch",
-  switch_
+  switch_,
 });
 
 /* =======================================================
@@ -1041,7 +1041,7 @@ export const newDate: Expr = newExpr(
  */
 export const newUint8Array = (lengthOrIterable: Expr): Expr =>
   newExpr(globalObjects(identifer.fromString("Uint8Array")), [
-    lengthOrIterable
+    lengthOrIterable,
   ]);
 
 /**
@@ -1074,49 +1074,49 @@ export const consoleLog = (expr: Expr): Statement =>
  * プリミティブの型のnumber
  */
 export const typeNumber: Type = {
-  _: "Number"
+  _: "Number",
 };
 
 /**
  * プリミティブの型のstring
  */
 export const typeString: Type = {
-  _: "String"
+  _: "String",
 };
 
 /**
  * プリミティブの型のboolean
  */
 export const typeBoolean: Type = {
-  _: "Boolean"
+  _: "Boolean",
 };
 
 /**
  * プリミティブの型のundefined
  */
 export const typeUndefined: Type = {
-  _: "Undefined"
+  _: "Undefined",
 };
 
 /**
  * プリミティブの型のnull
  */
 export const typeNull: Type = {
-  _: "Null"
+  _: "Null",
 };
 
 /**
  * never型
  */
 export const typeNever: Type = {
-  _: "Never"
+  _: "Never",
 };
 
 /**
  * void型
  */
 export const typeVoid: Type = {
-  _: "Void"
+  _: "Void",
 };
 
 /**
@@ -1126,7 +1126,7 @@ export const typeObject = (
   memberList: Map<string, { type_: Type; document: string }>
 ): Type => ({
   _: "Object",
-  memberList: memberList
+  memberList: memberList,
 });
 
 /**
@@ -1138,7 +1138,7 @@ export const typeFunction = (
 ): Type => ({
   _: "Function",
   parameterList: parameter,
-  return: returnType
+  return: returnType,
 });
 
 /**
@@ -1147,7 +1147,7 @@ export const typeFunction = (
  */
 export const typeUnion = (types: ReadonlyArray<Type>): Type => ({
   _: "Union",
-  types
+  types,
 });
 
 /**
@@ -1156,7 +1156,7 @@ export const typeUnion = (types: ReadonlyArray<Type>): Type => ({
 export const typeIntersection = (left: Type, right: Type): Type => ({
   _: "Intersection",
   left,
-  right
+  right,
 });
 
 /**
@@ -1168,7 +1168,7 @@ export const typeWithParameter = (
 ): Type => ({
   _: "WithTypeParameter",
   type_,
-  typeParameterList
+  typeParameterList,
 });
 
 /**
@@ -1182,7 +1182,7 @@ export const typeImported = (
 ): Type => ({
   _: "ImportedType",
   moduleName,
-  name
+  name,
 });
 
 /**
@@ -1191,7 +1191,7 @@ export const typeImported = (
  */
 export const typeScopeInFile = (name: identifer.Identifer): Type => ({
   _: "ScopeInFile",
-  name
+  name,
 });
 
 /**
@@ -1200,7 +1200,7 @@ export const typeScopeInFile = (name: identifer.Identifer): Type => ({
  */
 export const typeScopeInGlobal = (name: identifer.Identifer): Type => ({
   _: "ScopeInGlobal",
-  name
+  name,
 });
 
 /**
@@ -1208,7 +1208,7 @@ export const typeScopeInGlobal = (name: identifer.Identifer): Type => ({
  */
 export const typeStringLiteral = (string_: string): Type => ({
   _: "StringLiteral",
-  string_
+  string_,
 });
 /* =======================================================
                       util
@@ -1220,7 +1220,7 @@ export const typeStringLiteral = (string_: string): Type => ({
  */
 export const arrayType = (elementType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("Array")), [
-    elementType
+    elementType,
   ]);
 
 /**
@@ -1228,7 +1228,7 @@ export const arrayType = (elementType: Type): Type =>
  */
 export const readonlyArrayType = (elementType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlyArray")), [
-    elementType
+    elementType,
   ]);
 
 /**
@@ -1243,7 +1243,7 @@ export const uint8ArrayType: Type = typeScopeInGlobal(
  */
 export const promiseType = (returnType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("Promise")), [
-    returnType
+    returnType,
   ]);
 
 /**
@@ -1257,7 +1257,7 @@ export const dateType: Type = typeScopeInGlobal(identifer.fromString("Date"));
 export const mapType = (keyType: Type, valueType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("Map")), [
     keyType,
-    valueType
+    valueType,
   ]);
 
 /**
@@ -1266,7 +1266,7 @@ export const mapType = (keyType: Type, valueType: Type): Type =>
 export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlyMap")), [
     keyType,
-    valueType
+    valueType,
   ]);
 
 /**
@@ -1274,7 +1274,7 @@ export const readonlyMapType = (keyType: Type, valueType: Type): Type =>
  */
 export const setType = (elementType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("Set")), [
-    elementType
+    elementType,
   ]);
 
 /**
@@ -1282,5 +1282,5 @@ export const setType = (elementType: Type): Type =>
  */
 export const readonlySetType = (elementType: Type): Type =>
   typeWithParameter(typeScopeInGlobal(identifer.fromString("ReadonlySet")), [
-    elementType
+    elementType,
   ]);

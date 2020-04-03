@@ -11,12 +11,12 @@ export const collectInCode = (
     RootScopeIdentiferSet
   >(collectDefinitionNameInDefinition, {
     rootScopeTypeNameSet: new Set(),
-    rootScopeVariableName: new Set()
+    rootScopeVariableName: new Set(),
   });
 
   let scanData: data.UsedNameAndModulePathSet = {
     usedNameSet: new Set(),
-    modulePathSet: new Set()
+    modulePathSet: new Set(),
   };
   for (const definition of code.exportDefinitionList) {
     scanData = concatCollectData(
@@ -54,9 +54,9 @@ const collectDefinitionNameInDefinition = (
       return {
         rootScopeTypeNameSet: new Set([
           ...rootScopeIdentiferSet.rootScopeTypeNameSet,
-          definition.typeAlias.name
+          definition.typeAlias.name,
         ]),
-        rootScopeVariableName: rootScopeIdentiferSet.rootScopeVariableName
+        rootScopeVariableName: rootScopeIdentiferSet.rootScopeVariableName,
       };
 
     case "Function":
@@ -73,8 +73,8 @@ const collectDefinitionNameInDefinition = (
         rootScopeTypeNameSet: rootScopeIdentiferSet.rootScopeTypeNameSet,
         rootScopeVariableName: new Set([
           ...rootScopeIdentiferSet.rootScopeVariableName,
-          definition.function_.name
-        ])
+          definition.function_.name,
+        ]),
       };
 
     case "Variable":
@@ -91,8 +91,8 @@ const collectDefinitionNameInDefinition = (
         rootScopeTypeNameSet: rootScopeIdentiferSet.rootScopeTypeNameSet,
         rootScopeVariableName: new Set([
           ...rootScopeIdentiferSet.rootScopeVariableName,
-          definition.variable.name
-        ])
+          definition.variable.name,
+        ]),
       };
   }
 };
@@ -129,10 +129,10 @@ const collectInTypeAlias = (
   return concatCollectData(
     {
       usedNameSet: new Set([typeAlias.name]),
-      modulePathSet: new Set()
+      modulePathSet: new Set(),
     },
     collectInType(typeAlias.type_, rootScopeTypeNameSet, [
-      new Set(typeAlias.parameterList)
+      new Set(typeAlias.parameterList),
     ])
   );
 };
@@ -143,7 +143,7 @@ const collectInFunctionDefinition = (
 ): data.UsedNameAndModulePathSet => {
   let collectData: data.UsedNameAndModulePathSet = {
     modulePathSet: new Set(),
-    usedNameSet: new Set([function_.name])
+    usedNameSet: new Set([function_.name]),
   };
   const parameterNameSet: Set<identifer.Identifer> = new Set();
   for (const parameter of function_.parameterList) {
@@ -161,7 +161,7 @@ const collectInFunctionDefinition = (
       concatCollectData(
         {
           usedNameSet: new Set([parameter.name]),
-          modulePathSet: new Set()
+          modulePathSet: new Set(),
         },
         collectInType(
           parameter.type_,
@@ -198,12 +198,12 @@ const collectInVariableDefinition = (
 ): data.UsedNameAndModulePathSet => {
   let collectData: data.UsedNameAndModulePathSet = {
     modulePathSet: new Set(),
-    usedNameSet: new Set([variable.name])
+    usedNameSet: new Set([variable.name]),
   };
   collectData = concatCollectData(
     collectData,
     collectInType(variable.type_, rootScopeIdentiferSet.rootScopeTypeNameSet, [
-      new Set()
+      new Set(),
     ])
   );
   return concatCollectData(
@@ -231,7 +231,7 @@ const collectInExpr = (
     case "UndefinedLiteral":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
 
     case "UnaryOperator":
@@ -284,7 +284,7 @@ const collectInExpr = (
     case "ArrayLiteral": {
       let data: data.UsedNameAndModulePathSet = {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
       for (const { expr: item } of expr.itemList) {
         data = concatCollectData(
@@ -303,7 +303,7 @@ const collectInExpr = (
     case "ObjectLiteral": {
       let data: data.UsedNameAndModulePathSet = {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
       for (const member of expr.memberList) {
         switch (member._) {
@@ -336,7 +336,7 @@ const collectInExpr = (
     case "Lambda": {
       let data: data.UsedNameAndModulePathSet = {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
       const parameterNameSet: Set<identifer.Identifer> = new Set();
       for (const oneParameter of expr.parameterList) {
@@ -384,19 +384,19 @@ const collectInExpr = (
       );
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([expr.name])
+        usedNameSet: new Set([expr.name]),
       };
 
     case "GlobalObjects":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
 
     case "ImportedVariable":
       return {
         modulePathSet: new Set([expr.moduleName]),
-        usedNameSet: new Set([expr.name])
+        usedNameSet: new Set([expr.name]),
       };
 
     case "Get":
@@ -483,11 +483,11 @@ const collectStatementList = (
 ): data.UsedNameAndModulePathSet => {
   let data: data.UsedNameAndModulePathSet = {
     modulePathSet: new Set(),
-    usedNameSet: new Set()
+    usedNameSet: new Set(),
   };
   const localVariableNameSet = new Set([
     ...collectNameInStatement(statementList),
-    ...parameterNameSet
+    ...parameterNameSet,
   ]);
   for (const statement of statementList) {
     data = concatCollectData(
@@ -587,7 +587,7 @@ const collectInStatement = (
     case "Continue":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
 
     case "VariableDefinition":
@@ -608,7 +608,7 @@ const collectInStatement = (
     case "FunctionDefinition": {
       let data: data.UsedNameAndModulePathSet = {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
       const parameterNameSet: Set<identifer.Identifer> = new Set();
       for (const parameter of statement.functionDefinition.parameterList) {
@@ -699,7 +699,7 @@ const collectInStatement = (
     case "Break":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set()
+        usedNameSet: new Set(),
       };
 
     case "Switch": {
@@ -748,7 +748,7 @@ const checkVariableIsDefinedOrThrow = (
       (variableName as string) +
       " スコープ内に存在している変数 =[ " +
       localVariableNameSetList
-        .map(scope => "[" + [...scope].join(",") + "]")
+        .map((scope) => "[" + [...scope].join(",") + "]")
         .join(",") +
       " ]" +
       "ファイルの直下に存在している変数 =" +
@@ -770,7 +770,7 @@ const collectInType = (
 ): data.UsedNameAndModulePathSet => {
   let data: data.UsedNameAndModulePathSet = {
     modulePathSet: new Set(),
-    usedNameSet: new Set()
+    usedNameSet: new Set(),
   };
   switch (type_._) {
     case "Number":
@@ -832,7 +832,7 @@ const collectInType = (
     case "ImportedType":
       return {
         modulePathSet: new Set([type_.moduleName]),
-        usedNameSet: new Set([type_.name])
+        usedNameSet: new Set([type_.name]),
       };
 
     case "ScopeInFile":
@@ -843,13 +843,13 @@ const collectInType = (
       );
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([type_.name])
+        usedNameSet: new Set([type_.name]),
       };
 
     case "ScopeInGlobal":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([type_.name])
+        usedNameSet: new Set([type_.name]),
       };
 
     case "StringLiteral":
@@ -877,7 +877,7 @@ const checkTypeIsDefinedOrThrow = (
       (typeName as string) +
       " 存在している変数 =[ " +
       typeParameterSetList
-        .map(scope => "[ " + [...scope].join(",") + " ]")
+        .map((scope) => "[ " + [...scope].join(",") + " ]")
         .join(",") +
       "]" +
       "ファイルの直下に存在している型 =[ " +
@@ -893,11 +893,11 @@ const concatCollectData = (
   return {
     modulePathSet: new Set([
       ...collectDataA.modulePathSet,
-      ...collectDataB.modulePathSet
+      ...collectDataB.modulePathSet,
     ]),
     usedNameSet: new Set([
       ...collectDataA.usedNameSet,
-      ...collectDataB.usedNameSet
-    ])
+      ...collectDataB.usedNameSet,
+    ]),
   };
 };

@@ -23,7 +23,7 @@ export const generateCodeAsString = (
   return toString.toString(
     code,
     {
-      importedModuleNameIdentiferMap: importedModuleNameMap
+      importedModuleNameIdentiferMap: importedModuleNameMap,
     },
     codeType
   );
@@ -50,6 +50,6 @@ const createImportedModuleName = (
   }
   return {
     importedModuleNameMap,
-    nextIdentiferIndex: identiferIndex
+    nextIdentiferIndex: identiferIndex,
   };
 };

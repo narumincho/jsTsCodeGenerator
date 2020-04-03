@@ -105,7 +105,7 @@ const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
   "undefined",
   "top",
   "closed",
-  "self"
+  "self",
 ]);
 
 /**
@@ -133,7 +133,7 @@ export const createIdentifer = (
     }
     return {
       identifer: result as Identifer,
-      nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex
+      nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex,
     };
   }
 };

@@ -20,20 +20,20 @@ describe("test", () => {
           {
             name: identifer.fromString("request"),
             document: "expressのリクエスト",
-            type_: expressRequest
+            type_: expressRequest,
           },
           {
             name: identifer.fromString("response"),
             document: "expressのレスポンス",
-            type_: expressResponse
-          }
+            type_: expressResponse,
+          },
         ],
         document: "ミドルウェア",
         returnType: data.typeVoid,
-        statementList: []
-      })
+        statementList: [],
+      }),
     ],
-    statementList: []
+    statementList: [],
   };
   const nodeJsTypeScriptCode = generator.generateCodeAsString(
     sampleCode,
@@ -59,10 +59,10 @@ describe("test", () => {
             typeParameterList: [],
             parameterList: [],
             returnType: data.typeVoid,
-            statementList: []
-          })
+            statementList: [],
+          }),
         ],
-        statementList: []
+        statementList: [],
       },
       "TypeScript"
     );
@@ -80,10 +80,10 @@ describe("test", () => {
             typeParameterList: [],
             parameterList: [],
             returnType: data.typeVoid,
-            statementList: []
-          })
+            statementList: [],
+          }),
         ],
-        statementList: []
+        statementList: [],
       },
       "TypeScript"
     );
@@ -120,10 +120,10 @@ describe("test", () => {
 
           改行
           "ダブルクオーテーション"
-  `)
-        })
+  `),
+        }),
       ],
-      statementList: []
+      statementList: [],
     };
     const codeAsString = generator.generateCodeAsString(
       nodeJsCode,
@@ -148,7 +148,7 @@ describe("test", () => {
               type_: data.typeImported(
                 "express",
                 identifer.fromString("Request")
-              )
+              ),
             },
             {
               name: identifer.fromString("response"),
@@ -156,8 +156,8 @@ describe("test", () => {
               type_: data.typeImported(
                 "express",
                 identifer.fromString("Response")
-              )
-            }
+              ),
+            },
           ],
           returnType: data.typeVoid,
           statementList: [
@@ -191,16 +191,16 @@ describe("test", () => {
                     "setHeader",
                     [
                       data.stringLiteral("content-type"),
-                      data.stringLiteral("text/html")
+                      data.stringLiteral("text/html"),
                     ]
                   )
-                )
+                ),
               ]
-            )
-          ]
-        })
+            ),
+          ],
+        }),
       ],
-      statementList: []
+      statementList: [],
     };
     const code = generator.generateCodeAsString(nodeJsCode, "TypeScript");
     console.log(code);
@@ -218,8 +218,8 @@ describe("test", () => {
               {
                 name: identifer.fromString("array"),
                 document: "Uint8Array",
-                type_: data.uint8ArrayType
-              }
+                type_: data.uint8ArrayType,
+              },
             ],
             returnType: data.typeNumber,
             statementList: [
@@ -228,11 +228,11 @@ describe("test", () => {
                   data.variable(identifer.fromString("array")),
                   data.numberLiteral(0)
                 )
-              )
-            ]
-          })
+              ),
+            ],
+          }),
         ],
-        statementList: []
+        statementList: [],
       },
       "TypeScript"
     );
@@ -248,8 +248,8 @@ describe("test", () => {
           data.typeString,
           data.stringLiteral("それな")
         ),
-        data.consoleLog(data.variable(identifer.fromString("sorena")))
-      ]
+        data.consoleLog(data.variable(identifer.fromString("sorena"))),
+      ],
     },
     "JavaScript"
   );
@@ -271,10 +271,10 @@ describe("test", () => {
             typeParameterList: [],
             parameterList: [],
             returnType: data.promiseType(data.typeString),
-            statementList: []
-          })
+            statementList: [],
+          }),
         ],
-        statementList: []
+        statementList: [],
       },
       "TypeScript"
     );
@@ -289,10 +289,10 @@ describe("test", () => {
           data.statementEvaluateExpr(
             data.objectLiteral([
               data.memberKeyValue("abc", data.numberLiteral(3)),
-              data.memberKeyValue("a b c", data.stringLiteral("separated"))
+              data.memberKeyValue("a b c", data.stringLiteral("separated")),
             ])
-          )
-        ]
+          ),
+        ],
       },
       "TypeScript"
     );
@@ -327,8 +327,8 @@ describe("test", () => {
                 data.addition(data.numberLiteral(7), data.numberLiteral(8))
               )
             )
-          )
-        ]
+          ),
+        ],
       },
       "JavaScript"
     );
@@ -347,20 +347,20 @@ describe("test", () => {
             returnType: data.typeObject(
               new Map([
                 ["name", { type_: data.typeString, document: "" }],
-                ["age", { type_: data.typeNumber, document: "" }]
+                ["age", { type_: data.typeNumber, document: "" }],
               ])
             ),
             statementList: [
               data.statementReturn(
                 data.objectLiteral([
                   data.memberKeyValue("name", data.stringLiteral("mac")),
-                  data.memberKeyValue("age", data.numberLiteral(10))
+                  data.memberKeyValue("age", data.numberLiteral(10)),
                 ])
-              )
-            ]
-          })
+              ),
+            ],
+          }),
         ],
-        statementList: []
+        statementList: [],
       },
       "TypeScript"
     );
@@ -379,8 +379,8 @@ describe("test", () => {
             data.numberLiteral(10)
           ),
           data.statementSet(data.variable(v), null, data.numberLiteral(30)),
-          data.statementSet(data.variable(v), "+", data.numberLiteral(1))
-        ]
+          data.statementSet(data.variable(v), "+", data.numberLiteral(1)),
+        ],
       },
       "TypeScript"
     );
@@ -400,14 +400,14 @@ describe("test", () => {
               expr: data.arrayLiteral([
                 { expr: data.numberLiteral(3), spread: false },
                 { expr: data.numberLiteral(4), spread: false },
-                { expr: data.numberLiteral(5), spread: false }
+                { expr: data.numberLiteral(5), spread: false },
               ]),
-              spread: true
-            }
+              spread: true,
+            },
           ]),
           [data.consoleLog(data.variable(identifer.fromString("element")))]
-        )
-      ]
+        ),
+      ],
     };
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
@@ -421,7 +421,7 @@ describe("test", () => {
           document: "Result型",
           parameterList: [
             identifer.fromString("error"),
-            identifer.fromString("ok")
+            identifer.fromString("ok"),
           ],
           type_: data.typeUnion([
             data.typeObject(
@@ -431,16 +431,16 @@ describe("test", () => {
                   "ok",
                   {
                     type_: data.typeScopeInGlobal(identifer.fromString("ok")),
-                    document: ""
-                  }
-                ]
+                    document: "",
+                  },
+                ],
               ])
             ),
             data.typeObject(
               new Map([
                 [
                   "_",
-                  { type_: data.typeStringLiteral("Error"), document: "Error" }
+                  { type_: data.typeStringLiteral("Error"), document: "Error" },
                 ],
                 [
                   "error",
@@ -448,19 +448,19 @@ describe("test", () => {
                     type_: data.typeScopeInGlobal(
                       identifer.fromString("error")
                     ),
-                    document: ""
-                  }
-                ]
+                    document: "",
+                  },
+                ],
               ])
-            )
-          ])
+            ),
+          ]),
         }),
         data.definitionFunction({
           name: identifer.fromString("switchSample"),
           document: "switch文のテスト",
           typeParameterList: [
             identifer.fromString("ok"),
-            identifer.fromString("error")
+            identifer.fromString("error"),
           ],
           parameterList: [
             {
@@ -470,10 +470,10 @@ describe("test", () => {
                 data.typeScopeInGlobal(identifer.fromString("Result")),
                 [
                   data.typeScopeInGlobal(identifer.fromString("ok")),
-                  data.typeScopeInGlobal(identifer.fromString("error"))
+                  data.typeScopeInGlobal(identifer.fromString("error")),
                 ]
-              )
-            }
+              ),
+            },
           ],
           returnType: data.typeString,
           statementList: [
@@ -492,8 +492,8 @@ describe("test", () => {
                         "toString",
                         []
                       )
-                    )
-                  ]
+                    ),
+                  ],
                 },
                 {
                   caseTag: "Error",
@@ -507,15 +507,15 @@ describe("test", () => {
                         "toString",
                         []
                       )
-                    )
-                  ]
-                }
-              ]
-            })
-          ]
-        })
+                    ),
+                  ],
+                },
+              ],
+            }),
+          ],
+        }),
       ],
-      statementList: []
+      statementList: [],
     };
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
@@ -527,8 +527,8 @@ describe("test", () => {
       statementList: [
         data.statementEvaluateExpr(
           data.typeAssertion(data.objectLiteral([]), data.dateType)
-        )
-      ]
+        ),
+      ],
     };
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
@@ -541,10 +541,10 @@ describe("test", () => {
           name: identifer.fromString("SampleIntersectionType"),
           document: "",
           parameterList: [],
-          type_: data.typeIntersection(data.dateType, data.uint8ArrayType)
-        })
+          type_: data.typeIntersection(data.dateType, data.uint8ArrayType),
+        }),
       ],
-      statementList: []
+      statementList: [],
     };
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
@@ -563,30 +563,30 @@ describe("test", () => {
                 "a",
                 {
                   type_: data.typeString,
-                  document: ""
-                }
+                  document: "",
+                },
               ],
               [
                 "b",
                 {
                   type_: data.typeNumber,
-                  document: ""
-                }
-              ]
+                  document: "",
+                },
+              ],
             ])
           ),
           data.objectLiteral([
             data.memberKeyValue("a", data.stringLiteral("aValue")),
-            data.memberKeyValue("b", data.numberLiteral(123))
+            data.memberKeyValue("b", data.numberLiteral(123)),
           ])
         ),
         data.consoleLog(
           data.objectLiteral([
             data.memberSpread(data.variable(identifer.fromString("value"))),
-            data.memberKeyValue("b", data.numberLiteral(987))
+            data.memberKeyValue("b", data.numberLiteral(987)),
           ])
-        )
-      ]
+        ),
+      ],
     };
     const codeAsString = generator.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);

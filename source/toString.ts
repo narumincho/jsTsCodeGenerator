@@ -19,7 +19,7 @@ export const toString = (
 
   const definitionCode =
     code.exportDefinitionList
-      .map(definition =>
+      .map((definition) =>
         definitionToString(definition, collectedData, codeType)
       )
       .join("") + "\n";
@@ -88,13 +88,13 @@ const functionToString = (
       ? ""
       : "<" +
         function_.typeParameterList
-          .map(typeParameter => typeParameter as string)
+          .map((typeParameter) => typeParameter as string)
           .join(", ") +
         ">") +
     "(" +
     function_.parameterList
       .map(
-        parameter =>
+        (parameter) =>
           (parameter.name as string) +
           ": " +
           typeToString(parameter.type_, collectedData)
@@ -132,7 +132,7 @@ const documentToString = (document: string): string => {
     : "/**\n" +
         documentTrimmed
           .split("\n")
-          .map(line => (line === "" ? " *" : " * " + line))
+          .map((line) => (line === "" ? " *" : " * " + line))
           .join("\n") +
         "\n */\n";
 };
@@ -144,7 +144,7 @@ const parameterListToDocument = (
     ? ""
     : "\n" +
       parameterList
-        .map(parameter =>
+        .map((parameter) =>
           parameter.document === ""
             ? ""
             : "@param " + (parameter.name as string) + " " + parameter.document
@@ -205,7 +205,7 @@ const exprToString = (
         "[" +
         expr.itemList
           .map(
-            item =>
+            (item) =>
               (item.spread ? "..." : "") +
               exprToString(item.expr, indent, collectedData, codeType)
           )
@@ -273,7 +273,7 @@ const exprToString = (
         "(" +
         expr.parameterList
           .map(
-            o =>
+            (o) =>
               (o.name as string) +
               typeAnnotation(o.type_, codeType, collectedData)
           )
@@ -330,7 +330,7 @@ const exprToString = (
         ) +
         "(" +
         expr.parameterList
-          .map(e => exprToString(e, indent, collectedData, codeType))
+          .map((e) => exprToString(e, indent, collectedData, codeType))
           .join(", ") +
         ")"
       );
@@ -347,7 +347,7 @@ const exprToString = (
         ) +
         "(" +
         expr.parameterList
-          .map(e => exprToString(e, indent, collectedData, codeType))
+          .map((e) => exprToString(e, indent, collectedData, codeType))
           .join(", ") +
         ")"
       );
@@ -370,7 +370,7 @@ const objectLiteralToString = (
   return (
     "{ " +
     memberList
-      .map(member => {
+      .map((member) => {
         switch (member._) {
           case "Spread":
             return (
@@ -447,7 +447,7 @@ const binaryOperatorExprToString = (
     _: "BinaryOperator",
     operator,
     left,
-    right
+    right,
   });
   const leftExprCombineStrength = exprCombineStrength(left);
   const rightExprCombineStrength = exprCombineStrength(right);
@@ -558,7 +558,7 @@ export const statementListToString = (
 ): string =>
   "{\n" +
   statementList
-    .map(statement =>
+    .map((statement) =>
       statementToTypeScriptCodeAsString(
         statement,
         indent + 1,
@@ -728,7 +728,7 @@ const functionDefinitionToString = (
     "(" +
     functionDefinition.parameterList
       .map(
-        parameter =>
+        (parameter) =>
           (parameter.name as string) +
           typeAnnotation(parameter.type_, codeType, collectedData)
       )
@@ -762,7 +762,7 @@ const switchToString = (
     ") {\n" +
     switch_.patternList
       .map(
-        pattern =>
+        (pattern) =>
           caseIndentString +
           "case " +
           stringLiteralValueToString(pattern.caseTag) +
@@ -799,7 +799,7 @@ const functionTypeToString = (
     index = indexAndIdentifer.nextIdentiferIndex;
     parameterList.push({
       name: indexAndIdentifer.identifer,
-      type_: parameter
+      type_: parameter,
     });
   }
 
@@ -807,7 +807,7 @@ const functionTypeToString = (
     "(" +
     parameterList
       .map(
-        parameter =>
+        (parameter) =>
           parameter.name + ": " + typeToString(parameter.type_, collectedData)
       )
       .join(", ") +
@@ -892,7 +892,7 @@ export const typeToString = (
 
     case "Union":
       return type_.types
-        .map(type_ => typeToString(type_, collectedData))
+        .map((type_) => typeToString(type_, collectedData))
         .join(" | ");
 
     case "Intersection":
@@ -907,7 +907,7 @@ export const typeToString = (
         typeToString(type_.type_, collectedData) +
         "<" +
         type_.typeParameterList
-          .map(type_ => typeToString(type_, collectedData))
+          .map((type_) => typeToString(type_, collectedData))
           .join(", ") +
         ">"
       );
