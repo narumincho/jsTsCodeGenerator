@@ -877,7 +877,10 @@ export const typeToString = (
         [...type_.memberList.entries()]
           .map(
             ([name, typeAndDocument]) =>
-              name + ": " + typeToString(typeAndDocument.type_, collectedData)
+              documentToString(typeAndDocument.document) +
+              name +
+              ": " +
+              typeToString(typeAndDocument.type_, collectedData)
           )
           .join("; ") +
         " }"
