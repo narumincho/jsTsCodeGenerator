@@ -592,4 +592,40 @@ describe("test", () => {
     console.log(codeAsString);
     expect(codeAsString).toMatch(/{ *\.\.\.value *, *b: 987 }/);
   });
+
+  it("type property document", () => {
+    const code: data.Code = {
+      exportDefinitionList: [
+        data.definitionTypeAlias({
+          name: identifer.fromString("Time"),
+          document: "初期のDefinyで使う時間の内部表現",
+          parameterList: [],
+          type_: data.typeObject(
+            new Map([
+              [
+                "day",
+                {
+                  type_: data.typeNumber,
+                  document:
+                    "1970-01-01からの経過日数. マイナスになることもある",
+                },
+              ],
+              [
+                "millisecond",
+                {
+                  type_: data.typeNumber,
+                  document:
+                    "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
+                },
+              ],
+            ])
+          ),
+        }),
+      ],
+      statementList: [],
+    };
+    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    console.log(codeAsString);
+    expect(codeAsString).toMatch(/日にちの中のミリ秒. 0 to 86399999/);
+  });
 });
