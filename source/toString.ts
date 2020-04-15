@@ -129,7 +129,7 @@ const documentToString = (document: string): string => {
   const documentTrimmed = document.trim();
   return documentTrimmed === ""
     ? ""
-    : "/**\n" +
+    : "\n/**\n" +
         documentTrimmed
           .split("\n")
           .map((line) => (line === "" ? " *" : " * " + line))
