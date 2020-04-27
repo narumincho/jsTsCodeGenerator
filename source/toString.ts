@@ -878,6 +878,7 @@ export const typeToString = (
           .map(
             ([name, typeAndDocument]) =>
               documentToString(typeAndDocument.document) +
+              "readonly " +
               name +
               ": " +
               typeToString(typeAndDocument.type_, collectedData)
