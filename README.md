@@ -5,12 +5,13 @@
 
 ## コンセプト
 
-[Definy](https://github.com/narumincho/Definy) や [call-on-http](https://github.com/narumincho/call-on-http) で TypeScript, JavaScript のコードを生成したかったので作った。
+[Definy](https://github.com/narumincho/Definy) や [@narumincho/type](https://github.com/narumincho/type) で TypeScript, JavaScript のコードを生成したかったので作った。
 
 - 入力値は, 構造化されているので TypeScript の AST(抽象構文木)とは違う
 - 出力した形式は人間にも読みやすい
 - Node.js でもブラウザでも動く
-- 入力のコードにはある程度の制限がかかる (全てには対応しない)
+- 予約語はあまり気にしなくていい
+- 対応している構文は一部だけ
 
 ## sample code サンプルコード
 
@@ -97,9 +98,6 @@ export const middleware = (request: a.Request, response: a.Response): void => {
 
 ## 対応する形式
 
-- Node.js 向けの TypeScript (call-on-http)
-- ブラウザ向けの TypeScript (call-on-http, Definy)
-- ブラウザ向けの JavaScript (Definy の基本のコンパイルターゲット)
-- 両対応の JavaScript+d.ts (Definy の npm パッケージとして公開する機能)
-
-## npm へリリースするときは master ブランチに Release 0.0.1 のようなコミットメッセージをつければリリースされる
+- Node.js 向けの TypeScript
+- ブラウザ 向けの TypeScript
+- ブラウザ向けの JavaScript
