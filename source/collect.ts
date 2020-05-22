@@ -3,6 +3,7 @@ import * as identifer from "./identifer";
 
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
+ * @throws コードにエラーが見つかった
  */
 export const collectInCode = (
   code: data.Code
@@ -14,17 +15,9 @@ export const collectInCode = (
     rootScopeVariableName: new Set(),
   });
 
-  let scanData: data.UsedNameAndModulePathSet = {
-    usedNameSet: new Set(),
-    modulePathSet: new Set(),
-  };
-  for (const definition of code.exportDefinitionList) {
-    scanData = concatCollectData(
-      scanData,
-      collectInDefinition(definition, rootScopeIdentiferSet)
-    );
-  }
-  return scanData;
+  return collectList(code.exportDefinitionList, (definition) =>
+    collectInDefinition(definition, rootScopeIdentiferSet)
+  );
 };
 
 type RootScopeIdentiferSet = {
@@ -141,10 +134,6 @@ const collectInFunctionDefinition = (
   function_: data.Function,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
-  let collectData: data.UsedNameAndModulePathSet = {
-    modulePathSet: new Set(),
-    usedNameSet: new Set([function_.name]),
-  };
   const parameterNameSet: Set<identifer.Identifer> = new Set();
   for (const parameter of function_.parameterList) {
     if (parameterNameSet.has(parameter.name)) {
@@ -155,32 +144,34 @@ const collectInFunctionDefinition = (
           (function_.name as string)
       );
     }
-    parameterNameSet.add(parameter.name);
-    collectData = concatCollectData(
-      collectData,
+  }
+  return concatCollectData(
+    concatCollectData(
       concatCollectData(
         {
-          usedNameSet: new Set([parameter.name]),
           modulePathSet: new Set(),
+          usedNameSet: new Set([function_.name]),
         },
-        collectInType(
-          parameter.type_,
-          rootScopeIdentiferSet.rootScopeTypeNameSet,
-          [new Set(function_.typeParameterList)]
+        collectList(function_.parameterList, (parameter) =>
+          concatCollectData(
+            {
+              usedNameSet: new Set([parameter.name]),
+              modulePathSet: new Set(),
+            },
+            collectInType(
+              parameter.type_,
+              rootScopeIdentiferSet.rootScopeTypeNameSet,
+              [new Set(function_.typeParameterList)]
+            )
+          )
         )
+      ),
+      collectInType(
+        function_.returnType,
+        rootScopeIdentiferSet.rootScopeTypeNameSet,
+        [new Set(function_.typeParameterList)]
       )
-    );
-  }
-  collectData = concatCollectData(
-    collectData,
-    collectInType(
-      function_.returnType,
-      rootScopeIdentiferSet.rootScopeTypeNameSet,
-      [new Set(function_.typeParameterList)]
-    )
-  );
-  collectData = concatCollectData(
-    collectData,
+    ),
     collectStatementList(
       function_.statementList,
       [],
@@ -189,28 +180,26 @@ const collectInFunctionDefinition = (
       parameterNameSet
     )
   );
-  return collectData;
 };
 
 const collectInVariableDefinition = (
   variable: data.Variable,
   rootScopeIdentiferSet: RootScopeIdentiferSet
-): data.UsedNameAndModulePathSet => {
-  let collectData: data.UsedNameAndModulePathSet = {
-    modulePathSet: new Set(),
-    usedNameSet: new Set([variable.name]),
-  };
-  collectData = concatCollectData(
-    collectData,
-    collectInType(variable.type_, rootScopeIdentiferSet.rootScopeTypeNameSet, [
-      new Set(),
-    ])
-  );
-  return concatCollectData(
-    collectData,
+): data.UsedNameAndModulePathSet =>
+  concatCollectData(
+    concatCollectData(
+      {
+        modulePathSet: new Set(),
+        usedNameSet: new Set([variable.name]),
+      },
+      collectInType(
+        variable.type_,
+        rootScopeIdentiferSet.rootScopeTypeNameSet,
+        [new Set()]
+      )
+    ),
     collectInExpr(variable.expr, [], [], rootScopeIdentiferSet)
   );
-};
 
 /**
  * グローバルで使われているものを収集したり、インポートしているものを収集する
@@ -768,10 +757,6 @@ const collectInType = (
   rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>
 ): data.UsedNameAndModulePathSet => {
-  let data: data.UsedNameAndModulePathSet = {
-    modulePathSet: new Set(),
-    usedNameSet: new Set(),
-  };
   switch (type_._) {
     case "Number":
     case "String":
@@ -780,48 +765,36 @@ const collectInType = (
     case "Null":
     case "Never":
     case "Void":
-      return data;
+      return {
+        modulePathSet: new Set(),
+        usedNameSet: new Set(),
+      };
 
     case "Object":
-      for (const [, value] of type_.memberList) {
-        collectInType(value.type_, rootScopeTypeNameSet, typeParameterSetList);
-      }
-      return data;
+      return collectList([...type_.memberDict], ([, value]) =>
+        collectInType(value.type_, rootScopeTypeNameSet, typeParameterSetList)
+      );
 
     case "Function":
-      for (const parameter of type_.parameterList) {
-        data = concatCollectData(
-          data,
+      return concatCollectData(
+        collectList(type_.parameterList, (parameter) =>
           collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
-        );
-      }
-      data = concatCollectData(
-        data,
+        ),
         collectInType(type_.return, rootScopeTypeNameSet, typeParameterSetList)
       );
-      return data;
 
     case "WithTypeParameter":
-      data = concatCollectData(
-        data,
-        collectInType(type_.type_, rootScopeTypeNameSet, typeParameterSetList)
-      );
-      for (const parameter of type_.typeParameterList) {
-        data = concatCollectData(
-          data,
+      return concatCollectData(
+        collectInType(type_.type_, rootScopeTypeNameSet, typeParameterSetList),
+        collectList(type_.typeParameterList, (parameter) =>
           collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
-        );
-      }
-      return data;
+        )
+      );
 
     case "Union":
-      for (const oneType of type_.types) {
-        data = concatCollectData(
-          data,
-          collectInType(oneType, rootScopeTypeNameSet, typeParameterSetList)
-        );
-      }
-      return data;
+      return collectList(type_.types, (oneType) =>
+        collectInType(oneType, rootScopeTypeNameSet, typeParameterSetList)
+      );
 
     case "Intersection":
       return concatCollectData(
@@ -853,7 +826,10 @@ const collectInType = (
       };
 
     case "StringLiteral":
-      return data;
+      return {
+        modulePathSet: new Set(),
+        usedNameSet: new Set(),
+      };
   }
 };
 
@@ -899,5 +875,26 @@ const concatCollectData = (
       ...collectDataA.usedNameSet,
       ...collectDataB.usedNameSet,
     ]),
+  };
+};
+
+const collectList = <element>(
+  list: ReadonlyArray<element>,
+  collectFunc: (element: element) => data.UsedNameAndModulePathSet
+): data.UsedNameAndModulePathSet => {
+  const modulePathSet: Set<string> = new Set();
+  const usedNameSet: Set<identifer.Identifer> = new Set();
+  for (const element of list) {
+    const result = collectFunc(element);
+    for (const path of result.modulePathSet) {
+      modulePathSet.add(path);
+    }
+    for (const name of result.usedNameSet) {
+      usedNameSet.add(name);
+    }
+  }
+  return {
+    modulePathSet,
+    usedNameSet,
   };
 };

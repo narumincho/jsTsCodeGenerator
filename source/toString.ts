@@ -164,7 +164,7 @@ export const lambdaBodyToString = (
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === "Return") {
     return exprToStringWithCombineStrength(
-      data.lambda([], data.typeVoid, []),
+      data.lambda([], [], data.typeVoid, []),
       statementList[0].expr,
       indent,
       collectedData,
@@ -874,7 +874,7 @@ export const typeToString = (
     case "Object":
       return (
         "{ " +
-        [...type_.memberList.entries()]
+        [...type_.memberDict.entries()]
           .map(
             ([name, typeAndDocument]) =>
               documentToString(typeAndDocument.document) +

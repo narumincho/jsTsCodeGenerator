@@ -85,11 +85,9 @@ export type Variable = {
  * モジュールの識別子を作るのに使う
  */
 export type UsedNameAndModulePathSet = {
-  readonly usedNameSet: Set<identifer.Identifer>;
-  readonly modulePathSet: Set<string>;
+  readonly usedNameSet: ReadonlySet<identifer.Identifer>;
+  readonly modulePathSet: ReadonlySet<string>;
 };
-
-export type ModulePathOrName = string & { _modulePathOrName: never };
 
 /**
  * モジュールの識別子の辞書
@@ -164,6 +162,7 @@ export type Expr =
   | {
       _: "Lambda";
       parameterList: ReadonlyArray<Parameter>;
+      typeParameterList: ReadonlyArray<identifer.Identifer>;
       returnType: Type;
       statementList: ReadonlyArray<Statement>;
     }
@@ -309,7 +308,7 @@ export type Type =
   | { _: "Void" }
   | {
       _: "Object";
-      memberList: Map<string, { type_: Type; document: string }>;
+      memberDict: Map<string, { type_: Type; document: string }>;
     }
   | {
       _: "Function";
@@ -670,17 +669,20 @@ export const memberKeyValue = (key: string, value: Expr): Member => ({
 
 /**
  * ラムダ式
- * @param parameter パラメーター
- * @param returnType 戻り値
+ * @param parameterList パラメーター
+ * @param typeParameterList 型パラメーター
+ * @param returnType 戻り値の型
  * @param statementList 本体
  */
 export const lambda = (
   parameterList: ReadonlyArray<Parameter>,
+  typeParameterList: ReadonlyArray<identifer.Identifer>,
   returnType: Type,
   statementList: ReadonlyArray<Statement>
 ): Expr => ({
   _: "Lambda",
   parameterList,
+  typeParameterList,
   returnType,
   statementList,
 });
@@ -1126,7 +1128,7 @@ export const typeObject = (
   memberList: Map<string, { type_: Type; document: string }>
 ): Type => ({
   _: "Object",
-  memberList: memberList,
+  memberDict: memberList,
 });
 
 /**
