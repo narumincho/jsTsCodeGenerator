@@ -3,6 +3,7 @@ import * as identifer from "./identifer";
 
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
+ * コードのエラーもチェックする
  * @throws コードにエラーが見つかった
  */
 export const collectInCode = (

@@ -119,7 +119,7 @@ export const initialIdentiferIndex = 0 as IdentiferIndex;
 /**
  * 識別子を生成する
  * @param identiferIndex 識別子を生成するインデックス
- * @param reserved 言語の予約語と別に
+ * @param reserved 言語の予約語と別に使わない識別子
  */
 export const createIdentifer = (
   identiferIndex: IdentiferIndex,

@@ -14,19 +14,22 @@ export const generateCodeAsString = (
   const usedNameAndModulePath: data.UsedNameAndModulePathSet = collect.collectInCode(
     code
   );
-  // インポートしたモジュールの名前空間識別子を当てはめる
-  const importedModuleNameMap = createImportedModuleName(
-    usedNameAndModulePath,
-    identifer.initialIdentiferIndex
-  );
 
-  return toString.toString(code, importedModuleNameMap, codeType);
+  return toString.toString(
+    code,
+    createImportedModuleName(usedNameAndModulePath),
+    codeType
+  );
 };
 
+/**
+ * 使われている名前, モジュールのパスから, モジュールのパスとnamed importの識別子のMapを生成する
+ * @param usedNameAndModulePath
+ */
 const createImportedModuleName = (
-  usedNameAndModulePath: data.UsedNameAndModulePathSet,
-  identiferIndex: identifer.IdentiferIndex
+  usedNameAndModulePath: data.UsedNameAndModulePathSet
 ): ReadonlyMap<string, identifer.Identifer> => {
+  let identiferIndex = identifer.initialIdentiferIndex;
   const importedModuleNameMap = new Map<string, identifer.Identifer>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
