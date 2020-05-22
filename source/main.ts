@@ -15,27 +15,18 @@ export const generateCodeAsString = (
     code
   );
   // インポートしたモジュールの名前空間識別子を当てはめる
-  const { importedModuleNameMap } = createImportedModuleName(
+  const importedModuleNameMap = createImportedModuleName(
     usedNameAndModulePath,
     identifer.initialIdentiferIndex
   );
 
-  return toString.toString(
-    code,
-    {
-      importedModuleNameIdentiferMap: importedModuleNameMap,
-    },
-    codeType
-  );
+  return toString.toString(code, importedModuleNameMap, codeType);
 };
 
 const createImportedModuleName = (
   usedNameAndModulePath: data.UsedNameAndModulePathSet,
   identiferIndex: identifer.IdentiferIndex
-): {
-  importedModuleNameMap: Map<string, identifer.Identifer>;
-  nextIdentiferIndex: identifer.IdentiferIndex;
-} => {
+): ReadonlyMap<string, identifer.Identifer> => {
   const importedModuleNameMap = new Map<string, identifer.Identifer>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
@@ -48,8 +39,5 @@ const createImportedModuleName = (
     );
     identiferIndex = identiferAndNextIdentiferIndex.nextIdentiferIndex;
   }
-  return {
-    importedModuleNameMap,
-    nextIdentiferIndex: identiferIndex,
-  };
+  return importedModuleNameMap;
 };

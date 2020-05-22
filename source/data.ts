@@ -89,13 +89,6 @@ export type UsedNameAndModulePathSet = {
   readonly modulePathSet: ReadonlySet<string>;
 };
 
-/**
- * モジュールの識別子の辞書
- */
-export type CollectedData = {
-  importedModuleNameIdentiferMap: ReadonlyMap<string, identifer.Identifer>;
-};
-
 export type UnaryOperator = "-" | "~" | "!";
 
 export type BinaryOperator =

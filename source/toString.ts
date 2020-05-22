@@ -3,14 +3,17 @@ import * as data from "./data";
 
 /**
  * コードを文字列にする
+ * @param code コードを表すデータ
+ * @param moduleMap モジュールの名をnamed importで使う名前
+ * @param codeType JavaScriptかTypeScriptか
  */
 export const toString = (
   code: data.Code,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   const importCode =
-    [...collectedData.importedModuleNameIdentiferMap.entries()]
+    [...moduleMap.entries()]
       .map(
         ([name, identifer]) =>
           "import * as " + (identifer as string) + ' from "' + name + '";'
@@ -19,15 +22,13 @@ export const toString = (
 
   const definitionCode =
     code.exportDefinitionList
-      .map((definition) =>
-        definitionToString(definition, collectedData, codeType)
-      )
+      .map((definition) => definitionToString(definition, moduleMap, codeType))
       .join("") + "\n";
 
   const statementCode = statementListToString(
     code.statementList,
     0,
-    collectedData,
+    moduleMap,
     codeType
   );
 
@@ -39,7 +40,7 @@ export const toString = (
 
 const definitionToString = (
   definition: data.Definition,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   switch (definition._) {
@@ -47,19 +48,19 @@ const definitionToString = (
       if (codeType === "JavaScript") {
         return "";
       }
-      return typeAliasToString(definition.typeAlias, collectedData);
+      return typeAliasToString(definition.typeAlias, moduleMap);
 
     case "Function":
-      return functionToString(definition.function_, collectedData, codeType);
+      return functionToString(definition.function_, moduleMap, codeType);
 
     case "Variable":
-      return variableToString(definition.variable, collectedData, codeType);
+      return variableToString(definition.variable, moduleMap, codeType);
   }
 };
 
 const typeAliasToString = (
   typeAlias: data.TypeAlias,
-  collectedData: data.CollectedData
+  moduleMap: ReadonlyMap<string, identifer.Identifer>
 ): string => {
   return (
     documentToString(typeAlias.document) +
@@ -67,14 +68,14 @@ const typeAliasToString = (
     (typeAlias.name as string) +
     typeParameterListToString(typeAlias.parameterList) +
     " = " +
-    typeToString(typeAlias.type_, collectedData) +
+    typeToString(typeAlias.type_, moduleMap) +
     ";\n\n"
   );
 };
 
 const functionToString = (
   function_: data.Function,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   return (
@@ -97,20 +98,20 @@ const functionToString = (
         (parameter) =>
           (parameter.name as string) +
           ": " +
-          typeToString(parameter.type_, collectedData)
+          typeToString(parameter.type_, moduleMap)
       )
       .join(", ") +
     "): " +
-    typeToString(function_.returnType, collectedData) +
+    typeToString(function_.returnType, moduleMap) +
     " => " +
-    lambdaBodyToString(function_.statementList, 0, collectedData, codeType) +
+    lambdaBodyToString(function_.statementList, 0, moduleMap, codeType) +
     ";\n\n"
   );
 };
 
 const variableToString = (
   variable: data.Variable,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   return (
@@ -118,9 +119,9 @@ const variableToString = (
     "export const " +
     (variable.name as string) +
     ": " +
-    typeToString(variable.type_, collectedData) +
+    typeToString(variable.type_, moduleMap) +
     " = " +
-    exprToString(variable.expr, 0, collectedData, codeType) +
+    exprToString(variable.expr, 0, moduleMap, codeType) +
     ";\n\n"
   );
 };
@@ -159,7 +160,7 @@ const parameterListToDocument = (
 export const lambdaBodyToString = (
   statementList: ReadonlyArray<data.Statement>,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === "Return") {
@@ -167,11 +168,11 @@ export const lambdaBodyToString = (
       data.lambda([], [], data.typeVoid, []),
       statementList[0].expr,
       indent,
-      collectedData,
+      moduleMap,
       codeType
     );
   }
-  return statementListToString(statementList, indent, collectedData, codeType);
+  return statementListToString(statementList, indent, moduleMap, codeType);
 };
 
 /**
@@ -181,7 +182,7 @@ export const lambdaBodyToString = (
 const exprToString = (
   expr: data.Expr,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   switch (expr._) {
@@ -207,7 +208,7 @@ const exprToString = (
           .map(
             (item) =>
               (item.spread ? "..." : "") +
-              exprToString(item.expr, indent, collectedData, codeType)
+              exprToString(item.expr, indent, moduleMap, codeType)
           )
           .join(", ") +
         "]"
@@ -217,7 +218,7 @@ const exprToString = (
       return objectLiteralToString(
         expr.memberList,
         indent,
-        collectedData,
+        moduleMap,
         codeType
       );
 
@@ -228,7 +229,7 @@ const exprToString = (
           expr,
           expr.expr,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         )
       );
@@ -238,7 +239,7 @@ const exprToString = (
         expr.left,
         expr.right,
         indent,
-        collectedData,
+        moduleMap,
         codeType
       );
     case "ConditionalOperator":
@@ -247,7 +248,7 @@ const exprToString = (
           expr,
           expr.condition,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         ) +
         "?" +
@@ -255,7 +256,7 @@ const exprToString = (
           expr,
           expr.thenExpr,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         ) +
         ":" +
@@ -263,7 +264,7 @@ const exprToString = (
           expr,
           expr.elseExpr,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         )
       );
@@ -274,14 +275,13 @@ const exprToString = (
         expr.parameterList
           .map(
             (o) =>
-              (o.name as string) +
-              typeAnnotation(o.type_, codeType, collectedData)
+              (o.name as string) + typeAnnotation(o.type_, codeType, moduleMap)
           )
           .join(", ") +
         ")" +
-        typeAnnotation(expr.returnType, codeType, collectedData) +
+        typeAnnotation(expr.returnType, codeType, moduleMap) +
         " => " +
-        lambdaBodyToString(expr.statementList, indent, collectedData, codeType)
+        lambdaBodyToString(expr.statementList, indent, moduleMap, codeType)
       );
 
     case "Variable":
@@ -291,9 +291,7 @@ const exprToString = (
       return expr.name;
 
     case "ImportedVariable": {
-      const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
-        expr.moduleName
-      );
+      const nameSpaceIdentifer = moduleMap.get(expr.moduleName);
       if (nameSpaceIdentifer === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" + expr.moduleName
@@ -308,14 +306,14 @@ const exprToString = (
           expr,
           expr.expr,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         ) +
         (expr.propertyName._ === "StringLiteral" &&
         identifer.isIdentifer(expr.propertyName.value)
           ? "." + expr.propertyName.value
           : "[" +
-            exprToString(expr.propertyName, indent, collectedData, codeType) +
+            exprToString(expr.propertyName, indent, moduleMap, codeType) +
             "]")
       );
 
@@ -325,12 +323,12 @@ const exprToString = (
           expr,
           expr.expr,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         ) +
         "(" +
         expr.parameterList
-          .map((e) => exprToString(e, indent, collectedData, codeType))
+          .map((e) => exprToString(e, indent, moduleMap, codeType))
           .join(", ") +
         ")"
       );
@@ -342,21 +340,21 @@ const exprToString = (
           expr,
           expr.expr,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         ) +
         "(" +
         expr.parameterList
-          .map((e) => exprToString(e, indent, collectedData, codeType))
+          .map((e) => exprToString(e, indent, moduleMap, codeType))
           .join(", ") +
         ")"
       );
 
     case "TypeAssertion":
       return (
-        exprToString(expr.expr, indent, collectedData, codeType) +
+        exprToString(expr.expr, indent, moduleMap, codeType) +
         " as " +
-        typeToString(expr.type_, collectedData)
+        typeToString(expr.type_, moduleMap)
       );
   }
 };
@@ -364,7 +362,7 @@ const exprToString = (
 const objectLiteralToString = (
   memberList: ReadonlyArray<data.Member>,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   return (
@@ -374,7 +372,7 @@ const objectLiteralToString = (
         switch (member._) {
           case "Spread":
             return (
-              "..." + exprToString(member.expr, indent, collectedData, codeType)
+              "..." + exprToString(member.expr, indent, moduleMap, codeType)
             );
           case "KeyValue":
             return (
@@ -382,7 +380,7 @@ const objectLiteralToString = (
                 ? member.key
                 : stringLiteralValueToString(member.key)) +
               ": " +
-              exprToString(member.value, indent, collectedData, codeType)
+              exprToString(member.value, indent, moduleMap, codeType)
             );
         }
       })
@@ -440,7 +438,7 @@ const binaryOperatorExprToString = (
   left: data.Expr,
   right: data.Expr,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
@@ -457,16 +455,16 @@ const binaryOperatorExprToString = (
     (operatorExprCombineStrength > leftExprCombineStrength ||
     (operatorExprCombineStrength === leftExprCombineStrength &&
       associativity === "RightToLeft")
-      ? "(" + exprToString(left, indent, collectedData, codeType) + ")"
-      : exprToString(left, indent, collectedData, codeType)) +
+      ? "(" + exprToString(left, indent, moduleMap, codeType) + ")"
+      : exprToString(left, indent, moduleMap, codeType)) +
     " " +
     operator +
     " " +
     (operatorExprCombineStrength > rightExprCombineStrength ||
     (operatorExprCombineStrength === rightExprCombineStrength &&
       associativity === "LeftToRight")
-      ? "(" + exprToString(right, indent, collectedData, codeType) + ")"
-      : exprToString(right, indent, collectedData, codeType))
+      ? "(" + exprToString(right, indent, moduleMap, codeType) + ")"
+      : exprToString(right, indent, moduleMap, codeType))
   );
 };
 
@@ -474,13 +472,14 @@ const exprToStringWithCombineStrength = (
   expr: data.Expr,
   target: data.Expr,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
+  const text = exprToString(target, indent, moduleMap, codeType);
   if (exprCombineStrength(expr) > exprCombineStrength(target)) {
-    return "(" + exprToString(target, indent, collectedData, codeType) + ")";
+    return "(" + text + ")";
   }
-  return exprToString(target, indent, collectedData, codeType);
+  return text;
 };
 
 const exprCombineStrength = (expr: data.Expr): number => {
@@ -553,7 +552,7 @@ const binaryOperatorCombineStrength = (
 export const statementListToString = (
   statementList: ReadonlyArray<data.Statement>,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string =>
   "{\n" +
@@ -562,7 +561,7 @@ export const statementListToString = (
       statementToTypeScriptCodeAsString(
         statement,
         indent + 1,
-        collectedData,
+        moduleMap,
         codeType
       )
     )
@@ -578,7 +577,7 @@ export const statementListToString = (
 const statementToTypeScriptCodeAsString = (
   statement: data.Statement,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   const indentString = indentNumberToString(indent);
@@ -586,18 +585,18 @@ const statementToTypeScriptCodeAsString = (
     case "EvaluateExpr":
       return (
         indentString +
-        exprToString(statement.expr, indent, collectedData, codeType) +
+        exprToString(statement.expr, indent, moduleMap, codeType) +
         ";"
       );
 
     case "Set":
       return (
         indentString +
-        exprToString(statement.targetObject, indent, collectedData, codeType) +
+        exprToString(statement.targetObject, indent, moduleMap, codeType) +
         " " +
         (statement.operator === null ? "" : statement.operator) +
         "= " +
-        exprToString(statement.expr, indent, collectedData, codeType) +
+        exprToString(statement.expr, indent, moduleMap, codeType) +
         ";"
       );
 
@@ -605,12 +604,12 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "if (" +
-        exprToString(statement.condition, indent, collectedData, codeType) +
+        exprToString(statement.condition, indent, moduleMap, codeType) +
         ") " +
         statementListToString(
           statement.thenStatementList,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         )
       );
@@ -619,7 +618,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "throw new Error(" +
-        exprToString(statement.errorMessage, indent, collectedData, codeType) +
+        exprToString(statement.errorMessage, indent, moduleMap, codeType) +
         ");"
       );
 
@@ -627,7 +626,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "return " +
-        exprToString(statement.expr, indent, collectedData, codeType) +
+        exprToString(statement.expr, indent, moduleMap, codeType) +
         ";"
       );
 
@@ -643,9 +642,9 @@ const statementToTypeScriptCodeAsString = (
         (statement.isConst ? "const" : "let") +
         " " +
         (statement.name as string) +
-        typeAnnotation(statement.type_, codeType, collectedData) +
+        typeAnnotation(statement.type_, codeType, moduleMap) +
         " = " +
-        exprToString(statement.expr, indent, collectedData, codeType) +
+        exprToString(statement.expr, indent, moduleMap, codeType) +
         ";"
       );
 
@@ -653,7 +652,7 @@ const statementToTypeScriptCodeAsString = (
       return functionDefinitionToString(
         statement.functionDefinition,
         indent,
-        collectedData,
+        moduleMap,
         codeType
       );
 
@@ -665,14 +664,14 @@ const statementToTypeScriptCodeAsString = (
         " = 0; " +
         (statement.counterVariableName as string) +
         " < " +
-        exprToString(statement.untilExpr, indent, collectedData, codeType) +
+        exprToString(statement.untilExpr, indent, moduleMap, codeType) +
         "; " +
         (statement.counterVariableName as string) +
         " += 1)" +
         statementListToString(
           statement.statementList,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         )
       );
@@ -683,12 +682,12 @@ const statementToTypeScriptCodeAsString = (
         "for (const " +
         (statement.elementVariableName as string) +
         " of " +
-        exprToString(statement.iterableExpr, indent, collectedData, codeType) +
+        exprToString(statement.iterableExpr, indent, moduleMap, codeType) +
         ")" +
         statementListToString(
           statement.statementList,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         )
       );
@@ -700,7 +699,7 @@ const statementToTypeScriptCodeAsString = (
         statementListToString(
           statement.statementList,
           indent,
-          collectedData,
+          moduleMap,
           codeType
         )
       );
@@ -709,14 +708,14 @@ const statementToTypeScriptCodeAsString = (
       return indentString + "break;";
 
     case "Switch":
-      return switchToString(statement.switch_, indent, collectedData, codeType);
+      return switchToString(statement.switch_, indent, moduleMap, codeType);
   }
 };
 
 const functionDefinitionToString = (
   functionDefinition: data.FunctionDefinition,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   return (
@@ -730,16 +729,16 @@ const functionDefinitionToString = (
       .map(
         (parameter) =>
           (parameter.name as string) +
-          typeAnnotation(parameter.type_, codeType, collectedData)
+          typeAnnotation(parameter.type_, codeType, moduleMap)
       )
       .join(", ") +
     ")" +
-    typeAnnotation(functionDefinition.returnType, codeType, collectedData) +
+    typeAnnotation(functionDefinition.returnType, codeType, moduleMap) +
     " => " +
     lambdaBodyToString(
       functionDefinition.statementList,
       indent,
-      collectedData,
+      moduleMap,
       codeType
     ) +
     ";"
@@ -749,7 +748,7 @@ const functionDefinitionToString = (
 const switchToString = (
   switch_: data.Switch,
   indent: number,
-  collectedData: data.CollectedData,
+  moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
   const indentString = indentNumberToString(indent);
@@ -758,7 +757,7 @@ const switchToString = (
   return (
     indentString +
     "switch (" +
-    exprToString(switch_.expr, indent, collectedData, codeType) +
+    exprToString(switch_.expr, indent, moduleMap, codeType) +
     ") {\n" +
     switch_.patternList
       .map(
@@ -770,7 +769,7 @@ const switchToString = (
           statementListToString(
             pattern.statementList,
             caseIndentNumber,
-            collectedData,
+            moduleMap,
             codeType
           )
       )
@@ -787,7 +786,7 @@ const indentNumberToString = (indent: number): string => "  ".repeat(indent);
 const functionTypeToString = (
   parameterTypeList: ReadonlyArray<data.Type>,
   returnType: data.Type,
-  collectedData: data.CollectedData
+  moduleMap: ReadonlyMap<string, identifer.Identifer>
 ): string => {
   let index = identifer.initialIdentiferIndex;
   const parameterList: Array<{
@@ -808,11 +807,11 @@ const functionTypeToString = (
     parameterList
       .map(
         (parameter) =>
-          parameter.name + ": " + typeToString(parameter.type_, collectedData)
+          parameter.name + ": " + typeToString(parameter.type_, moduleMap)
       )
       .join(", ") +
     ") => " +
-    typeToString(returnType, collectedData)
+    typeToString(returnType, moduleMap)
   );
 };
 
@@ -831,13 +830,13 @@ const typeParameterListToString = (
 const typeAnnotation = (
   type_: data.Type,
   codeType: data.CodeType,
-  collectedData: data.CollectedData
+  moduleMap: ReadonlyMap<string, identifer.Identifer>
 ): string => {
   switch (codeType) {
     case "JavaScript":
       return "";
     case "TypeScript":
-      return ": " + typeToString(type_, collectedData);
+      return ": " + typeToString(type_, moduleMap);
   }
 };
 
@@ -847,7 +846,7 @@ const typeAnnotation = (
  */
 export const typeToString = (
   type_: data.Type,
-  collectedData: data.CollectedData
+  moduleMap: ReadonlyMap<string, identifer.Identifer>
 ): string => {
   switch (type_._) {
     case "Number":
@@ -881,37 +880,33 @@ export const typeToString = (
               "readonly " +
               name +
               ": " +
-              typeToString(typeAndDocument.type_, collectedData)
+              typeToString(typeAndDocument.type_, moduleMap)
           )
           .join("; ") +
         " }"
       );
 
     case "Function":
-      return functionTypeToString(
-        type_.parameterList,
-        type_.return,
-        collectedData
-      );
+      return functionTypeToString(type_.parameterList, type_.return, moduleMap);
 
     case "Union":
       return type_.types
-        .map((type_) => typeToString(type_, collectedData))
+        .map((type_) => typeToString(type_, moduleMap))
         .join(" | ");
 
     case "Intersection":
       return (
-        typeToString(type_.left, collectedData) +
+        typeToString(type_.left, moduleMap) +
         " & " +
-        typeToString(type_.right, collectedData)
+        typeToString(type_.right, moduleMap)
       );
 
     case "WithTypeParameter":
       return (
-        typeToString(type_.type_, collectedData) +
+        typeToString(type_.type_, moduleMap) +
         "<" +
         type_.typeParameterList
-          .map((type_) => typeToString(type_, collectedData))
+          .map((type_) => typeToString(type_, moduleMap))
           .join(", ") +
         ">"
       );
@@ -923,9 +918,7 @@ export const typeToString = (
       return type_.name;
 
     case "ImportedType": {
-      const nameSpaceIdentifer = collectedData.importedModuleNameIdentiferMap.get(
-        type_.moduleName
-      );
+      const nameSpaceIdentifer = moduleMap.get(type_.moduleName);
       if (nameSpaceIdentifer === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" + type_.moduleName
