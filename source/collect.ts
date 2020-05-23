@@ -1,5 +1,6 @@
 import * as data from "./data";
-import * as identifer from "./identifer";
+import { Identifer } from "./identifer";
+import { identifer } from "./main";
 
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
@@ -19,8 +20,8 @@ export const collectInCode = (
 };
 
 type RootScopeIdentiferSet = {
-  rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>;
-  rootScopeVariableName: ReadonlySet<identifer.Identifer>;
+  rootScopeTypeNameSet: ReadonlySet<Identifer>;
+  rootScopeVariableName: ReadonlySet<Identifer>;
 };
 
 /**
@@ -30,8 +31,8 @@ type RootScopeIdentiferSet = {
 const collectRootScopeIdentifer = (
   definitionList: ReadonlyArray<data.Definition>
 ): RootScopeIdentiferSet => {
-  const typeNameSet: Set<identifer.Identifer> = new Set();
-  const variableNameSet: Set<identifer.Identifer> = new Set();
+  const typeNameSet: Set<Identifer> = new Set();
+  const variableNameSet: Set<Identifer> = new Set();
   for (const definition of definitionList) {
     switch (definition._) {
       case "TypeAlias":
@@ -46,7 +47,7 @@ const collectRootScopeIdentifer = (
       case "Function":
         if (variableNameSet.has(definition.function_.name)) {
           throw new Error(
-            "Duplicate function name. name=" +
+            "Duplicate export function name. name=" +
               (definition.function_.name as string)
           );
         }
@@ -55,7 +56,7 @@ const collectRootScopeIdentifer = (
       case "Variable":
         if (variableNameSet.has(definition.variable.name)) {
           throw new Error(
-            "Duplicate variable name. name=" +
+            "Duplicate export variable name. name=" +
               (definition.variable.name as string)
           );
         }
@@ -94,7 +95,7 @@ const collectInDefinition = (
 
 const collectInTypeAlias = (
   typeAlias: data.TypeAlias,
-  rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>
+  rootScopeTypeNameSet: ReadonlySet<Identifer>
 ): data.UsedNameAndModulePathSet => {
   return concatCollectData(
     {
@@ -108,20 +109,17 @@ const collectInTypeAlias = (
 };
 
 const collectInFunctionDefinition = (
-  function_: data.Function,
+  function_: data.Function_,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
-  const parameterNameSet: Set<identifer.Identifer> = new Set();
-  for (const parameter of function_.parameterList) {
-    if (parameterNameSet.has(parameter.name)) {
-      throw new Error(
-        "外部に公開する関数のパラメーター名が重複しています parameterName=" +
-          (parameter.name as string) +
-          " exportFunctionName=" +
-          (function_.name as string)
-      );
-    }
-  }
+  const parameterNameSet = checkDuplicateIdentifer(
+    "export function parameter name",
+    function_.parameterList.map((parameter) => parameter.name)
+  );
+  const typeParameterNameSet = checkDuplicateIdentifer(
+    "export function type parameter name",
+    function_.typeParameterList
+  );
   return concatCollectData(
     concatCollectData(
       concatCollectData(
@@ -138,7 +136,7 @@ const collectInFunctionDefinition = (
             collectInType(
               parameter.type_,
               rootScopeIdentiferSet.rootScopeTypeNameSet,
-              [new Set(function_.typeParameterList)]
+              [typeParameterNameSet]
             )
           )
         )
@@ -146,13 +144,13 @@ const collectInFunctionDefinition = (
       collectInType(
         function_.returnType,
         rootScopeIdentiferSet.rootScopeTypeNameSet,
-        [new Set(function_.typeParameterList)]
+        [typeParameterNameSet]
       )
     ),
     collectStatementList(
       function_.statementList,
       [],
-      [new Set(function_.typeParameterList)],
+      [typeParameterNameSet],
       rootScopeIdentiferSet,
       parameterNameSet
     )
@@ -185,8 +183,8 @@ const collectInVariableDefinition = (
  */
 const collectInExpr = (
   expr: data.Expr,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<Identifer>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<Identifer>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
   switch (expr._) {
@@ -278,16 +276,16 @@ const collectInExpr = (
       });
 
     case "Lambda": {
-      const parameterNameSet: Set<identifer.Identifer> = new Set();
-      for (const oneParameter of expr.parameterList) {
-        if (parameterNameSet.has(oneParameter.name)) {
-          throw new Error(
-            "Duplicate lambda parameter name. parameterName=" +
-              (oneParameter.name as string)
-          );
-        }
-        parameterNameSet.add(oneParameter.name);
-      }
+      const parameterNameSet = checkDuplicateIdentifer(
+        "lambda parameter name",
+        expr.parameterList.map((parameter) => parameter.name)
+      );
+      const newTypeParameterSetList = typeParameterSetList.concat(
+        checkDuplicateIdentifer(
+          "lambda type paramter name",
+          expr.typeParameterList
+        )
+      );
 
       return concatCollectData(
         concatCollectData(
@@ -300,20 +298,20 @@ const collectInExpr = (
               collectInType(
                 oneParameter.type_,
                 rootScopeIdentiferSet.rootScopeTypeNameSet,
-                typeParameterSetList
+                newTypeParameterSetList
               )
             )
           ),
           collectInType(
             expr.returnType,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            typeParameterSetList
+            newTypeParameterSetList
           )
         ),
         collectStatementList(
           expr.statementList,
           localVariableNameSetList,
-          typeParameterSetList,
+          newTypeParameterSetList,
           rootScopeIdentiferSet,
           parameterNameSet
         )
@@ -415,10 +413,10 @@ const collectInExpr = (
 
 const collectStatementList = (
   statementList: ReadonlyArray<data.Statement>,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<Identifer>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<Identifer>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet,
-  parameterNameSet: ReadonlySet<identifer.Identifer>
+  parameterNameSet: ReadonlySet<Identifer>
 ): data.UsedNameAndModulePathSet => {
   const newLocalVariableNameSetList = localVariableNameSetList.concat(
     new Set([...parameterNameSet, ...collectNameInStatement(statementList)])
@@ -435,8 +433,8 @@ const collectStatementList = (
 
 const collectNameInStatement = (
   statementList: ReadonlyArray<data.Statement>
-): Set<identifer.Identifer> => {
-  const identiferSet: Set<identifer.Identifer> = new Set();
+): Set<Identifer> => {
+  const identiferSet: Set<Identifer> = new Set();
   for (const statement of statementList) {
     switch (statement._) {
       case "VariableDefinition":
@@ -451,8 +449,8 @@ const collectNameInStatement = (
 
 const collectInStatement = (
   statement: data.Statement,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<Identifer>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<Identifer>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
   switch (statement._) {
@@ -536,41 +534,36 @@ const collectInStatement = (
       );
 
     case "FunctionDefinition": {
-      const parameterNameSet: Set<identifer.Identifer> = new Set();
-      for (const parameter of statement.functionDefinition.parameterList) {
-        if (parameterNameSet.has(parameter.name)) {
-          throw new Error(
-            "ローカル内での関数定義のパラメーター名が重複しています parameterName=" +
-              (parameter.name as string)
-          );
-        }
-        parameterNameSet.add(parameter.name);
-      }
-
+      const parameterNameSet = checkDuplicateIdentifer(
+        "local function parameter name",
+        statement.functionDefinition.parameterList.map(
+          (parameter) => parameter.name
+        )
+      );
+      const newTypeParameterSetList = typeParameterSetList.concat(
+        checkDuplicateIdentifer(
+          "local function type parameter name",
+          statement.functionDefinition.typeParameterList
+        )
+      );
       return concatCollectData(
         collectList(statement.functionDefinition.parameterList, (parameter) =>
           collectInType(
             parameter.type_,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            typeParameterSetList.concat(
-              new Set(statement.functionDefinition.typeParameterList)
-            )
+            newTypeParameterSetList
           )
         ),
         concatCollectData(
           collectInType(
             statement.functionDefinition.returnType,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
-            typeParameterSetList.concat(
-              new Set(statement.functionDefinition.typeParameterList)
-            )
+            newTypeParameterSetList
           ),
           collectStatementList(
             statement.functionDefinition.statementList,
             localVariableNameSetList,
-            typeParameterSetList.concat(
-              new Set(statement.functionDefinition.typeParameterList)
-            ),
+            newTypeParameterSetList,
             rootScopeIdentiferSet,
             parameterNameSet
           )
@@ -649,8 +642,8 @@ const collectInStatement = (
 
 const checkVariableIsDefinedOrThrow = (
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  rootScopeNameSet: ReadonlySet<identifer.Identifer>,
-  variableName: identifer.Identifer
+  rootScopeNameSet: ReadonlySet<Identifer>,
+  variableName: Identifer
 ): void => {
   for (let i = 0; i < localVariableNameSetList.length; i++) {
     if (
@@ -686,8 +679,8 @@ const checkVariableIsDefinedOrThrow = (
  */
 const collectInType = (
   type_: data.Type,
-  rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>
+  rootScopeTypeNameSet: ReadonlySet<Identifer>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<Identifer>>
 ): data.UsedNameAndModulePathSet => {
   switch (type_._) {
     case "Number":
@@ -766,9 +759,9 @@ const collectInType = (
 };
 
 const checkTypeIsDefinedOrThrow = (
-  rootScopeTypeNameSet: ReadonlySet<identifer.Identifer>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<identifer.Identifer>>,
-  typeName: identifer.Identifer
+  rootScopeTypeNameSet: ReadonlySet<Identifer>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<Identifer>>,
+  typeName: Identifer
 ): void => {
   for (let i = 0; i < typeParameterSetList.length; i++) {
     if (
@@ -815,7 +808,7 @@ const collectList = <element>(
   collectFunc: (element: element) => data.UsedNameAndModulePathSet
 ): data.UsedNameAndModulePathSet => {
   const modulePathSet: Set<string> = new Set();
-  const usedNameSet: Set<identifer.Identifer> = new Set();
+  const usedNameSet: Set<Identifer> = new Set();
   for (const element of list) {
     const result = collectFunc(element);
     for (const path of result.modulePathSet) {
@@ -829,4 +822,25 @@ const collectList = <element>(
     modulePathSet,
     usedNameSet,
   };
+};
+
+/**
+ * 識別子の重複を調べる
+ * @param name エラーメッセージに使う.何の識別子を表すか
+ * @param identiferList 識別子のリスト
+ */
+const checkDuplicateIdentifer = (
+  name: string,
+  identiferList: ReadonlyArray<Identifer>
+): ReadonlySet<Identifer> => {
+  const set: Set<identifer.Identifer> = new Set();
+  for (const identifer of identiferList) {
+    if (set.has(identifer)) {
+      throw new Error(
+        "Duplicate " + name + ". name = " + (identifer as string)
+      );
+    }
+    set.add(identifer);
+  }
+  return set;
 };

@@ -24,7 +24,7 @@ export type Definition =
   | { _: "TypeAlias"; typeAlias: TypeAlias }
   | {
       _: "Function";
-      function_: Function;
+      function_: Function_;
     }
   | {
       _: "Variable";
@@ -36,7 +36,7 @@ export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
   typeAlias,
 });
 
-export const definitionFunction = (function_: Function): Definition => ({
+export const definitionFunction = (function_: Function_): Definition => ({
   _: "Function",
   function_,
 });
@@ -53,7 +53,7 @@ export type TypeAlias = {
   readonly type_: Type;
 };
 
-export type Function = {
+export type Function_ = {
   readonly name: identifer.Identifer;
   readonly document: string;
   readonly typeParameterList: ReadonlyArray<identifer.Identifer>;

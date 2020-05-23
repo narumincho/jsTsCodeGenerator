@@ -51,10 +51,10 @@ const definitionToString = (
       return typeAliasToString(definition.typeAlias, moduleMap);
 
     case "Function":
-      return functionToString(definition.function_, moduleMap, codeType);
+      return exportFunctionToString(definition.function_, moduleMap, codeType);
 
     case "Variable":
-      return variableToString(definition.variable, moduleMap, codeType);
+      return exportVariableToString(definition.variable, moduleMap, codeType);
   }
 };
 
@@ -73,8 +73,8 @@ const typeAliasToString = (
   );
 };
 
-const functionToString = (
-  function_: data.Function,
+const exportFunctionToString = (
+  function_: data.Function_,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
 ): string => {
@@ -85,13 +85,7 @@ const functionToString = (
     "export const " +
     (function_.name as string) +
     " = " +
-    (function_.typeParameterList.length === 0
-      ? ""
-      : "<" +
-        function_.typeParameterList
-          .map((typeParameter) => typeParameter as string)
-          .join(", ") +
-        ">") +
+    typeParameterListToString(function_.typeParameterList) +
     "(" +
     function_.parameterList
       .map(
@@ -109,7 +103,7 @@ const functionToString = (
   );
 };
 
-const variableToString = (
+const exportVariableToString = (
   variable: data.Variable,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
   codeType: data.CodeType
@@ -271,6 +265,7 @@ const exprToString = (
 
     case "Lambda":
       return (
+        typeParameterListToString(expr.typeParameterList) +
         "(" +
         expr.parameterList
           .map(
@@ -904,11 +899,13 @@ export const typeToString = (
     case "WithTypeParameter":
       return (
         typeToString(type_.type_, moduleMap) +
-        "<" +
-        type_.typeParameterList
-          .map((type_) => typeToString(type_, moduleMap))
-          .join(", ") +
-        ">"
+        (type_.typeParameterList.length === 0
+          ? ""
+          : "<" +
+            type_.typeParameterList
+              .map((type_) => typeToString(type_, moduleMap))
+              .join(", ") +
+            ">")
       );
 
     case "ScopeInFile":
