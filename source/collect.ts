@@ -42,6 +42,7 @@ const collectRootScopeIdentifer = (
               (definition.typeAlias.name as string)
           );
         }
+        typeNameSet.add(definition.typeAlias.name);
         continue;
 
       case "Function":
@@ -51,6 +52,7 @@ const collectRootScopeIdentifer = (
               (definition.function_.name as string)
           );
         }
+        variableNameSet.add(definition.function_.name);
         continue;
 
       case "Variable":
@@ -60,6 +62,7 @@ const collectRootScopeIdentifer = (
               (definition.variable.name as string)
           );
         }
+        variableNameSet.add(definition.variable.name);
     }
   }
   return {
