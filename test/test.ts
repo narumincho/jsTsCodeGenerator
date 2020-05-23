@@ -629,3 +629,47 @@ describe("test", () => {
     expect(codeAsString).toMatch(/日にちの中のミリ秒. 0 to 86399999/);
   });
 });
+
+it("output lambda type parameter", () => {
+  const typeParameterIdentifer = identifer.fromString("t");
+  const code: data.Code = {
+    exportDefinitionList: [],
+    statementList: [
+      data.statementEvaluateExpr(
+        data.lambda(
+          [
+            {
+              name: identifer.fromString("input"),
+              type_: data.typeScopeInFile(typeParameterIdentifer),
+            },
+          ],
+          [typeParameterIdentifer],
+          data.typeObject(
+            new Map([
+              [
+                "value",
+                {
+                  document: "",
+                  type_: data.typeScopeInFile(typeParameterIdentifer),
+                },
+              ],
+            ])
+          ),
+          [
+            data.statementReturn(
+              data.objectLiteral([
+                data.memberKeyValue(
+                  "value",
+                  data.variable(identifer.fromString("input"))
+                ),
+              ])
+            ),
+          ]
+        )
+      ),
+    ],
+  };
+  const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+  console.log(codeAsString);
+  expect(codeAsString).toMatch(/<t>\(input: t\): { readonly value: t } =>/);
+});
