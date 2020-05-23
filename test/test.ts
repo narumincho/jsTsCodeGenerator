@@ -635,7 +635,23 @@ it("output lambda type parameter", () => {
   const code: data.Code = {
     exportDefinitionList: [],
     statementList: [
-      data.statementEvaluateExpr(
+      data.statementVariableDefinition(
+        identifer.fromString("sampleFunction"),
+        data.typeFunction(
+          [typeParameterIdentifer],
+          [data.typeScopeInFile(typeParameterIdentifer)],
+          data.typeObject(
+            new Map([
+              [
+                "value",
+                {
+                  document: "",
+                  type_: data.typeScopeInFile(typeParameterIdentifer),
+                },
+              ],
+            ])
+          )
+        ),
         data.lambda(
           [
             {
