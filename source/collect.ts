@@ -703,13 +703,28 @@ const collectInType = (
         collectInType(value.type_, rootScopeTypeNameSet, typeParameterSetList)
       );
 
-    case "Function":
+    case "Function": {
+      const newTypeParameterSetList = typeParameterSetList.concat(
+        checkDuplicateIdentifer(
+          "function type, type parameter",
+          type_.typeParameterList
+        )
+      );
       return concatCollectData(
         collectList(type_.parameterList, (parameter) =>
-          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
+          collectInType(
+            parameter,
+            rootScopeTypeNameSet,
+            newTypeParameterSetList
+          )
         ),
-        collectInType(type_.return, rootScopeTypeNameSet, typeParameterSetList)
+        collectInType(
+          type_.return,
+          rootScopeTypeNameSet,
+          newTypeParameterSetList
+        )
       );
+    }
 
     case "WithTypeParameter":
       return concatCollectData(

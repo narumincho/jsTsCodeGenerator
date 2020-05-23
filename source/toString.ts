@@ -779,6 +779,7 @@ const indentNumberToString = (indent: number): string => "  ".repeat(indent);
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
+  typeParameterList: ReadonlyArray<identifer.Identifer>,
   parameterTypeList: ReadonlyArray<data.Type>,
   returnType: data.Type,
   moduleMap: ReadonlyMap<string, identifer.Identifer>
@@ -798,6 +799,7 @@ const functionTypeToString = (
   }
 
   return (
+    typeParameterListToString(typeParameterList) +
     "(" +
     parameterList
       .map(
@@ -810,6 +812,9 @@ const functionTypeToString = (
   );
 };
 
+/**
+ * 型パラメーターを文字列にする `<T>` `<ok, error>`
+ */
 const typeParameterListToString = (
   typeParameterList: ReadonlyArray<identifer.Identifer>
 ): string => {
@@ -882,7 +887,12 @@ export const typeToString = (
       );
 
     case "Function":
-      return functionTypeToString(type_.parameterList, type_.return, moduleMap);
+      return functionTypeToString(
+        type_.typeParameterList,
+        type_.parameterList,
+        type_.return,
+        moduleMap
+      );
 
     case "Union":
       return type_.types

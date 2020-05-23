@@ -305,6 +305,7 @@ export type Type =
     }
   | {
       _: "Function";
+      typeParameterList: ReadonlyArray<identifer.Identifer>;
       parameterList: ReadonlyArray<Type>;
       return: Type;
     }
@@ -1128,10 +1129,12 @@ export const typeObject = (
  * 関数 `(parameter: parameter) => returnType`
  */
 export const typeFunction = (
+  typeParameterList: ReadonlyArray<identifer.Identifer>,
   parameter: ReadonlyArray<Type>,
   returnType: Type
 ): Type => ({
   _: "Function",
+  typeParameterList: typeParameterList,
   parameterList: parameter,
   return: returnType,
 });
