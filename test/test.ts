@@ -649,6 +649,19 @@ it("output lambda type parameter", () => {
                   type_: data.typeScopeInFile(typeParameterIdentifer),
                 },
               ],
+              [
+                "s",
+                {
+                  document: "",
+                  type_: data.typeWithParameter(
+                    data.typeImported(
+                      "sampleModule",
+                      identifer.fromString("Type")
+                    ),
+                    [data.typeNumber]
+                  ),
+                },
+              ],
             ])
           )
         ),

@@ -14,8 +14,17 @@ export const collectInCode = (
     code.exportDefinitionList
   );
 
-  return collectList(code.exportDefinitionList, (definition) =>
-    collectInDefinition(definition, rootScopeIdentiferSet)
+  return concatCollectData(
+    collectList(code.exportDefinitionList, (definition) =>
+      collectInDefinition(definition, rootScopeIdentiferSet)
+    ),
+    collectStatementList(
+      code.statementList,
+      [],
+      [],
+      rootScopeIdentiferSet,
+      new Set()
+    )
   );
 };
 
