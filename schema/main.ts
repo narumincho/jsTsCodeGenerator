@@ -5,8 +5,39 @@ import { promises as fileSystem } from "fs";
 import * as prettier from "prettier";
 
 const codeTypeName = "CodeType";
+const codeName = "Code";
+const exportDefinitionName = "ExportDefinition";
+const statementName = "Statement";
+const typeAliasName = "TypeAlias";
+const functionName = "Function";
+const variableName = "Variable";
+
 const codeTypeType = data.Type.Custom({
   name: codeTypeName,
+  parameterList: [],
+});
+const codeType = data.Type.Custom({
+  name: codeName,
+  parameterList: [],
+});
+const exportDefinitionType = data.Type.Custom({
+  name: exportDefinitionName,
+  parameterList: [],
+});
+const statementType = data.Type.Custom({
+  name: statementName,
+  parameterList: [],
+});
+const typeAliasType = data.Type.Custom({
+  name: typeAliasName,
+  parameterList: [],
+});
+const functionType = data.Type.Custom({
+  name: functionName,
+  parameterList: [],
+});
+const variableType = data.Type.Custom({
+  name: variableName,
   parameterList: [],
 });
 
@@ -27,6 +58,70 @@ const customTypeDefinitionList: ReadonlyArray<data.CustomTypeDefinition> = [
         parameter: data.Maybe.Nothing(),
       },
     ]),
+  },
+  {
+    name: codeName,
+    description:
+      "TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([
+      {
+        name: "exportDefinitionList",
+        description: "外部に公開する定義",
+        type: data.Type.List(exportDefinitionType),
+      },
+      {
+        name: "statementList",
+        description: "定義した後に実行するコード",
+        type: data.Type.List(statementType),
+      },
+    ]),
+  },
+  {
+    name: exportDefinitionName,
+    description: "外部に公開する定義",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Sum([
+      {
+        name: "TypeAlias",
+        description: "TypeAlias. `export type T = {}`",
+        parameter: data.Maybe.Just(typeAliasType),
+      },
+      {
+        name: "Function",
+        description: "Function `export const f = () => {}`",
+        parameter: data.Maybe.Just(functionType),
+      },
+      {
+        name: "Variable",
+        description: "Variable `export const v = {}`",
+        parameter: data.Maybe.Just(variableType),
+      },
+    ]),
+  },
+  {
+    name: typeAliasName,
+    description: "TypeAlias. `export type T = {}`",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([]),
+  },
+  {
+    name: functionName,
+    description: "",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([]),
+  },
+  {
+    name: variableName,
+    description: "",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([]),
+  },
+  {
+    name: statementName,
+    description: "",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([]),
   },
 ];
 

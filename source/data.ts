@@ -1,14 +1,13 @@
 import * as identifer from "./identifer";
 
 /**
- * TypeScriptやJavaScriptのコードを表現する。
- * TypeScriptでも出力できるように型情報をつける必要がある
+ * TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
  */
 export type Code = {
   /**
    * 外部に公開する定義
    */
-  readonly exportDefinitionList: ReadonlyArray<Definition>;
+  readonly exportDefinitionList: ReadonlyArray<ExportDefinition>;
   /**
    * 定義した後に実行するコード
    */
@@ -16,35 +15,43 @@ export type Code = {
 };
 
 /**
- * 出力するコードの種類
+ * 外部に公開する定義
  */
-export type CodeType = "JavaScript" | "TypeScript";
+export type ExportDefinition =
+  | { readonly _: "TypeAlias"; readonly typeAlias: TypeAlias }
+  | { readonly _: "Function"; readonly function_: Function_ }
+  | { readonly _: "Variable"; readonly variable: Variable };
 
-export type Definition =
-  | { _: "TypeAlias"; typeAlias: TypeAlias }
-  | {
-      _: "Function";
-      function_: Function_;
-    }
-  | {
-      _: "Variable";
-      variable: Variable;
-    };
-
-export const definitionTypeAlias = (typeAlias: TypeAlias): Definition => ({
-  _: "TypeAlias",
-  typeAlias,
-});
-
-export const definitionFunction = (function_: Function_): Definition => ({
-  _: "Function",
-  function_,
-});
-
-export const definitionVariable = (variable: Variable): Definition => ({
-  _: "Variable",
-  variable,
-});
+/**
+ * 外部に公開する定義
+ */
+export const ExportDefinition: {
+  /**
+   * TypeAlias. `export type T = {}`
+   */
+  readonly TypeAlias: (a: TypeAlias) => ExportDefinition;
+  /**
+   * Function `export const f = () => {}`
+   */
+  readonly Function: (a: Function_) => ExportDefinition;
+  /**
+   * Variable `export const v = {}`
+   */
+  readonly Variable: (a: Variable) => ExportDefinition;
+} = {
+  TypeAlias: (typeAlias: TypeAlias): ExportDefinition => ({
+    _: "TypeAlias",
+    typeAlias: typeAlias,
+  }),
+  Function: (function_: Function_): ExportDefinition => ({
+    _: "Function",
+    function_: function_,
+  }),
+  Variable: (variable: Variable): ExportDefinition => ({
+    _: "Variable",
+    variable: variable,
+  }),
+};
 
 export type TypeAlias = {
   readonly name: identifer.Identifer;

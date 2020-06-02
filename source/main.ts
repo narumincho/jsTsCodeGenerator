@@ -1,5 +1,6 @@
 import * as collect from "./collect";
 import * as data from "./data";
+import * as newData from "./newData";
 import * as identifer from "./identifer";
 import * as toString from "./toString";
 
@@ -8,7 +9,7 @@ export { identifer };
 
 export const generateCodeAsString = (
   code: data.Code,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const usedNameAndModulePath: data.UsedNameAndModulePathSet = collect.collectInCode(

@@ -38,7 +38,7 @@ type RootScopeIdentiferSet = {
  * @throws 同名の定義があった場合
  */
 const collectRootScopeIdentifer = (
-  definitionList: ReadonlyArray<data.Definition>
+  definitionList: ReadonlyArray<data.ExportDefinition>
 ): RootScopeIdentiferSet => {
   const typeNameSet: Set<Identifer> = new Set();
   const variableNameSet: Set<Identifer> = new Set();
@@ -81,7 +81,7 @@ const collectRootScopeIdentifer = (
 };
 
 const collectInDefinition = (
-  definition: data.Definition,
+  definition: data.ExportDefinition,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): data.UsedNameAndModulePathSet => {
   switch (definition._) {

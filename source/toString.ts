@@ -1,5 +1,6 @@
 import * as identifer from "./identifer";
 import * as data from "./data";
+import * as newData from "./newData";
 
 /**
  * コードを文字列にする
@@ -10,7 +11,7 @@ import * as data from "./data";
 export const toString = (
   code: data.Code,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   const importCode =
     [...moduleMap.entries()]
@@ -39,9 +40,9 @@ export const toString = (
 };
 
 const definitionToString = (
-  definition: data.Definition,
+  definition: data.ExportDefinition,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   switch (definition._) {
     case "TypeAlias":
@@ -76,7 +77,7 @@ const typeAliasToString = (
 const exportFunctionToString = (
   function_: data.Function_,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   return (
     documentToString(
@@ -106,7 +107,7 @@ const exportFunctionToString = (
 const exportVariableToString = (
   variable: data.Variable,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   return (
     documentToString(variable.document) +
@@ -155,7 +156,7 @@ export const lambdaBodyToString = (
   statementList: ReadonlyArray<data.Statement>,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   if (statementList.length === 1 && statementList[0]._ === "Return") {
     return exprToStringWithCombineStrength(
@@ -177,7 +178,7 @@ const exprToString = (
   expr: data.Expr,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   switch (expr._) {
     case "NumberLiteral":
@@ -358,7 +359,7 @@ const objectLiteralToString = (
   memberList: ReadonlyArray<data.Member>,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   return (
     "{ " +
@@ -434,7 +435,7 @@ const binaryOperatorExprToString = (
   right: data.Expr,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
     _: "BinaryOperator",
@@ -468,7 +469,7 @@ const exprToStringWithCombineStrength = (
   target: data.Expr,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   const text = exprToString(target, indent, moduleMap, codeType);
   if (exprCombineStrength(expr) > exprCombineStrength(target)) {
@@ -548,7 +549,7 @@ export const statementListToString = (
   statementList: ReadonlyArray<data.Statement>,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string =>
   "{\n" +
   statementList
@@ -573,7 +574,7 @@ const statementToTypeScriptCodeAsString = (
   statement: data.Statement,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   const indentString = indentNumberToString(indent);
   switch (statement._) {
@@ -711,7 +712,7 @@ const functionDefinitionToString = (
   functionDefinition: data.FunctionDefinition,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   return (
     indentNumberToString(indent) +
@@ -744,7 +745,7 @@ const switchToString = (
   switch_: data.Switch,
   indent: number,
   moduleMap: ReadonlyMap<string, identifer.Identifer>,
-  codeType: data.CodeType
+  codeType: newData.CodeType
 ): string => {
   const indentString = indentNumberToString(indent);
   const caseIndentNumber = indent + 1;
@@ -829,7 +830,7 @@ const typeParameterListToString = (
  */
 const typeAnnotation = (
   type_: data.Type,
-  codeType: data.CodeType,
+  codeType: newData.CodeType,
   moduleMap: ReadonlyMap<string, identifer.Identifer>
 ): string => {
   switch (codeType) {

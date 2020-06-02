@@ -13,7 +13,7 @@ describe("test", () => {
 
   const sampleCode: data.Code = {
     exportDefinitionList: [
-      data.definitionFunction({
+      data.ExportDefinition.Function({
         name: identifer.fromString("middleware"),
         typeParameterList: [],
         parameterList: [
@@ -53,7 +53,7 @@ describe("test", () => {
     const codeAsString = generator.generateCodeAsString(
       {
         exportDefinitionList: [
-          data.definitionFunction({
+          data.ExportDefinition.Function({
             name: identifer.fromString("new"),
             document: "newという名前の関数",
             typeParameterList: [],
@@ -74,7 +74,7 @@ describe("test", () => {
     const codeAsString = generator.generateCodeAsString(
       {
         exportDefinitionList: [
-          data.definitionFunction({
+          data.ExportDefinition.Function({
             name: identifer.fromString("0name"),
             document: "0から始まる識別子",
             typeParameterList: [],
@@ -112,7 +112,7 @@ describe("test", () => {
   it("escape string literal", () => {
     const nodeJsCode: data.Code = {
       exportDefinitionList: [
-        data.definitionVariable({
+        data.ExportDefinition.Variable({
           name: identifer.fromString("stringValue"),
           document: "文字列リテラルでエスケープしているか調べる",
           type_: data.typeString,
@@ -137,7 +137,7 @@ describe("test", () => {
   it("include function parameter name", () => {
     const nodeJsCode: data.Code = {
       exportDefinitionList: [
-        data.definitionFunction({
+        data.ExportDefinition.Function({
           name: identifer.fromString("middleware"),
           document: "ミドルウェア",
           typeParameterList: [],
@@ -210,7 +210,7 @@ describe("test", () => {
     const code = generator.generateCodeAsString(
       {
         exportDefinitionList: [
-          data.definitionFunction({
+          data.ExportDefinition.Function({
             name: identifer.fromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
             typeParameterList: [],
@@ -265,7 +265,7 @@ describe("test", () => {
     const code = generator.generateCodeAsString(
       {
         exportDefinitionList: [
-          data.definitionFunction({
+          data.ExportDefinition.Function({
             name: identifer.fromString("sample"),
             document: "",
             typeParameterList: [],
@@ -339,7 +339,7 @@ describe("test", () => {
     const code = generator.generateCodeAsString(
       {
         exportDefinitionList: [
-          data.definitionFunction({
+          data.ExportDefinition.Function({
             name: identifer.fromString("returnObject"),
             document: "",
             typeParameterList: [],
@@ -416,7 +416,7 @@ describe("test", () => {
   it("switch", () => {
     const code: data.Code = {
       exportDefinitionList: [
-        data.definitionTypeAlias({
+        data.ExportDefinition.TypeAlias({
           name: identifer.fromString("Result"),
           document: "Result型",
           parameterList: [
@@ -455,7 +455,7 @@ describe("test", () => {
             ),
           ]),
         }),
-        data.definitionFunction({
+        data.ExportDefinition.Function({
           name: identifer.fromString("switchSample"),
           document: "switch文のテスト",
           typeParameterList: [
@@ -537,7 +537,7 @@ describe("test", () => {
   it("Type Intersection", () => {
     const code: data.Code = {
       exportDefinitionList: [
-        data.definitionTypeAlias({
+        data.ExportDefinition.TypeAlias({
           name: identifer.fromString("SampleIntersectionType"),
           document: "",
           parameterList: [],
@@ -596,7 +596,7 @@ describe("test", () => {
   it("type property document", () => {
     const code: data.Code = {
       exportDefinitionList: [
-        data.definitionTypeAlias({
+        data.ExportDefinition.TypeAlias({
           name: identifer.fromString("Time"),
           document: "初期のDefinyで使う時間の内部表現",
           parameterList: [],
