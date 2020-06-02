@@ -2,3 +2,4 @@ source
 test
 node_modules
 .github
+schemaJs
