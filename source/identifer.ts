@@ -15,15 +15,13 @@ export const fromString = (word: string): Identifer => {
   )
     ? word[0]
     : escapeChar(word[0]);
-
-  for (let i = 1; i < word.length; i++) {
-    result =
-      result +
-      ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
-        word[i]
-      )
-        ? word[i]
-        : escapeChar(word[i]));
+  const slicedWord = word.slice(1);
+  for (const char of slicedWord) {
+    result += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
+      char
+    )
+      ? char
+      : escapeChar(char);
   }
   if (reservedByLanguageWordSet.has(word)) {
     return (result + "_") as Identifer;
@@ -127,14 +125,13 @@ export const createIdentifer = (
 ): { identifer: Identifer; nextIdentiferIndex: IdentiferIndex } => {
   while (true) {
     const result = createIdentiferByIndex(identiferIndex);
-    if (reserved.has(result) || reservedByLanguageWordSet.has(result)) {
-      (identiferIndex as number) += 1;
-      continue;
+    if (!reserved.has(result) && !reservedByLanguageWordSet.has(result)) {
+      return {
+        identifer: result as Identifer,
+        nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex,
+      };
     }
-    return {
-      identifer: result as Identifer,
-      nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex,
-    };
+    (identiferIndex as number) += 1;
   }
 };
 
@@ -150,10 +147,10 @@ const createIdentiferByIndex = (index: number): string => {
     return headIdentiferCharTable[index];
   }
   let result = "";
-  index -= headIdentiferCharTable.length;
+  let offsetIndex = index - headIdentiferCharTable.length;
   while (true) {
-    const quotient = Math.floor(index / noHeadIdentiferCharTable.length);
-    const remainder = index % noHeadIdentiferCharTable.length;
+    const quotient = Math.floor(offsetIndex / noHeadIdentiferCharTable.length);
+    const remainder = offsetIndex % noHeadIdentiferCharTable.length;
     if (quotient < headIdentiferCharTable.length) {
       return (
         headIdentiferCharTable[quotient] +
@@ -162,7 +159,7 @@ const createIdentiferByIndex = (index: number): string => {
       );
     }
     result = noHeadIdentiferCharTable[remainder] + result;
-    index = quotient;
+    offsetIndex = quotient;
   }
 };
 
@@ -179,10 +176,11 @@ export const isIdentifer = (word: string): boolean => {
   ) {
     return false;
   }
-  for (let i = 1; i < word.length; i++) {
+  const slicedWord = word.slice(1);
+  for (const char of slicedWord) {
     if (
       !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
-        word[i]
+        char
       )
     ) {
       return false;

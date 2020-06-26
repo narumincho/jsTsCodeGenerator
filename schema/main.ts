@@ -1,8 +1,7 @@
-import * as nType from "@narumincho/type";
-import { data } from "@narumincho/type";
 import * as jsTsCodeGenerator from "../source/main";
-import { promises as fileSystem } from "fs";
 import * as prettier from "prettier";
+import { data, generateTypeScriptCode } from "@narumincho/type";
+import { promises as fileSystem } from "fs";
 
 const codeTypeName = "CodeType";
 const codeName = "Code";
@@ -127,7 +126,7 @@ const customTypeDefinitionList: ReadonlyArray<data.CustomTypeDefinition> = [
 
 const code = prettier.format(
   jsTsCodeGenerator.generateCodeAsString(
-    nType.generateTypeScriptCode(customTypeDefinitionList),
+    generateTypeScriptCode(customTypeDefinitionList),
     "TypeScript"
   ),
   {

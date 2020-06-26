@@ -822,7 +822,13 @@ const typeParameterListToString = (
   if (typeParameterList.length === 0) {
     return "";
   }
-  return "<" + typeParameterList.join(", ") + ">";
+  return (
+    "<" +
+    typeParameterList
+      .map((typeParameter) => (typeParameter as string) + " extends unknown")
+      .join(", ") +
+    ">"
+  );
 };
 
 /**

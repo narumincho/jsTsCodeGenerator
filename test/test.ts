@@ -1,5 +1,4 @@
-import * as generator from "../source/main";
-import { data, identifer } from "../source/main";
+import { data, generateCodeAsString, identifer } from "../source/main";
 
 describe("test", () => {
   const expressRequest = data.typeImported(
@@ -35,22 +34,19 @@ describe("test", () => {
     ],
     statementList: [],
   };
-  const nodeJsTypeScriptCode = generator.generateCodeAsString(
-    sampleCode,
-    "TypeScript"
-  );
+  const nodeJsTypeScriptCode = generateCodeAsString(sampleCode, "TypeScript");
   console.log(nodeJsTypeScriptCode);
   it("return string", () => {
     expect(typeof nodeJsTypeScriptCode).toBe("string");
   });
   it("include import keyword", () => {
-    expect(nodeJsTypeScriptCode).toMatch(/import/);
+    expect(nodeJsTypeScriptCode).toMatch("import");
   });
   it("include import path", () => {
     expect(nodeJsTypeScriptCode).toMatch("express");
   });
   it("not include revered word", () => {
-    const codeAsString = generator.generateCodeAsString(
+    const codeAsString = generateCodeAsString(
       {
         exportDefinitionList: [
           data.ExportDefinition.Function({
@@ -68,10 +64,10 @@ describe("test", () => {
     );
 
     console.log("new code", codeAsString);
-    expect(codeAsString).not.toMatch(/const new =/);
+    expect(codeAsString).not.toMatch(/const new =/u);
   });
   it("識別子として使えない文字は, 変更される", () => {
-    const codeAsString = generator.generateCodeAsString(
+    const codeAsString = generateCodeAsString(
       {
         exportDefinitionList: [
           data.ExportDefinition.Function({
@@ -88,13 +84,13 @@ describe("test", () => {
       "TypeScript"
     );
     console.log(codeAsString);
-    expect(codeAsString).not.toMatch(/const 0name/);
+    expect(codeAsString).not.toMatch(/const 0name/u);
   });
   it("識別子の生成で識別子に使えない文字が含まれているかどうか", () => {
     expect(() => {
       const reserved: ReadonlySet<string> = new Set();
       let index = identifer.initialIdentiferIndex;
-      for (let i = 0; i < 999; i++) {
+      for (let i = 0; i < 999; i += 1) {
         const createIdentiferResult = identifer.createIdentifer(
           index,
           reserved
@@ -125,13 +121,10 @@ describe("test", () => {
       ],
       statementList: [],
     };
-    const codeAsString = generator.generateCodeAsString(
-      nodeJsCode,
-      "TypeScript"
-    );
+    const codeAsString = generateCodeAsString(nodeJsCode, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/\\"/);
-    expect(codeAsString).toMatch(/\\n/);
+    expect(codeAsString).toMatch(/\\"/u);
+    expect(codeAsString).toMatch(/\\n/u);
   });
 
   it("include function parameter name", () => {
@@ -202,12 +195,12 @@ describe("test", () => {
       ],
       statementList: [],
     };
-    const code = generator.generateCodeAsString(nodeJsCode, "TypeScript");
+    const code = generateCodeAsString(nodeJsCode, "TypeScript");
     console.log(code);
     expect(code).toMatch("request");
   });
   it("get array index", () => {
-    const code = generator.generateCodeAsString(
+    const code = generateCodeAsString(
       {
         exportDefinitionList: [
           data.ExportDefinition.Function({
@@ -239,7 +232,7 @@ describe("test", () => {
     console.log(code);
     expect(code).toMatch("[0]");
   });
-  const scopedCode = generator.generateCodeAsString(
+  const scopedCode = generateCodeAsString(
     {
       exportDefinitionList: [],
       statementList: [
@@ -262,7 +255,7 @@ describe("test", () => {
     expect(scopedCode).not.toMatch("string");
   });
   it("type parameter", () => {
-    const code = generator.generateCodeAsString(
+    const code = generateCodeAsString(
       {
         exportDefinitionList: [
           data.ExportDefinition.Function({
@@ -282,7 +275,7 @@ describe("test", () => {
     expect(code).toMatch("Promise<string>");
   });
   it("object literal key is escaped", () => {
-    const code = generator.generateCodeAsString(
+    const code = generateCodeAsString(
       {
         exportDefinitionList: [],
         statementList: [
@@ -300,7 +293,7 @@ describe("test", () => {
     expect(code).toMatch(/"a b c"/u);
   });
   it("binary operator combine", () => {
-    const code = generator.generateCodeAsString(
+    const code = generateCodeAsString(
       {
         exportDefinitionList: [],
         statementList: [
@@ -336,7 +329,7 @@ describe("test", () => {
     expect(code).toMatch("3 * 9 + 7 * 6 === 2 + 3 + (5 + 8) === 5 * (7 + 8)");
   });
   it("object literal return need parenthesis", () => {
-    const code = generator.generateCodeAsString(
+    const code = generateCodeAsString(
       {
         exportDefinitionList: [
           data.ExportDefinition.Function({
@@ -365,11 +358,11 @@ describe("test", () => {
       "TypeScript"
     );
     console.log(code);
-    expect(code).toMatch(/\(\{.*\}\)/);
+    expect(code).toMatch(/\(\{.*\}\)/u);
   });
   it("let variable", () => {
     const v = identifer.fromString("v");
-    const code = generator.generateCodeAsString(
+    const code = generateCodeAsString(
       {
         exportDefinitionList: [],
         statementList: [
@@ -385,7 +378,7 @@ describe("test", () => {
       "TypeScript"
     );
     console.log(code);
-    expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/);
+    expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
   });
   it("for of", () => {
     const code: data.Code = {
@@ -409,9 +402,9 @@ describe("test", () => {
         ),
       ],
     };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/);
+    expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
   });
   it("switch", () => {
     const code: data.Code = {
@@ -517,9 +510,9 @@ describe("test", () => {
       ],
       statementList: [],
     };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/switch (.+) {\n +case .+:/);
+    expect(codeAsString).toMatch(/switch \(.+\) \{\n +case .+:/u);
   });
   it("Type Assertion", () => {
     const code: data.Code = {
@@ -530,9 +523,9 @@ describe("test", () => {
         ),
       ],
     };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/as Date/);
+    expect(codeAsString).toMatch(/as Date/u);
   });
   it("Type Intersection", () => {
     const code: data.Code = {
@@ -546,9 +539,9 @@ describe("test", () => {
       ],
       statementList: [],
     };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/Date & Uint8Array/);
+    expect(codeAsString).toMatch(/Date & Uint8Array/u);
   });
 
   it("object literal spread syntax", () => {
@@ -588,9 +581,9 @@ describe("test", () => {
         ),
       ],
     };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/{ *\.\.\.value *, *b: 987 }/);
+    expect(codeAsString).toMatch(/\{ *\.\.\.value *, *b: 987 \}/u);
   });
 
   it("type property document", () => {
@@ -624,9 +617,9 @@ describe("test", () => {
       ],
       statementList: [],
     };
-    const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+    const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/日にちの中のミリ秒. 0 to 86399999/);
+    expect(codeAsString).toMatch(/日にちの中のミリ秒. 0 to 86399999/u);
   });
 });
 
@@ -698,7 +691,9 @@ it("output lambda type parameter", () => {
       ),
     ],
   };
-  const codeAsString = generator.generateCodeAsString(code, "TypeScript");
+  const codeAsString = generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  expect(codeAsString).toMatch(/<t>\(input: t\): { readonly value: t } =>/);
+  expect(codeAsString).toMatch(
+    /<t extends unknown>\(input: t\): \{ readonly value: t \} =>/u
+  );
 });

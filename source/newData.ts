@@ -3,7 +3,7 @@ import * as a from "util";
 /**
  * バイナリと相互変換するための関数
  */
-export type Codec<T> = {
+export type Codec<T extends unknown> = {
   readonly encode: (a: T) => ReadonlyArray<number>;
   readonly decode: (
     a: number,
@@ -14,14 +14,14 @@ export type Codec<T> = {
 /**
  * Maybe. nullableのようなもの. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export type Maybe<value> =
+export type Maybe<value extends unknown> =
   | { readonly _: "Just"; readonly value: value }
   | { readonly _: "Nothing" };
 
 /**
  * 成功と失敗を表す型. Elmに標準で定義されているものに変換をするためにデフォルトで用意した
  */
-export type Result<ok, error> =
+export type Result<ok extends unknown, error extends unknown> =
   | { readonly _: "Ok"; readonly ok: ok }
   | { readonly _: "Error"; readonly error: error };
 
@@ -29,6 +29,39 @@ export type Result<ok, error> =
  * 出力するコードの種類
  */
 export type CodeType = "JavaScript" | "TypeScript";
+
+/**
+ * TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
+ */
+export type Code = {
+  /**
+   * 外部に公開する定義
+   */
+  readonly exportDefinitionList: ReadonlyArray<ExportDefinition>;
+  /**
+   * 定義した後に実行するコード
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * 外部に公開する定義
+ */
+export type ExportDefinition =
+  | { readonly _: "TypeAlias"; readonly typeAlias: TypeAlias }
+  | { readonly _: "Function"; readonly function_: Function }
+  | { readonly _: "Variable"; readonly variable: Variable };
+
+/**
+ * TypeAlias. `export type T = {}`
+ */
+export type TypeAlias = {};
+
+export type Function = {};
+
+export type Variable = {};
+
+export type Statement = {};
 
 /**
  * -2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う
@@ -60,8 +93,8 @@ export const Int32: {
       index: number,
       binary: Uint8Array
     ): { readonly result: number; readonly nextIndex: number } => {
-      let result = 0;
-      let offset = 0;
+      let result: number = 0;
+      let offset: number = 0;
       while (true) {
         const byte: number = binary[index + offset];
         result |= (byte & 127) << (offset * 7);
@@ -178,9 +211,11 @@ export const Binary: {
  * リスト. JavaScriptのArrayで扱う
  */
 export const List: {
-  readonly codec: <element>(a: Codec<element>) => Codec<ReadonlyArray<element>>;
+  readonly codec: <element extends unknown>(
+    a: Codec<element>
+  ) => Codec<ReadonlyArray<element>>;
 } = {
-  codec: <element>(
+  codec: <element extends unknown>(
     elementCodec: Codec<element>
   ): Codec<ReadonlyArray<element>> => ({
     encode: (value: ReadonlyArray<element>): ReadonlyArray<number> => {
@@ -283,16 +318,23 @@ export const Maybe: {
   /**
    * 値があるということ
    */
-  readonly Just: <value>(a: value) => Maybe<value>;
+  readonly Just: <value extends unknown>(a: value) => Maybe<value>;
   /**
    * 値がないということ
    */
-  readonly Nothing: <value>() => Maybe<value>;
-  readonly codec: <value>(a: Codec<value>) => Codec<Maybe<value>>;
+  readonly Nothing: <value extends unknown>() => Maybe<value>;
+  readonly codec: <value extends unknown>(
+    a: Codec<value>
+  ) => Codec<Maybe<value>>;
 } = {
-  Just: <value>(value: value): Maybe<value> => ({ _: "Just", value: value }),
-  Nothing: <value>(): Maybe<value> => ({ _: "Nothing" }),
-  codec: <value>(valueCodec: Codec<value>): Codec<Maybe<value>> => ({
+  Just: <value extends unknown>(value: value): Maybe<value> => ({
+    _: "Just",
+    value: value,
+  }),
+  Nothing: <value extends unknown>(): Maybe<value> => ({ _: "Nothing" }),
+  codec: <value extends unknown>(
+    valueCodec: Codec<value>
+  ): Codec<Maybe<value>> => ({
     encode: (value: Maybe<value>): ReadonlyArray<number> => {
       switch (value._) {
         case "Just": {
@@ -336,22 +378,27 @@ export const Result: {
   /**
    * 成功
    */
-  readonly Ok: <ok, error>(a: ok) => Result<ok, error>;
+  readonly Ok: <ok extends unknown, error extends unknown>(
+    a: ok
+  ) => Result<ok, error>;
   /**
    * 失敗
    */
-  readonly Error: <ok, error>(a: error) => Result<ok, error>;
-  readonly codec: <ok, error>(
+  readonly Error: <ok extends unknown, error extends unknown>(
+    a: error
+  ) => Result<ok, error>;
+  readonly codec: <ok extends unknown, error extends unknown>(
     a: Codec<ok>,
     b: Codec<error>
   ) => Codec<Result<ok, error>>;
 } = {
-  Ok: <ok, error>(ok: ok): Result<ok, error> => ({ _: "Ok", ok: ok }),
-  Error: <ok, error>(error: error): Result<ok, error> => ({
-    _: "Error",
-    error: error,
-  }),
-  codec: <ok, error>(
+  Ok: <ok extends unknown, error extends unknown>(
+    ok: ok
+  ): Result<ok, error> => ({ _: "Ok", ok: ok }),
+  Error: <ok extends unknown, error extends unknown>(
+    error: error
+  ): Result<ok, error> => ({ _: "Error", error: error }),
+  codec: <ok extends unknown, error extends unknown>(
     okCodec: Codec<ok>,
     errorCodec: Codec<error>
   ): Codec<Result<ok, error>> => ({
@@ -447,5 +494,182 @@ export const CodeType: {
       }
       throw new Error("存在しないパターンを指定された 型を更新してください");
     },
+  },
+};
+
+/**
+ * TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
+ */
+export const Code: { readonly codec: Codec<Code> } = {
+  codec: {
+    encode: (value: Code): ReadonlyArray<number> =>
+      List.codec(ExportDefinition.codec)
+        .encode(value.exportDefinitionList)
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Code; readonly nextIndex: number } => {
+      const exportDefinitionListAndNextIndex: {
+        readonly result: ReadonlyArray<ExportDefinition>;
+        readonly nextIndex: number;
+      } = List.codec(ExportDefinition.codec).decode(index, binary);
+      const statementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        exportDefinitionListAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          exportDefinitionList: exportDefinitionListAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 外部に公開する定義
+ */
+export const ExportDefinition: {
+  /**
+   * TypeAlias. `export type T = {}`
+   */
+  readonly TypeAlias: (a: TypeAlias) => ExportDefinition;
+  /**
+   * Function `export const f = () => {}`
+   */
+  readonly Function: (a: Function) => ExportDefinition;
+  /**
+   * Variable `export const v = {}`
+   */
+  readonly Variable: (a: Variable) => ExportDefinition;
+  readonly codec: Codec<ExportDefinition>;
+} = {
+  TypeAlias: (typeAlias: TypeAlias): ExportDefinition => ({
+    _: "TypeAlias",
+    typeAlias: typeAlias,
+  }),
+  Function: (function_: Function): ExportDefinition => ({
+    _: "Function",
+    function_: function_,
+  }),
+  Variable: (variable: Variable): ExportDefinition => ({
+    _: "Variable",
+    variable: variable,
+  }),
+  codec: {
+    encode: (value: ExportDefinition): ReadonlyArray<number> => {
+      switch (value._) {
+        case "TypeAlias": {
+          return [0].concat(TypeAlias.codec.encode(value.typeAlias));
+        }
+        case "Function": {
+          return [1].concat(Function.codec.encode(value.function_));
+        }
+        case "Variable": {
+          return [2].concat(Variable.codec.encode(value.variable));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ExportDefinition; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: TypeAlias;
+          readonly nextIndex: number;
+        } = TypeAlias.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: ExportDefinition.TypeAlias(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        const result: {
+          readonly result: Function;
+          readonly nextIndex: number;
+        } = Function.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: ExportDefinition.Function(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 2) {
+        const result: {
+          readonly result: Variable;
+          readonly nextIndex: number;
+        } = Variable.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: ExportDefinition.Variable(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * TypeAlias. `export type T = {}`
+ */
+export const TypeAlias: { readonly codec: Codec<TypeAlias> } = {
+  codec: {
+    encode: (value: TypeAlias): ReadonlyArray<number> => [],
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: TypeAlias; readonly nextIndex: number } => ({
+      result: {},
+      nextIndex: index,
+    }),
+  },
+};
+
+export const Function: { readonly codec: Codec<Function> } = {
+  codec: {
+    encode: (value: Function): ReadonlyArray<number> => [],
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Function; readonly nextIndex: number } => ({
+      result: {},
+      nextIndex: index,
+    }),
+  },
+};
+
+export const Variable: { readonly codec: Codec<Variable> } = {
+  codec: {
+    encode: (value: Variable): ReadonlyArray<number> => [],
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Variable; readonly nextIndex: number } => ({
+      result: {},
+      nextIndex: index,
+    }),
+  },
+};
+
+export const Statement: { readonly codec: Codec<Statement> } = {
+  codec: {
+    encode: (value: Statement): ReadonlyArray<number> => [],
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Statement; readonly nextIndex: number } => ({
+      result: {},
+      nextIndex: index,
+    }),
   },
 };

@@ -1,6 +1,5 @@
 import * as data from "./data";
 import { Identifer } from "./identifer";
-import { identifer } from "./main";
 
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
@@ -52,7 +51,7 @@ const collectRootScopeIdentifer = (
           );
         }
         typeNameSet.add(definition.typeAlias.name);
-        continue;
+        break;
 
       case "Function":
         if (variableNameSet.has(definition.function_.name)) {
@@ -62,7 +61,7 @@ const collectRootScopeIdentifer = (
           );
         }
         variableNameSet.add(definition.function_.name);
-        continue;
+        break;
 
       case "Variable":
         if (variableNameSet.has(definition.variable.name)) {
@@ -451,7 +450,7 @@ const collectNameInStatement = (
     switch (statement._) {
       case "VariableDefinition":
         identiferSet.add(statement.name);
-        continue;
+        break;
       case "FunctionDefinition":
         identiferSet.add(statement.functionDefinition.name);
     }
@@ -657,12 +656,11 @@ const checkVariableIsDefinedOrThrow = (
   rootScopeNameSet: ReadonlySet<Identifer>,
   variableName: Identifer
 ): void => {
-  for (let i = 0; i < localVariableNameSetList.length; i++) {
-    if (
-      localVariableNameSetList[localVariableNameSetList.length - 1 - i].has(
-        variableName
-      )
-    ) {
+  const reversedLocalVariableNameSetList = [
+    ...localVariableNameSetList,
+  ].reverse();
+  for (const localVariableNameSet of reversedLocalVariableNameSetList) {
+    if (localVariableNameSet.has(variableName)) {
       return;
     }
   }
@@ -790,10 +788,9 @@ const checkTypeIsDefinedOrThrow = (
   typeParameterSetList: ReadonlyArray<ReadonlySet<Identifer>>,
   typeName: Identifer
 ): void => {
-  for (let i = 0; i < typeParameterSetList.length; i++) {
-    if (
-      typeParameterSetList[typeParameterSetList.length - 1 - i].has(typeName)
-    ) {
+  const reversedTypeParameterSetList = [...typeParameterSetList].reverse();
+  for (const typeParameter of reversedTypeParameterSetList) {
+    if (typeParameter.has(typeName)) {
       return;
     }
   }
@@ -860,7 +857,7 @@ const checkDuplicateIdentifer = (
   name: string,
   identiferList: ReadonlyArray<Identifer>
 ): ReadonlySet<Identifer> => {
-  const set: Set<identifer.Identifer> = new Set();
+  const set: Set<Identifer> = new Set();
   for (const identifer of identiferList) {
     if (set.has(identifer)) {
       throw new Error(

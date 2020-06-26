@@ -1,7 +1,7 @@
 import * as collect from "./collect";
 import * as data from "./data";
-import * as newData from "./newData";
 import * as identifer from "./identifer";
+import * as newData from "./newData";
 import * as toString from "./toString";
 
 export { data };
