@@ -41,15 +41,15 @@ export const ExportDefinition: {
 } = {
   TypeAlias: (typeAlias: TypeAlias): ExportDefinition => ({
     _: "TypeAlias",
-    typeAlias: typeAlias,
+    typeAlias,
   }),
   Function: (function_: Function_): ExportDefinition => ({
     _: "Function",
-    function_: function_,
+    function_,
   }),
   Variable: (variable: Variable): ExportDefinition => ({
     _: "Variable",
-    variable: variable,
+    variable,
   }),
 };
 
@@ -72,7 +72,7 @@ export type Function_ = {
 export type ParameterWithDocument = {
   readonly name: identifer.Identifer;
   readonly document: string;
-  readonly type_: Type;
+  readonly type: Type;
 };
 
 export type Parameter = {
@@ -265,7 +265,7 @@ export type Statement =
     }
   | {
       _: "Switch";
-      switch_: Switch;
+      switch: Switch;
     };
 
 export type FunctionDefinition = {
@@ -345,7 +345,7 @@ export type Type =
  */
 export const numberLiteral = (value: number): Expr => ({
   _: "NumberLiteral",
-  value: value,
+  value,
 });
 
 /**
@@ -431,8 +431,8 @@ export const exponentiation = (left: Expr, right: Expr): Expr => ({
 export const multiplication = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "*",
-  left: left,
-  right: right,
+  left,
+  right,
 });
 
 /**
@@ -443,8 +443,8 @@ export const multiplication = (left: Expr, right: Expr): Expr => ({
 export const division = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "/",
-  left: left,
-  right: right,
+  left,
+  right,
 });
 
 /**
@@ -467,8 +467,8 @@ export const modulo = (left: Expr, right: Expr): Expr => ({
 export const addition = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "+",
-  left: left,
-  right: right,
+  left,
+  right,
 });
 
 /**
@@ -479,8 +479,8 @@ export const addition = (left: Expr, right: Expr): Expr => ({
 export const subtraction = (left: Expr, right: Expr): Expr => ({
   _: "BinaryOperator",
   operator: "-",
-  left: left,
-  right: right,
+  left,
+  right,
 });
 
 /**
@@ -653,7 +653,7 @@ export const arrayLiteral = (itemList: ReadonlyArray<ArrayItem>): Expr => ({
 export const objectLiteral = (memberList: ReadonlyArray<Member>): Expr => {
   return {
     _: "ObjectLiteral",
-    memberList: memberList,
+    memberList,
   };
 };
 
@@ -987,13 +987,14 @@ export const statementBreak = (): Statement => ({ _: "Break" });
  */
 export const statementSwitch = (switch_: Switch): Statement => ({
   _: "Switch",
-  switch_,
+  switch: switch_,
 });
 
-/* =======================================================
-                      util
-   =======================================================
-*/
+/*
+ * =======================================================
+ *                    util
+ * =======================================================
+ */
 
 /**
  * ```ts
@@ -1141,7 +1142,7 @@ export const typeFunction = (
   returnType: Type
 ): Type => ({
   _: "Function",
-  typeParameterList: typeParameterList,
+  typeParameterList,
   parameterList: parameter,
   return: returnType,
 });
@@ -1215,10 +1216,11 @@ export const typeStringLiteral = (string_: string): Type => ({
   _: "StringLiteral",
   string_,
 });
-/* =======================================================
-                      util
-   =======================================================
-*/
+/*
+ * =======================================================
+ *                    util
+ * =======================================================
+ */
 
 /**
  * `Array<elementType>`

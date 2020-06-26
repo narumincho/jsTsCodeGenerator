@@ -106,7 +106,7 @@ export const Int32: {
               nextIndex: index + offset,
             };
           }
-          return { result: result, nextIndex: index + offset };
+          return { result, nextIndex: index + offset };
         }
       }
     },
@@ -144,15 +144,9 @@ export const String: {
       const isBrowser: boolean =
         process === undefined || process.title === "browser";
       if (isBrowser) {
-        return {
-          result: new TextDecoder().decode(textBinary),
-          nextIndex: nextIndex,
-        };
+        return { result: new TextDecoder().decode(textBinary), nextIndex };
       }
-      return {
-        result: new a.TextDecoder().decode(textBinary),
-        nextIndex: nextIndex,
-      };
+      return { result: new a.TextDecoder().decode(textBinary), nextIndex };
     },
   },
 };
@@ -199,10 +193,7 @@ export const Binary: {
         readonly nextIndex: number;
       } = Int32.codec.decode(index, binary);
       const nextIndex: number = length.nextIndex + length.result;
-      return {
-        result: binary.slice(length.nextIndex, nextIndex),
-        nextIndex: nextIndex,
-      };
+      return { result: binary.slice(length.nextIndex, nextIndex), nextIndex };
     },
   },
 };
@@ -248,7 +239,7 @@ export const List: {
         result.push(resultAndNextIndex.result);
         index = resultAndNextIndex.nextIndex;
       }
-      return { result: result, nextIndex: index };
+      return { result, nextIndex: index };
     },
   }),
 };
@@ -329,7 +320,7 @@ export const Maybe: {
 } = {
   Just: <value extends unknown>(value: value): Maybe<value> => ({
     _: "Just",
-    value: value,
+    value,
   }),
   Nothing: <value extends unknown>(): Maybe<value> => ({ _: "Nothing" }),
   codec: <value extends unknown>(
@@ -394,10 +385,10 @@ export const Result: {
 } = {
   Ok: <ok extends unknown, error extends unknown>(
     ok: ok
-  ): Result<ok, error> => ({ _: "Ok", ok: ok }),
+  ): Result<ok, error> => ({ _: "Ok", ok }),
   Error: <ok extends unknown, error extends unknown>(
     error: error
-  ): Result<ok, error> => ({ _: "Error", error: error }),
+  ): Result<ok, error> => ({ _: "Error", error }),
   codec: <ok extends unknown, error extends unknown>(
     okCodec: Codec<ok>,
     errorCodec: Codec<error>
@@ -552,15 +543,15 @@ export const ExportDefinition: {
 } = {
   TypeAlias: (typeAlias: TypeAlias): ExportDefinition => ({
     _: "TypeAlias",
-    typeAlias: typeAlias,
+    typeAlias,
   }),
   Function: (function_: Function): ExportDefinition => ({
     _: "Function",
-    function_: function_,
+    function_,
   }),
   Variable: (variable: Variable): ExportDefinition => ({
     _: "Variable",
-    variable: variable,
+    variable,
   }),
   codec: {
     encode: (value: ExportDefinition): ReadonlyArray<number> => {

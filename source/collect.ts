@@ -145,7 +145,7 @@ const collectInFunctionDefinition = (
               modulePathSet: new Set(),
             },
             collectInType(
-              parameter.type_,
+              parameter.type,
               rootScopeIdentiferSet.rootScopeTypeNameSet,
               [typeParameterNameSet]
             )
@@ -560,7 +560,7 @@ const collectInStatement = (
       return concatCollectData(
         collectList(statement.functionDefinition.parameterList, (parameter) =>
           collectInType(
-            parameter.type_,
+            parameter.type,
             rootScopeIdentiferSet.rootScopeTypeNameSet,
             newTypeParameterSetList
           )
@@ -633,12 +633,12 @@ const collectInStatement = (
     case "Switch":
       return concatCollectData(
         collectInExpr(
-          statement.switch_.expr,
+          statement.switch.expr,
           localVariableNameSetList,
           typeParameterSetList,
           rootScopeIdentiferSet
         ),
-        collectList(statement.switch_.patternList, (pattern) =>
+        collectList(statement.switch.patternList, (pattern) =>
           collectStatementList(
             pattern.statementList,
             localVariableNameSetList,

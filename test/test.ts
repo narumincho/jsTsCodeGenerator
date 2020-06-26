@@ -19,12 +19,12 @@ describe("test", () => {
           {
             name: identifer.fromString("request"),
             document: "expressのリクエスト",
-            type_: expressRequest,
+            type: expressRequest,
           },
           {
             name: identifer.fromString("response"),
             document: "expressのレスポンス",
-            type_: expressResponse,
+            type: expressResponse,
           },
         ],
         document: "ミドルウェア",
@@ -138,7 +138,7 @@ describe("test", () => {
             {
               name: identifer.fromString("request"),
               document: "リクエスト",
-              type_: data.typeImported(
+              type: data.typeImported(
                 "express",
                 identifer.fromString("Request")
               ),
@@ -146,7 +146,7 @@ describe("test", () => {
             {
               name: identifer.fromString("response"),
               document: "レスポンス",
-              type_: data.typeImported(
+              type: data.typeImported(
                 "express",
                 identifer.fromString("Response")
               ),
@@ -211,7 +211,7 @@ describe("test", () => {
               {
                 name: identifer.fromString("array"),
                 document: "Uint8Array",
-                type_: data.uint8ArrayType,
+                type: data.uint8ArrayType,
               },
             ],
             returnType: data.typeNumber,
@@ -459,7 +459,7 @@ describe("test", () => {
             {
               name: identifer.fromString("value"),
               document: "",
-              type_: data.typeWithParameter(
+              type: data.typeWithParameter(
                 data.typeScopeInGlobal(identifer.fromString("Result")),
                 [
                   data.typeScopeInGlobal(identifer.fromString("ok")),

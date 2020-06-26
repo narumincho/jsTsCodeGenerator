@@ -93,7 +93,7 @@ const exportFunctionToString = (
         (parameter) =>
           (parameter.name as string) +
           ": " +
-          typeToString(parameter.type_, moduleMap)
+          typeToString(parameter.type, moduleMap)
       )
       .join(", ") +
     "): " +
@@ -237,32 +237,17 @@ const exprToString = (
         moduleMap,
         codeType
       );
+
     case "ConditionalOperator":
-      return (
-        exprToStringWithCombineStrength(
-          expr,
-          expr.condition,
-          indent,
-          moduleMap,
-          codeType
-        ) +
-        "?" +
-        exprToStringWithCombineStrength(
-          expr,
-          expr.thenExpr,
-          indent,
-          moduleMap,
-          codeType
-        ) +
-        ":" +
-        exprToStringWithCombineStrength(
-          expr,
-          expr.elseExpr,
-          indent,
-          moduleMap,
-          codeType
-        )
-      );
+      return conditionalOperatorToString({
+        expr,
+        condition: expr.condition,
+        thenExpr: expr.thenExpr,
+        elseExpr: expr.elseExpr,
+        indent,
+        moduleMap,
+        codeType,
+      });
 
     case "Lambda":
       return (
@@ -355,6 +340,42 @@ const exprToString = (
   }
 };
 
+const conditionalOperatorToString = (param: {
+  expr: data.Expr;
+  condition: data.Expr;
+  thenExpr: data.Expr;
+  elseExpr: data.Expr;
+  indent: number;
+  moduleMap: ReadonlyMap<string, identifer.Identifer>;
+  codeType: newData.CodeType;
+}): string => {
+  return (
+    exprToStringWithCombineStrength(
+      param.expr,
+      param.condition,
+      param.indent,
+      param.moduleMap,
+      param.codeType
+    ) +
+    "?" +
+    exprToStringWithCombineStrength(
+      param.expr,
+      param.thenExpr,
+      param.indent,
+      param.moduleMap,
+      param.codeType
+    ) +
+    ":" +
+    exprToStringWithCombineStrength(
+      param.expr,
+      param.elseExpr,
+      param.indent,
+      param.moduleMap,
+      param.codeType
+    )
+  );
+};
+
 const objectLiteralToString = (
   memberList: ReadonlyArray<data.Member>,
   indent: number,
@@ -371,6 +392,13 @@ const objectLiteralToString = (
               "..." + exprToString(member.expr, indent, moduleMap, codeType)
             );
           case "KeyValue":
+            if (
+              identifer.isIdentifer(member.key) &&
+              member.value._ === "Variable" &&
+              member.value.name === member.key
+            ) {
+              return member.value.name;
+            }
             return (
               (identifer.isIdentifer(member.key)
                 ? member.key
@@ -704,7 +732,7 @@ const statementToTypeScriptCodeAsString = (
       return indentString + "break;";
 
     case "Switch":
-      return switchToString(statement.switch_, indent, moduleMap, codeType);
+      return switchToString(statement.switch, indent, moduleMap, codeType);
   }
 };
 
@@ -725,7 +753,7 @@ const functionDefinitionToString = (
       .map(
         (parameter) =>
           (parameter.name as string) +
-          typeAnnotation(parameter.type_, codeType, moduleMap)
+          typeAnnotation(parameter.type, codeType, moduleMap)
       )
       .join(", ") +
     ")" +
@@ -788,14 +816,14 @@ const functionTypeToString = (
   let index = identifer.initialIdentiferIndex;
   const parameterList: Array<{
     name: string;
-    type_: data.Type;
+    type: data.Type;
   }> = [];
   for (const parameter of parameterTypeList) {
     const indexAndIdentifer = identifer.createIdentifer(index, new Set());
     index = indexAndIdentifer.nextIdentiferIndex;
     parameterList.push({
       name: indexAndIdentifer.identifer,
-      type_: parameter,
+      type: parameter,
     });
   }
 
@@ -805,7 +833,7 @@ const functionTypeToString = (
     parameterList
       .map(
         (parameter) =>
-          parameter.name + ": " + typeToString(parameter.type_, moduleMap)
+          parameter.name + ": " + typeToString(parameter.type, moduleMap)
       )
       .join(", ") +
     ") => " +
