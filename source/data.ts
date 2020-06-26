@@ -19,7 +19,7 @@ export type Code = {
  */
 export type ExportDefinition =
   | { readonly _: "TypeAlias"; readonly typeAlias: TypeAlias }
-  | { readonly _: "Function"; readonly function_: Function_ }
+  | { readonly _: "Function"; readonly function: Function_ }
   | { readonly _: "Variable"; readonly variable: Variable };
 
 /**
@@ -45,7 +45,7 @@ export const ExportDefinition: {
   }),
   Function: (function_: Function_): ExportDefinition => ({
     _: "Function",
-    function_,
+    function: function_,
   }),
   Variable: (variable: Variable): ExportDefinition => ({
     _: "Variable",
@@ -57,7 +57,7 @@ export type TypeAlias = {
   readonly name: identifer.Identifer;
   readonly parameterList: ReadonlyArray<identifer.Identifer>;
   readonly document: string;
-  readonly type_: Type;
+  readonly type: Type;
 };
 
 export type Function_ = {
@@ -77,13 +77,13 @@ export type ParameterWithDocument = {
 
 export type Parameter = {
   name: identifer.Identifer;
-  type_: Type;
+  type: Type;
 };
 
 export type Variable = {
   readonly name: identifer.Identifer;
   readonly document: string;
-  readonly type_: Type;
+  readonly type: Type;
   readonly expr: Expr;
 };
 
@@ -197,7 +197,7 @@ export type Expr =
   | {
       _: "TypeAssertion";
       expr: Expr;
-      type_: Type;
+      type: Type;
     };
 
 /**
@@ -237,7 +237,7 @@ export type Statement =
       _: "VariableDefinition";
       name: identifer.Identifer;
       expr: Expr;
-      type_: Type;
+      type: Type;
       isConst: boolean;
     }
   | {
@@ -308,7 +308,7 @@ export type Type =
   | { _: "Void" }
   | {
       _: "Object";
-      memberDict: Map<string, { type_: Type; document: string }>;
+      memberList: Map<string, { type: Type; document: string }>;
     }
   | {
       _: "Function";
@@ -318,7 +318,7 @@ export type Type =
     }
   | {
       _: "WithTypeParameter";
-      type_: Type;
+      type: Type;
       typeParameterList: ReadonlyArray<Type>;
     }
   | {
@@ -337,7 +337,7 @@ export type Type =
     }
   | { _: "ScopeInFile"; name: identifer.Identifer }
   | { _: "ScopeInGlobal"; name: identifer.Identifer }
-  | { _: "StringLiteral"; string_: string };
+  | { _: "StringLiteral"; string: string };
 
 /**
  * 数値リテラル `123`
@@ -750,7 +750,7 @@ export const newExpr = (
 export const typeAssertion = (expr: Expr, type_: Type): Expr => ({
   _: "TypeAssertion",
   expr,
-  type_,
+  type: type_,
 });
 
 /**
@@ -889,7 +889,7 @@ export const statementVariableDefinition = (
   _: "VariableDefinition",
   name,
   expr,
-  type_,
+  type: type_,
   isConst: true,
 });
 
@@ -908,7 +908,7 @@ export const statementLetVariableDefinition = (
   _: "VariableDefinition",
   name,
   expr,
-  type_,
+  type: type_,
   isConst: false,
 });
 
@@ -1127,10 +1127,10 @@ export const typeVoid: Type = {
  * オブジェクト
  */
 export const typeObject = (
-  memberList: Map<string, { type_: Type; document: string }>
+  memberList: Map<string, { type: Type; document: string }>
 ): Type => ({
   _: "Object",
-  memberDict: memberList,
+  memberList,
 });
 
 /**
@@ -1173,7 +1173,7 @@ export const typeWithParameter = (
   typeParameterList: ReadonlyArray<Type>
 ): Type => ({
   _: "WithTypeParameter",
-  type_,
+  type: type_,
   typeParameterList,
 });
 
@@ -1214,7 +1214,7 @@ export const typeScopeInGlobal = (name: identifer.Identifer): Type => ({
  */
 export const typeStringLiteral = (string_: string): Type => ({
   _: "StringLiteral",
-  string_,
+  string: string_,
 });
 /*
  * =======================================================

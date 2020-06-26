@@ -111,7 +111,7 @@ describe("test", () => {
         data.ExportDefinition.Variable({
           name: identifer.fromString("stringValue"),
           document: "文字列リテラルでエスケープしているか調べる",
-          type_: data.typeString,
+          type: data.typeString,
           expr: data.stringLiteral(`
 
           改行
@@ -339,8 +339,8 @@ describe("test", () => {
             parameterList: [],
             returnType: data.typeObject(
               new Map([
-                ["name", { type_: data.typeString, document: "" }],
-                ["age", { type_: data.typeNumber, document: "" }],
+                ["name", { type: data.typeString, document: "" }],
+                ["age", { type: data.typeNumber, document: "" }],
               ])
             ),
             statementList: [
@@ -416,14 +416,14 @@ describe("test", () => {
             identifer.fromString("error"),
             identifer.fromString("ok"),
           ],
-          type_: data.typeUnion([
+          type: data.typeUnion([
             data.typeObject(
               new Map([
-                ["_", { type_: data.typeStringLiteral("Ok"), document: "" }],
+                ["_", { type: data.typeStringLiteral("Ok"), document: "" }],
                 [
                   "ok",
                   {
-                    type_: data.typeScopeInGlobal(identifer.fromString("ok")),
+                    type: data.typeScopeInGlobal(identifer.fromString("ok")),
                     document: "",
                   },
                 ],
@@ -433,14 +433,12 @@ describe("test", () => {
               new Map([
                 [
                   "_",
-                  { type_: data.typeStringLiteral("Error"), document: "Error" },
+                  { type: data.typeStringLiteral("Error"), document: "Error" },
                 ],
                 [
                   "error",
                   {
-                    type_: data.typeScopeInGlobal(
-                      identifer.fromString("error")
-                    ),
+                    type: data.typeScopeInGlobal(identifer.fromString("error")),
                     document: "",
                   },
                 ],
@@ -534,7 +532,7 @@ describe("test", () => {
           name: identifer.fromString("SampleIntersectionType"),
           document: "",
           parameterList: [],
-          type_: data.typeIntersection(data.dateType, data.uint8ArrayType),
+          type: data.typeIntersection(data.dateType, data.uint8ArrayType),
         }),
       ],
       statementList: [],
@@ -555,14 +553,14 @@ describe("test", () => {
               [
                 "a",
                 {
-                  type_: data.typeString,
+                  type: data.typeString,
                   document: "",
                 },
               ],
               [
                 "b",
                 {
-                  type_: data.typeNumber,
+                  type: data.typeNumber,
                   document: "",
                 },
               ],
@@ -593,12 +591,12 @@ describe("test", () => {
           name: identifer.fromString("Time"),
           document: "初期のDefinyで使う時間の内部表現",
           parameterList: [],
-          type_: data.typeObject(
+          type: data.typeObject(
             new Map([
               [
                 "day",
                 {
-                  type_: data.typeNumber,
+                  type: data.typeNumber,
                   document:
                     "1970-01-01からの経過日数. マイナスになることもある",
                 },
@@ -606,7 +604,7 @@ describe("test", () => {
               [
                 "millisecond",
                 {
-                  type_: data.typeNumber,
+                  type: data.typeNumber,
                   document:
                     "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
                 },
@@ -639,14 +637,14 @@ it("output lambda type parameter", () => {
                 "value",
                 {
                   document: "",
-                  type_: data.typeScopeInFile(typeParameterIdentifer),
+                  type: data.typeScopeInFile(typeParameterIdentifer),
                 },
               ],
               [
                 "s",
                 {
                   document: "",
-                  type_: data.typeWithParameter(
+                  type: data.typeWithParameter(
                     data.typeImported(
                       "sampleModule",
                       identifer.fromString("Type")
@@ -662,7 +660,7 @@ it("output lambda type parameter", () => {
           [
             {
               name: identifer.fromString("input"),
-              type_: data.typeScopeInFile(typeParameterIdentifer),
+              type: data.typeScopeInFile(typeParameterIdentifer),
             },
           ],
           [typeParameterIdentifer],
@@ -672,7 +670,7 @@ it("output lambda type parameter", () => {
                 "value",
                 {
                   document: "",
-                  type_: data.typeScopeInFile(typeParameterIdentifer),
+                  type: data.typeScopeInFile(typeParameterIdentifer),
                 },
               ],
             ])

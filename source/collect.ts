@@ -54,13 +54,13 @@ const collectRootScopeIdentifer = (
         break;
 
       case "Function":
-        if (variableNameSet.has(definition.function_.name)) {
+        if (variableNameSet.has(definition.function.name)) {
           throw new Error(
             "Duplicate export function name. name=" +
-              (definition.function_.name as string)
+              (definition.function.name as string)
           );
         }
-        variableNameSet.add(definition.function_.name);
+        variableNameSet.add(definition.function.name);
         break;
 
       case "Variable":
@@ -92,7 +92,7 @@ const collectInDefinition = (
 
     case "Function":
       return collectInFunctionDefinition(
-        definition.function_,
+        definition.function,
         rootScopeIdentiferSet
       );
 
@@ -113,7 +113,7 @@ const collectInTypeAlias = (
       usedNameSet: new Set([typeAlias.name]),
       modulePathSet: new Set(),
     },
-    collectInType(typeAlias.type_, rootScopeTypeNameSet, [
+    collectInType(typeAlias.type, rootScopeTypeNameSet, [
       new Set(typeAlias.parameterList),
     ])
   );
@@ -178,11 +178,9 @@ const collectInVariableDefinition = (
         modulePathSet: new Set(),
         usedNameSet: new Set([variable.name]),
       },
-      collectInType(
-        variable.type_,
-        rootScopeIdentiferSet.rootScopeTypeNameSet,
-        [new Set()]
-      )
+      collectInType(variable.type, rootScopeIdentiferSet.rootScopeTypeNameSet, [
+        new Set(),
+      ])
     ),
     collectInExpr(variable.expr, [], [], rootScopeIdentiferSet)
   );
@@ -307,7 +305,7 @@ const collectInExpr = (
                 modulePathSet: new Set(),
               },
               collectInType(
-                oneParameter.type_,
+                oneParameter.type,
                 rootScopeIdentiferSet.rootScopeTypeNameSet,
                 newTypeParameterSetList
               )
@@ -414,7 +412,7 @@ const collectInExpr = (
           rootScopeIdentiferSet
         ),
         collectInType(
-          expr.type_,
+          expr.type,
           rootScopeIdentiferSet.rootScopeTypeNameSet,
           typeParameterSetList
         )
@@ -538,7 +536,7 @@ const collectInStatement = (
           rootScopeIdentiferSet
         ),
         collectInType(
-          statement.type_,
+          statement.type,
           rootScopeIdentiferSet.rootScopeTypeNameSet,
           typeParameterSetList
         )
@@ -706,8 +704,8 @@ const collectInType = (
       };
 
     case "Object":
-      return collectList([...type_.memberDict], ([, value]) =>
-        collectInType(value.type_, rootScopeTypeNameSet, typeParameterSetList)
+      return collectList([...type_.memberList], ([, value]) =>
+        collectInType(value.type, rootScopeTypeNameSet, typeParameterSetList)
       );
 
     case "Function": {
@@ -735,7 +733,7 @@ const collectInType = (
 
     case "WithTypeParameter":
       return concatCollectData(
-        collectInType(type_.type_, rootScopeTypeNameSet, typeParameterSetList),
+        collectInType(type_.type, rootScopeTypeNameSet, typeParameterSetList),
         collectList(type_.typeParameterList, (parameter) =>
           collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
         )
