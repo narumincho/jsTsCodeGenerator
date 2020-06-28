@@ -1,4 +1,5 @@
 import { data, generateCodeAsString, identifer } from "../source/main";
+import { cachedDataVersionTag } from "v8";
 
 describe("test", () => {
   const expressRequest = data.typeImported(
@@ -339,8 +340,14 @@ describe("test", () => {
             parameterList: [],
             returnType: data.typeObject(
               new Map([
-                ["name", { type: data.typeString, document: "" }],
-                ["age", { type: data.typeNumber, document: "" }],
+                [
+                  "name",
+                  { required: true, type: data.typeString, document: "" },
+                ],
+                [
+                  "age",
+                  { required: true, type: data.typeNumber, document: "" },
+                ],
               ])
             ),
             statementList: [
@@ -419,10 +426,18 @@ describe("test", () => {
           type: data.typeUnion([
             data.typeObject(
               new Map([
-                ["_", { type: data.typeStringLiteral("Ok"), document: "" }],
+                [
+                  "_",
+                  {
+                    required: true,
+                    type: data.typeStringLiteral("Ok"),
+                    document: "",
+                  },
+                ],
                 [
                   "ok",
                   {
+                    required: true,
                     type: data.typeScopeInGlobal(identifer.fromString("ok")),
                     document: "",
                   },
@@ -433,11 +448,16 @@ describe("test", () => {
               new Map([
                 [
                   "_",
-                  { type: data.typeStringLiteral("Error"), document: "Error" },
+                  {
+                    required: true,
+                    type: data.typeStringLiteral("Error"),
+                    document: "Error",
+                  },
                 ],
                 [
                   "error",
                   {
+                    required: true,
                     type: data.typeScopeInGlobal(identifer.fromString("error")),
                     document: "",
                   },
@@ -550,20 +570,8 @@ describe("test", () => {
           identifer.fromString("value"),
           data.typeObject(
             new Map([
-              [
-                "a",
-                {
-                  type: data.typeString,
-                  document: "",
-                },
-              ],
-              [
-                "b",
-                {
-                  type: data.typeNumber,
-                  document: "",
-                },
-              ],
+              ["a", { required: true, type: data.typeString, document: "" }],
+              ["b", { required: true, type: data.typeNumber, document: "" }],
             ])
           ),
           data.objectLiteral([
@@ -596,6 +604,7 @@ describe("test", () => {
               [
                 "day",
                 {
+                  required: true,
                   type: data.typeNumber,
                   document:
                     "1970-01-01からの経過日数. マイナスになることもある",
@@ -604,6 +613,7 @@ describe("test", () => {
               [
                 "millisecond",
                 {
+                  required: true,
                   type: data.typeNumber,
                   document:
                     "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
@@ -636,6 +646,7 @@ it("output lambda type parameter", () => {
               [
                 "value",
                 {
+                  required: true,
                   document: "",
                   type: data.typeScopeInFile(typeParameterIdentifer),
                 },
@@ -643,6 +654,7 @@ it("output lambda type parameter", () => {
               [
                 "s",
                 {
+                  required: true,
                   document: "",
                   type: data.typeWithParameter(
                     data.typeImported(
@@ -669,6 +681,7 @@ it("output lambda type parameter", () => {
               [
                 "value",
                 {
+                  required: true,
                   document: "",
                   type: data.typeScopeInFile(typeParameterIdentifer),
                 },
@@ -694,4 +707,38 @@ it("output lambda type parameter", () => {
   expect(codeAsString).toMatch(
     /<t extends unknown>\(input: t\): \{ readonly value: t \} =>/u
   );
+});
+
+it("output optional type member", () => {
+  const code: data.Code = {
+    exportDefinitionList: [
+      data.ExportDefinition.Variable({
+        name: identifer.fromString("value"),
+        document: "年齢があってもなくてもいいやつ",
+        type: data.typeObject(
+          new Map([
+            [
+              "name",
+              { required: true, document: "名前", type: data.typeString },
+            ],
+            [
+              "age",
+              {
+                required: false,
+                document: "年齢",
+                type: data.typeNumber,
+              },
+            ],
+          ])
+        ),
+        expr: data.objectLiteral([
+          data.memberKeyValue("name", data.stringLiteral("narumincho")),
+        ]),
+      }),
+    ],
+    statementList: [],
+  };
+  const codeAsString = generateCodeAsString(code, "TypeScript");
+  console.log(codeAsString);
+  expect(codeAsString).toMatch(/readonly age\?: number/u);
 });

@@ -932,20 +932,7 @@ export const typeToString = (
       return "undefined";
 
     case "Object":
-      return (
-        "{ " +
-        [...type_.memberList.entries()]
-          .map(
-            ([name, typeAndDocument]) =>
-              documentToString(typeAndDocument.document) +
-              "readonly " +
-              name +
-              ": " +
-              typeToString(typeAndDocument.type, moduleMap)
-          )
-          .join("; ") +
-        " }"
-      );
+      return typeObjectToString(type_.memberList, moduleMap);
 
     case "Function":
       return functionTypeToString(
@@ -999,4 +986,28 @@ export const typeToString = (
     case "StringLiteral":
       return stringLiteralValueToString(type_.string);
   }
+};
+
+const typeObjectToString = (
+  memberList: Map<
+    string,
+    { required: boolean; type: data.Type; document: string }
+  >,
+  moduleMap: ReadonlyMap<string, Identifer>
+): string => {
+  return (
+    "{ " +
+    [...memberList.entries()]
+      .map(
+        ([name, typeAndDocument]) =>
+          documentToString(typeAndDocument.document) +
+          "readonly " +
+          name +
+          (typeAndDocument.required ? "" : "?") +
+          ": " +
+          typeToString(typeAndDocument.type, moduleMap)
+      )
+      .join("; ") +
+    " }"
+  );
 };

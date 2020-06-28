@@ -308,7 +308,10 @@ export type Type =
   | { _: "Void" }
   | {
       _: "Object";
-      memberList: Map<string, { type: Type; document: string }>;
+      memberList: Map<
+        string,
+        { required: boolean; type: Type; document: string }
+      >;
     }
   | {
       _: "Function";
@@ -1127,7 +1130,7 @@ export const typeVoid: Type = {
  * オブジェクト
  */
 export const typeObject = (
-  memberList: Map<string, { type: Type; document: string }>
+  memberList: Map<string, { required: boolean; type: Type; document: string }>
 ): Type => ({
   _: "Object",
   memberList,
