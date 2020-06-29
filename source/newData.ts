@@ -67,6 +67,11 @@ export type Variable = {};
 export type Statement = {};
 
 /**
+ * TypeScriptの識別子として使える文字
+ */
+export type Identifer = { readonly _: "Identifer"; readonly string: string };
+
+/**
  * -2 147 483 648 ～ 2 147 483 647. 32bit 符号付き整数. JavaScriptのnumberで扱う
  */
 export const Int32: {
@@ -155,7 +160,7 @@ export const String: {
 };
 
 /**
- * Bool. 真か偽. JavaScriptのbooleanで扱う
+ * Bool. 真か偽. JavaScriptのbooleanで扱える
  */
 export const Bool: {
   /**
@@ -176,11 +181,11 @@ export const Bool: {
 };
 
 /**
- * バイナリ. JavaScriptのUint8Arrayで扱う
+ * バイナリ. JavaScriptのUint8Arrayで扱える
  */
 export const Binary: {
   /**
-   * 最初にバイト数, その次にバイナリそのまま
+   * 最初にLED128でバイト数, その次にバイナリそのまま
    */
   readonly codec: Codec<Uint8Array>;
 } = {
@@ -248,14 +253,9 @@ export const List: {
 };
 
 /**
- * Id
+ * 16byteのバイナリ. JSでは 0-fの16進数の文字列として扱う
  */
-export const Id: {
-  /**
-   * バイナリに変換する
-   */
-  readonly codec: Codec<string>;
-} = {
+export const Id: { readonly codec: Codec<string> } = {
   codec: {
     encode: (value: string): ReadonlyArray<number> => {
       const result: Array<number> = [];
@@ -277,14 +277,9 @@ export const Id: {
 };
 
 /**
- * Token
+ * 32byteのバイナリ. JSでは 0-fの16進数の文字列として扱う
  */
-export const Token: {
-  /**
-   * バイナリに変換する
-   */
-  readonly codec: Codec<string>;
-} = {
+export const Token: { readonly codec: Codec<string> } = {
   codec: {
     encode: (value: string): ReadonlyArray<number> => {
       const result: Array<number> = [];
@@ -693,5 +688,50 @@ export const Statement: { readonly codec: Codec<Statement> } = {
       result: {},
       nextIndex: index,
     }),
+  },
+};
+
+/**
+ * TypeScriptの識別子として使える文字
+ */
+export const Identifer: {
+  /**
+   * **直接 Identifer.Identifer("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**
+   */
+  readonly Identifer: (a: string) => Identifer;
+  readonly codec: Codec<Identifer>;
+} = {
+  Identifer: (string_: string): Identifer => ({
+    _: "Identifer",
+    string: string_,
+  }),
+  codec: {
+    encode: (value: Identifer): ReadonlyArray<number> => {
+      switch (value._) {
+        case "Identifer": {
+          return [0].concat(String.codec.encode(value["string"]));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Identifer; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: string;
+          readonly nextIndex: number;
+        } = String.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Identifer.Identifer(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
   },
 };

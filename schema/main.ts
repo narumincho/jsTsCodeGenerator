@@ -10,6 +10,7 @@ const statementName = "Statement";
 const typeAliasName = "TypeAlias";
 const functionName = "Function";
 const variableName = "Variable";
+const identiferName = "Identifer";
 
 const codeTypeType = data.Type.Custom({
   name: codeTypeName,
@@ -37,6 +38,10 @@ const functionType = data.Type.Custom({
 });
 const variableType = data.Type.Custom({
   name: variableName,
+  parameterList: [],
+});
+const identiferType = data.Type.Custom({
+  name: identiferName,
   parameterList: [],
 });
 
@@ -121,6 +126,19 @@ const customTypeDefinitionList: ReadonlyArray<data.CustomTypeDefinition> = [
     description: "",
     typeParameterList: [],
     body: data.CustomTypeDefinitionBody.Product([]),
+  },
+  {
+    name: identiferName,
+    description: "TypeScriptの識別子として使える文字",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Sum([
+      {
+        name: "Identifer",
+        description:
+          '**直接 Identifer.Identifer("name") と指定してはいけない!! TypeScriptの識別子として使える文字としてチェックできないため**',
+        parameter: data.Maybe.Just(data.Type.String),
+      },
+    ]),
   },
 ];
 
