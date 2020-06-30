@@ -35,3 +35,11 @@ export const importedVariable = noParameterType(name.importedVariable);
 export const getExpr = noParameterType(name.getExpr);
 export const callExpr = noParameterType(name.callExpr);
 export const TypeAssertion = noParameterType(name.typeAssertion);
+export const setStatement = noParameterType(name.setStatement);
+export const ifStatement = noParameterType(name.ifStatement);
+export const variableDefinitionStatement = noParameterType(
+  name.variableDefinitionStatement
+);
+export const forStatement = noParameterType(name.forStatement);
+export const forOfStatement = noParameterType(name.forOfStatement);
+export const switchStatement = noParameterType(name.switchStatement);

@@ -416,7 +416,73 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     name: name.statement,
     description: "",
     typeParameterList: [],
-    body: CustomTypeDefinitionBody.Product([]),
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "EvaluateExpr",
+        description: "",
+        parameter: Maybe.Just(customType.expr),
+      },
+      {
+        name: "Set",
+        description: "",
+        parameter: Maybe.Just(customType.setStatement),
+      },
+      {
+        name: "If",
+        description: "",
+        parameter: Maybe.Just(customType.ifStatement),
+      },
+      {
+        name: "ThrowError",
+        description: "",
+        parameter: Maybe.Just(customType.expr),
+      },
+      {
+        name: "Return",
+        description: "",
+        parameter: Maybe.Just(customType.expr),
+      },
+      {
+        name: "ReturnVoid",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Continue",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "VariableDefinition",
+        description: "",
+        parameter: Maybe.Just(customType.variableDefinitionStatement),
+      },
+      {
+        name: "For",
+        description: "",
+        parameter: Maybe.Just(customType.forStatement),
+      },
+      {
+        name: "ForOf",
+        description: "",
+        parameter: Maybe.Just(customType.forOfStatement),
+      },
+      {
+        name: "WhileTrue",
+        description: "",
+        parameter: Maybe.Just(Type.List(customType.statement)),
+      },
+      {
+        name: "Break",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Switch",
+        description: "",
+        parameter: Maybe.Just(customType.switchStatement),
+      },
+    ]),
   },
   {
     name: name.identifer,
