@@ -150,6 +150,9 @@
       "max-statements": [
         "off"
       ],
+      "no-underscore-dangle": [
+        "off"
+      ],
       "@typescript-eslint/restrict-plus-operands": [
         "error",
         {
