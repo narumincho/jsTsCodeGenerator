@@ -30,6 +30,7 @@ export const functionDefinitionStatement = "FunctionDefinitionStatement";
 export const forStatement = "ForStatement";
 export const forOfStatement = "ForOfStatement";
 export const switchStatement = "SwitchStatement";
+export const pattern = "Pattern";
 export const memberType = "MemberType";
 export const functionType = "FunctionType";
 export const typeWithTypeParameter = "TypeWithTypeParameter";

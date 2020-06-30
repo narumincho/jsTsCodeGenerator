@@ -47,6 +47,7 @@ export const functionDefinitionStatement = noParameterType(
 export const forStatement = noParameterType(name.forStatement);
 export const forOfStatement = noParameterType(name.forOfStatement);
 export const switchStatement = noParameterType(name.switchStatement);
+export const pattern = noParameterType(name.pattern);
 export const memberType = noParameterType(name.memberType);
 export const functionType = noParameterType(name.functionType);
 export const typeWithTypeParameter = noParameterType(

@@ -4,33 +4,51 @@ import {
   CustomTypeDefinition,
   CustomTypeDefinitionBody,
   Maybe,
+  Member,
+  Pattern,
   Type,
 } from "@narumincho/type/source/data";
+import { count } from "console";
+
+const sum = (
+  typeName: string,
+  description: string,
+  patternList: ReadonlyArray<Pattern>
+): CustomTypeDefinition => ({
+  name: typeName,
+  description,
+  typeParameterList: [],
+  body: CustomTypeDefinitionBody.Sum(patternList),
+});
+
+const product = (
+  typeName: string,
+  description: string,
+  memberList: ReadonlyArray<Member>
+): CustomTypeDefinition => ({
+  name: typeName,
+  description,
+  typeParameterList: [],
+  body: CustomTypeDefinitionBody.Product(memberList),
+});
 
 export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
-  {
-    name: name.codeType,
-    description: "出力するコードの種類",
-    typeParameterList: [],
-    body: CustomTypeDefinitionBody.Sum([
-      {
-        name: "JavaScript",
-        description: "JavaScript",
-        parameter: Maybe.Nothing(),
-      },
-      {
-        name: "TypeScript",
-        description: "TypeScript",
-        parameter: Maybe.Nothing(),
-      },
-    ]),
-  },
-  {
-    name: name.code,
-    description:
-      "TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある",
-    typeParameterList: [],
-    body: CustomTypeDefinitionBody.Product([
+  sum(name.codeType, "出力するコードの種類", [
+    {
+      name: "JavaScript",
+      description: "JavaScript",
+      parameter: Maybe.Nothing(),
+    },
+    {
+      name: "TypeScript",
+      description: "TypeScript",
+      parameter: Maybe.Nothing(),
+    },
+  ]),
+  product(
+    name.code,
+    "TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある",
+    [
       {
         name: "exportDefinitionList",
         description: "外部に公開する定義",
@@ -41,94 +59,79 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
         description: "定義した後に実行するコード",
         type: Type.List(customType.statement),
       },
-    ]),
-  },
-  {
-    name: name.exportDefinition,
-    description: "外部に公開する定義",
-    typeParameterList: [],
-    body: CustomTypeDefinitionBody.Sum([
-      {
-        name: "TypeAlias",
-        description: "TypeAlias. `export type T = {}`",
-        parameter: Maybe.Just(customType.typeAlias),
-      },
-      {
-        name: "Function",
-        description: "Function `export const f = () => {}`",
-        parameter: Maybe.Just(customType.function_),
-      },
-      {
-        name: "Variable",
-        description: "Variable `export const v = {}`",
-        parameter: Maybe.Just(customType.variable),
-      },
-    ]),
-  },
-  {
-    name: name.typeAlias,
-    description: "TypeAlias. `export type T = {}`",
-    typeParameterList: [],
-    body: CustomTypeDefinitionBody.Product([
-      {
-        name: "name",
-        description: "型の名前",
-        type: customType.identifer,
-      },
-      {
-        name: "typeParameterList",
-        description: "型パラメーターのリスト",
-        type: Type.List(customType.identifer),
-      },
-      {
-        name: "document",
-        description: "ドキュメント",
-        type: Type.String,
-      },
-      {
-        name: "type",
-        description: "型本体",
-        type: customType.type,
-      },
-    ]),
-  },
-  {
-    name: name.function_,
-    description: "",
-    typeParameterList: [],
-    body: CustomTypeDefinitionBody.Product([
-      {
-        name: "name",
-        description: "外部に公開する関数の名前",
-        type: customType.identifer,
-      },
-      {
-        name: "document",
-        description: "ドキュメント",
-        type: Type.String,
-      },
-      {
-        name: "typeParameterList",
-        description: "型パラメーターのリスト",
-        type: Type.List(customType.identifer),
-      },
-      {
-        name: "parameterList",
-        description: "パラメーター",
-        type: Type.List(customType.parameterWithDocument),
-      },
-      {
-        name: "returnType",
-        description: "戻り値の型",
-        type: customType.type,
-      },
-      {
-        name: "statementList",
-        description: "関数の本体",
-        type: customType.statement,
-      },
-    ]),
-  },
+    ]
+  ),
+  sum(name.exportDefinition, "外部に公開する定義", [
+    {
+      name: "TypeAlias",
+      description: "TypeAlias. `export type T = {}`",
+      parameter: Maybe.Just(customType.typeAlias),
+    },
+    {
+      name: "Function",
+      description: "Function `export const f = () => {}`",
+      parameter: Maybe.Just(customType.function_),
+    },
+    {
+      name: "Variable",
+      description: "Variable `export const v = {}`",
+      parameter: Maybe.Just(customType.variable),
+    },
+  ]),
+  product(name.typeAlias, "TypeAlias. `export type T = {}`", [
+    {
+      name: "name",
+      description: "型の名前",
+      type: customType.identifer,
+    },
+    {
+      name: "typeParameterList",
+      description: "型パラメーターのリスト",
+      type: Type.List(customType.identifer),
+    },
+    {
+      name: "document",
+      description: "ドキュメント",
+      type: Type.String,
+    },
+    {
+      name: "type",
+      description: "型本体",
+      type: customType.type,
+    },
+  ]),
+  product(name.function_, "", [
+    {
+      name: "name",
+      description: "外部に公開する関数の名前",
+      type: customType.identifer,
+    },
+    {
+      name: "document",
+      description: "ドキュメント",
+      type: Type.String,
+    },
+    {
+      name: "typeParameterList",
+      description: "型パラメーターのリスト",
+      type: Type.List(customType.identifer),
+    },
+    {
+      name: "parameterList",
+      description: "パラメーター",
+      type: Type.List(customType.parameterWithDocument),
+    },
+    {
+      name: "returnType",
+      description: "戻り値の型",
+      type: customType.type,
+    },
+    {
+      name: "statementList",
+      description: "関数の本体",
+      type: customType.statement,
+    },
+  ]),
   {
     name: name.parameterWithDocument,
     description:
@@ -789,6 +792,142 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       },
     ]),
   },
+  product(name.setStatement, "代入文", [
+    {
+      name: "target",
+      description: "対象となる式. 指定の仕方によってはJSのSyntaxErrorになる",
+      type: customType.expr,
+    },
+    {
+      name: "operatorMaybe",
+      description: "演算子を=の左につける",
+      type: Type.Maybe(customType.binaryOperator),
+    },
+    {
+      name: "expr",
+      description: "式",
+      type: customType.expr,
+    },
+  ]),
+  product(name.ifStatement, "if文", [
+    {
+      name: "condition",
+      description: "条件の式",
+      type: customType.expr,
+    },
+    {
+      name: "thenStatementList",
+      description: "条件がtrueのときに実行する文",
+      type: Type.List(customType.statement),
+    },
+  ]),
+  product(name.variableDefinitionStatement, "ローカル変数定義", [
+    {
+      name: "name",
+      description: "変数名",
+      type: customType.identifer,
+    },
+    {
+      name: "type",
+      description: "変数の型",
+      type: customType.type,
+    },
+    {
+      name: "expr",
+      description: "式",
+      type: customType.expr,
+    },
+    {
+      name: "isConst",
+      description: "constかどうか. falseはlet",
+      type: Type.Bool,
+    },
+  ]),
+  product(name.functionDefinitionStatement, "ローカル関数定義", [
+    {
+      name: "name",
+      description: "変数名",
+      type: customType.identifer,
+    },
+    {
+      name: "typeParameterList",
+      description: "型パラメーターのリスト",
+      type: Type.List(customType.identifer),
+    },
+    {
+      name: "parameterList",
+      description: "パラメーターのリスト",
+      type: Type.List(customType.parameterWithDocument),
+    },
+    {
+      name: "returnType",
+      description: "戻り値の型",
+      type: customType.type,
+    },
+    {
+      name: "statementList",
+      description: "関数本体",
+      type: Type.List(customType.statement),
+    },
+  ]),
+  product(name.forStatement, "for文", [
+    {
+      name: "counterVariableName",
+      description: "カウンタ変数名",
+      type: customType.identifer,
+    },
+    {
+      name: "untilExpr",
+      description: "ループの上限の式",
+      type: customType.expr,
+    },
+    {
+      name: "statementList",
+      description: "繰り返す文",
+      type: Type.List(customType.statement),
+    },
+  ]),
+  product(name.forOfStatement, "forOf文", [
+    {
+      name: "elementVariableName",
+      description: "要素の変数名",
+      type: customType.identifer,
+    },
+    {
+      name: "iterableExpr",
+      description: "繰り返す対象",
+      type: customType.expr,
+    },
+    {
+      name: "statementList",
+      description: "繰り返す文",
+      type: Type.List(customType.statement),
+    },
+  ]),
+  product(name.switchStatement, "switch文", [
+    {
+      name: "expr",
+      description: "switch(a) {} の a",
+      type: customType.expr,
+    },
+    {
+      name: "patternList",
+      description: 'case "text": { statementList }',
+      type: Type.List(customType.pattern),
+    },
+  ]),
+  product(name.pattern, 'switch文のcase "text": { statementList } の部分', [
+    {
+      name: "caseString",
+      description: "case に使う文字列",
+      type: Type.String,
+    },
+    {
+      name: "statementList",
+      description: "statementList",
+      type: Type.List(customType.statement),
+    },
+  ]),
   {
     name: name.identifer,
     description: "TypeScriptの識別子として使える文字",
