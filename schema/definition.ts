@@ -458,6 +458,11 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
         parameter: Maybe.Just(customType.variableDefinitionStatement),
       },
       {
+        name: "FunctionDefinition",
+        description: "",
+        parameter: Maybe.Just(customType.functionDefinitionStatement),
+      },
+      {
         name: "For",
         description: "",
         parameter: Maybe.Just(customType.forStatement),
@@ -481,6 +486,93 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
         name: "Switch",
         description: "",
         parameter: Maybe.Just(customType.switchStatement),
+      },
+    ]),
+  },
+  {
+    name: name.type,
+    description: "",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Number",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "String",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Boolean",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Undefined",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Null",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Never",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Void",
+        description: "",
+        parameter: Maybe.Nothing(),
+      },
+      {
+        name: "Object",
+        description: "",
+        parameter: Maybe.Just(Type.List(customType.memberType)),
+      },
+      {
+        name: "Function",
+        description: "",
+        parameter: Maybe.Just(customType.functionType),
+      },
+      {
+        name: "WithTypeParameter",
+        description: "",
+        parameter: Maybe.Just(customType.typeWithTypeParameter),
+      },
+      {
+        name: "Union",
+        description: "",
+        parameter: Maybe.Just(Type.List(customType.type)),
+      },
+      {
+        name: "Intersection",
+        description: "",
+        parameter: Maybe.Just(customType.intersectionType),
+      },
+      {
+        name: "ImportedType",
+        description: "",
+        parameter: Maybe.Just(customType.intersectionType),
+      },
+      {
+        name: "ScopeInFile",
+        description: "",
+        parameter: Maybe.Just(customType.identifer),
+      },
+      {
+        name: "ScopeInGlobal",
+        description: "",
+        parameter: Maybe.Just(customType.identifer),
+      },
+      {
+        name: "StringLiteral",
+        description: "",
+        parameter: Maybe.Just(Type.String),
       },
     ]),
   },

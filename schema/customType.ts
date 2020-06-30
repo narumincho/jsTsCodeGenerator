@@ -40,6 +40,16 @@ export const ifStatement = noParameterType(name.ifStatement);
 export const variableDefinitionStatement = noParameterType(
   name.variableDefinitionStatement
 );
+export const functionDefinitionStatement = noParameterType(
+  name.functionDefinitionStatement
+);
 export const forStatement = noParameterType(name.forStatement);
 export const forOfStatement = noParameterType(name.forOfStatement);
 export const switchStatement = noParameterType(name.switchStatement);
+export const memberType = noParameterType(name.memberType);
+export const functionType = noParameterType(name.functionType);
+export const typeWithTypeParameter = noParameterType(
+  name.typeWithTypeParameter
+);
+export const intersectionType = noParameterType(name.intersectionType);
+export const importedType = noParameterType(name.intersectionType);
