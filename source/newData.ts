@@ -58,13 +58,606 @@ export type ExportDefinition =
 /**
  * TypeAlias. `export type T = {}`
  */
-export type TypeAlias = {};
+export type TypeAlias = {
+  /**
+   * 型の名前
+   */
+  readonly name: Identifer;
+  /**
+   * 型パラメーターのリスト
+   */
+  readonly typeParameterList: ReadonlyArray<Identifer>;
+  /**
+   * ドキュメント
+   */
+  readonly document: string;
+  /**
+   * 型本体
+   */
+  readonly type: Type;
+};
 
-export type Function = {};
+export type Function = {
+  /**
+   * 外部に公開する関数の名前
+   */
+  readonly name: Identifer;
+  /**
+   * ドキュメント
+   */
+  readonly document: string;
+  /**
+   * 型パラメーターのリスト
+   */
+  readonly typeParameterList: ReadonlyArray<Identifer>;
+  /**
+   * パラメーター
+   */
+  readonly parameterList: ReadonlyArray<ParameterWithDocument>;
+  /**
+   * 戻り値の型
+   */
+  readonly returnType: Type;
+  /**
+   * 関数の本体
+   */
+  readonly statementList: Statement;
+};
 
-export type Variable = {};
+/**
+ * ドキュメント付きの関数のパラメーター. パラメーター名, ドキュメント, 型
+ */
+export type ParameterWithDocument = {
+  /**
+   * パラメーター名
+   */
+  readonly name: Identifer;
+  /**
+   * ドキュメント
+   */
+  readonly document: string;
+  /**
+   * パラメーターの型
+   */
+  readonly type: Type;
+};
 
-export type Statement = {};
+/**
+ * 関数のパラメーター. パラメーター名, ドキュメント
+ */
+export type Parameter = {
+  /**
+   * パラメーター名
+   */
+  readonly name: Identifer;
+  /**
+   * パラメーターの型
+   */
+  readonly type: Type;
+};
+
+export type Variable = {
+  /**
+   * 変数の名前
+   */
+  readonly name: Identifer;
+  /**
+   * ドキュメント
+   */
+  readonly document: string;
+  /**
+   * 変数の型
+   */
+  readonly type: Type;
+  /**
+   * 変数の式
+   */
+  readonly expr: Expr;
+};
+
+/**
+ * 単項演算子
+ */
+export type UnaryOperator = "Minus" | "BitwiseNot" | "LogicalNot";
+
+/**
+ * 2項演算子
+ */
+export type BinaryOperator =
+  | "Exponentiation"
+  | "Multiplication"
+  | "Division"
+  | "Remainder"
+  | "Addition"
+  | "Subtraction"
+  | "LeftShift"
+  | "SignedRightShift"
+  | "UnsignedRightShift"
+  | "LessThan"
+  | "LessThanOrEqual"
+  | "Equal"
+  | "NotEqual"
+  | "BitwiseAnd"
+  | "BitwiseXOr"
+  | "BitwiseOr"
+  | "LogicalAnd"
+  | "LogicalOr";
+
+/**
+ * 式
+ */
+export type Expr =
+  | { readonly _: "NumberLiteral"; readonly int32: number }
+  | { readonly _: "StringLiteral"; readonly string: string }
+  | { readonly _: "BooleanLiteral"; readonly bool: boolean }
+  | { readonly _: "NullLiteral" }
+  | { readonly _: "UndefinedLiteral" }
+  | {
+      readonly _: "UnaryOperator";
+      readonly unaryOperatorExpr: UnaryOperatorExpr;
+    }
+  | {
+      readonly _: "BinaryOperator";
+      readonly binaryOperatorExpr: BinaryOperatorExpr;
+    }
+  | {
+      readonly _: "ConditionalOperator";
+      readonly conditionalOperatorExpr: ConditionalOperatorExpr;
+    }
+  | {
+      readonly _: "ArrayLiteral";
+      readonly arrayItemList: ReadonlyArray<ArrayItem>;
+    }
+  | { readonly _: "ObjectLiteral"; readonly memberList: ReadonlyArray<Member> }
+  | { readonly _: "Lambda"; readonly lambdaExpr: LambdaExpr }
+  | { readonly _: "Variable"; readonly identifer: Identifer }
+  | { readonly _: "GlobalObjects"; readonly identifer: Identifer }
+  | {
+      readonly _: "ImportedVariable";
+      readonly importedVariable: ImportedVariable;
+    }
+  | { readonly _: "Get"; readonly getExpr: GetExpr }
+  | { readonly _: "Call"; readonly callExpr: CallExpr }
+  | { readonly _: "New"; readonly callExpr: CallExpr }
+  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion };
+
+export type Statement =
+  | { readonly _: "EvaluateExpr"; readonly expr: Expr }
+  | { readonly _: "Set"; readonly setStatement: SetStatement }
+  | { readonly _: "If"; readonly ifStatement: IfStatement }
+  | { readonly _: "ThrowError"; readonly expr: Expr }
+  | { readonly _: "Return"; readonly expr: Expr }
+  | { readonly _: "ReturnVoid" }
+  | { readonly _: "Continue" }
+  | {
+      readonly _: "VariableDefinition";
+      readonly variableDefinitionStatement: VariableDefinitionStatement;
+    }
+  | {
+      readonly _: "FunctionDefinition";
+      readonly functionDefinitionStatement: FunctionDefinitionStatement;
+    }
+  | { readonly _: "For"; readonly forStatement: ForStatement }
+  | { readonly _: "ForOf"; readonly forOfStatement: ForOfStatement }
+  | {
+      readonly _: "WhileTrue";
+      readonly statementList: ReadonlyArray<Statement>;
+    }
+  | { readonly _: "Break" }
+  | { readonly _: "Switch"; readonly switchStatement: SwitchStatement };
+
+/**
+ * 型
+ */
+export type Type =
+  | { readonly _: "Number" }
+  | { readonly _: "String" }
+  | { readonly _: "Boolean" }
+  | { readonly _: "Undefined" }
+  | { readonly _: "Null" }
+  | { readonly _: "Never" }
+  | { readonly _: "Void" }
+  | { readonly _: "Object"; readonly memberTypeList: ReadonlyArray<MemberType> }
+  | { readonly _: "Function"; readonly functionType: FunctionType }
+  | {
+      readonly _: "WithTypeParameter";
+      readonly typeWithTypeParameter: TypeWithTypeParameter;
+    }
+  | { readonly _: "Union"; readonly typeList: ReadonlyArray<Type> }
+  | { readonly _: "Intersection"; readonly intersectionType: IntersectionType }
+  | { readonly _: "ImportedType"; readonly intersectionType: IntersectionType }
+  | { readonly _: "ScopeInFile"; readonly identifer: Identifer }
+  | { readonly _: "ScopeInGlobal"; readonly identifer: Identifer }
+  | { readonly _: "StringLiteral"; readonly string: string };
+
+/**
+ * 単項演算子と適用される式
+ */
+export type UnaryOperatorExpr = {
+  /**
+   * 単項演算子
+   */
+  readonly operator: UnaryOperator;
+  /**
+   * 適用される式
+   */
+  readonly expr: Expr;
+};
+
+/**
+ * 2項演算子と左右の式
+ */
+export type BinaryOperatorExpr = {
+  /**
+   * 2項演算子
+   */
+  readonly operator: BinaryOperator;
+  /**
+   * 左の式
+   */
+  readonly left: Expr;
+  /**
+   * 右の式
+   */
+  readonly right: Expr;
+};
+
+/**
+ * 条件演算子
+ */
+export type ConditionalOperatorExpr = {
+  /**
+   * 条件の式
+   */
+  readonly condition: Expr;
+  /**
+   * 条件がtrueのときに評価される式
+   */
+  readonly thenExpr: Expr;
+  /**
+   * 条件がfalseのときに評価される式
+   */
+  readonly elseExpr: Expr;
+};
+
+/**
+ * 配列リテラルの要素
+ */
+export type ArrayItem = {
+  /**
+   * 式
+   */
+  readonly expr: Expr;
+  /**
+   * スプレッド ...a のようにするか
+   */
+  readonly spread: boolean;
+};
+
+/**
+ * オブジェクトリテラルの要素
+ */
+export type Member =
+  | { readonly _: "Spread"; readonly expr: Expr }
+  | { readonly _: "KeyValue"; readonly keyValue: KeyValue };
+
+/**
+ * 文字列のkeyと式のvalue
+ */
+export type KeyValue = {
+  /**
+   * key
+   */
+  readonly key: string;
+  /**
+   * value
+   */
+  readonly value: Expr;
+};
+
+/**
+ * ラムダ式
+ */
+export type LambdaExpr = {
+  /**
+   * パラメーターのリスト
+   */
+  readonly parameterList: ReadonlyArray<Parameter>;
+  /**
+   * 型パラメーターのリスト
+   */
+  readonly typeParameterList: ReadonlyArray<Identifer>;
+  /**
+   * 戻り値の型
+   */
+  readonly returnType: Type;
+  /**
+   * ラムダ式本体
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * インポートした変数
+ */
+export type ImportedVariable = {
+  /**
+   * モジュール名, 使うときにはnamedインポートされ, そのモジュール識別子は自動的につけられる
+   */
+  readonly moduleName: string;
+  /**
+   * 変数名
+   */
+  readonly name: Identifer;
+};
+
+/**
+ * プロパティアクセス
+ */
+export type GetExpr = {
+  /**
+   * 式
+   */
+  readonly expr: Expr;
+  /**
+   * プロパティの式
+   */
+  readonly propertyExpr: Expr;
+};
+
+/**
+ * 式と呼ぶパラメーター
+ */
+export type CallExpr = {
+  /**
+   * 呼ばれる式
+   */
+  readonly expr: Expr;
+  /**
+   * パラメーター
+   */
+  readonly parameterList: ReadonlyArray<Expr>;
+};
+
+/**
+ * 型アサーション
+ */
+export type TypeAssertion = {
+  /**
+   * 型アサーションを受ける式
+   */
+  readonly expr: Expr;
+  /**
+   * 型
+   */
+  readonly type: Type;
+};
+
+/**
+ * 代入文
+ */
+export type SetStatement = {
+  /**
+   * 対象となる式. 指定の仕方によってはJSのSyntaxErrorになる
+   */
+  readonly target: Expr;
+  /**
+   * 演算子を=の左につける
+   */
+  readonly operatorMaybe: Maybe<BinaryOperator>;
+  /**
+   * 式
+   */
+  readonly expr: Expr;
+};
+
+/**
+ * if文
+ */
+export type IfStatement = {
+  /**
+   * 条件の式
+   */
+  readonly condition: Expr;
+  /**
+   * 条件がtrueのときに実行する文
+   */
+  readonly thenStatementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * ローカル変数定義
+ */
+export type VariableDefinitionStatement = {
+  /**
+   * 変数名
+   */
+  readonly name: Identifer;
+  /**
+   * 変数の型
+   */
+  readonly type: Type;
+  /**
+   * 式
+   */
+  readonly expr: Expr;
+  /**
+   * constかどうか. falseはlet
+   */
+  readonly isConst: boolean;
+};
+
+/**
+ * ローカル関数定義
+ */
+export type FunctionDefinitionStatement = {
+  /**
+   * 変数名
+   */
+  readonly name: Identifer;
+  /**
+   * 型パラメーターのリスト
+   */
+  readonly typeParameterList: ReadonlyArray<Identifer>;
+  /**
+   * パラメーターのリスト
+   */
+  readonly parameterList: ReadonlyArray<ParameterWithDocument>;
+  /**
+   * 戻り値の型
+   */
+  readonly returnType: Type;
+  /**
+   * 関数本体
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * for文
+ */
+export type ForStatement = {
+  /**
+   * カウンタ変数名
+   */
+  readonly counterVariableName: Identifer;
+  /**
+   * ループの上限の式
+   */
+  readonly untilExpr: Expr;
+  /**
+   * 繰り返す文
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * forOf文
+ */
+export type ForOfStatement = {
+  /**
+   * 要素の変数名
+   */
+  readonly elementVariableName: Identifer;
+  /**
+   * 繰り返す対象
+   */
+  readonly iterableExpr: Expr;
+  /**
+   * 繰り返す文
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * switch文
+ */
+export type SwitchStatement = {
+  /**
+   * switch(a) {} の a
+   */
+  readonly expr: Expr;
+  /**
+   * case "text": { statementList }
+   */
+  readonly patternList: ReadonlyArray<Pattern>;
+};
+
+/**
+ * switch文のcase "text": { statementList } の部分
+ */
+export type Pattern = {
+  /**
+   * case に使う文字列
+   */
+  readonly caseString: string;
+  /**
+   * statementList
+   */
+  readonly statementList: ReadonlyArray<Statement>;
+};
+
+/**
+ * オブジェクトのメンバーの型
+ */
+export type MemberType = {
+  /**
+   * プロパティ名
+   */
+  readonly name: string;
+  /**
+   * 必須かどうか falseの場合 ? がつく
+   */
+  readonly required: boolean;
+  /**
+   * 型
+   */
+  readonly type: Type;
+  /**
+   * ドキュメント
+   */
+  readonly document: string;
+};
+
+/**
+ * 関数の型
+ */
+export type FunctionType = {
+  /**
+   * 型パラメーターのリスト
+   */
+  readonly typeParameterList: ReadonlyArray<Identifer>;
+  /**
+   * パラメーターの型. 意味のない引数名は適当に付く
+   */
+  readonly parameterList: ReadonlyArray<Type>;
+  /**
+   * 戻り値の型
+   */
+  readonly return: Type;
+};
+
+/**
+ * パラメーター付きの型
+ */
+export type TypeWithTypeParameter = {
+  /**
+   * パラメーターをつけられる型
+   */
+  readonly type: Type;
+  /**
+   * パラメーターに指定する型. なにも要素を入れなけければ T<>ではなく T の形式で出力される
+   */
+  readonly typeParameterList: ReadonlyArray<Type>;
+};
+
+/**
+ * 交差型
+ */
+export type IntersectionType = {
+  /**
+   * 左に指定する型
+   */
+  readonly left: Type;
+  /**
+   * 右に指定する型
+   */
+  readonly right: Type;
+};
+
+/**
+ * インポートされた型
+ */
+export type ImportedType = {
+  /**
+   * モジュール名. namedImportされるがその識別子は自動的に作成される
+   */
+  readonly moduleName: string;
+  /**
+   * 型の名前
+   */
+  readonly name: Identifer;
+};
 
 /**
  * TypeScriptの識別子として使える文字
@@ -641,53 +1234,2473 @@ export const ExportDefinition: {
  */
 export const TypeAlias: { readonly codec: Codec<TypeAlias> } = {
   codec: {
-    encode: (value: TypeAlias): ReadonlyArray<number> => [],
+    encode: (value: TypeAlias): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(List.codec(Identifer.codec).encode(value.typeParameterList))
+        .concat(String.codec.encode(value.document))
+        .concat(Type.codec.encode(value["type"])),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: TypeAlias; readonly nextIndex: number } => ({
-      result: {},
-      nextIndex: index,
-    }),
+    ): { readonly result: TypeAlias; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Identifer>;
+        readonly nextIndex: number;
+      } = List.codec(Identifer.codec).decode(
+        nameAndNextIndex.nextIndex,
+        binary
+      );
+      const documentAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(typeParameterListAndNextIndex.nextIndex, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(documentAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+          document: documentAndNextIndex.result,
+          type: typeAndNextIndex.result,
+        },
+        nextIndex: typeAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
 export const Function: { readonly codec: Codec<Function> } = {
   codec: {
-    encode: (value: Function): ReadonlyArray<number> => [],
+    encode: (value: Function): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(String.codec.encode(value.document))
+        .concat(List.codec(Identifer.codec).encode(value.typeParameterList))
+        .concat(
+          List.codec(ParameterWithDocument.codec).encode(value.parameterList)
+        )
+        .concat(Type.codec.encode(value.returnType))
+        .concat(Statement.codec.encode(value.statementList)),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Function; readonly nextIndex: number } => ({
-      result: {},
-      nextIndex: index,
-    }),
+    ): { readonly result: Function; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const documentAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Identifer>;
+        readonly nextIndex: number;
+      } = List.codec(Identifer.codec).decode(
+        documentAndNextIndex.nextIndex,
+        binary
+      );
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<ParameterWithDocument>;
+        readonly nextIndex: number;
+      } = List.codec(ParameterWithDocument.codec).decode(
+        typeParameterListAndNextIndex.nextIndex,
+        binary
+      );
+      const returnTypeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(parameterListAndNextIndex.nextIndex, binary);
+      const statementListAndNextIndex: {
+        readonly result: Statement;
+        readonly nextIndex: number;
+      } = Statement.codec.decode(returnTypeAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          document: documentAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+          parameterList: parameterListAndNextIndex.result,
+          returnType: returnTypeAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * ドキュメント付きの関数のパラメーター. パラメーター名, ドキュメント, 型
+ */
+export const ParameterWithDocument: {
+  readonly codec: Codec<ParameterWithDocument>;
+} = {
+  codec: {
+    encode: (value: ParameterWithDocument): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(String.codec.encode(value.document))
+        .concat(Type.codec.encode(value["type"])),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: ParameterWithDocument;
+      readonly nextIndex: number;
+    } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const documentAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(documentAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          document: documentAndNextIndex.result,
+          type: typeAndNextIndex.result,
+        },
+        nextIndex: typeAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 関数のパラメーター. パラメーター名, ドキュメント
+ */
+export const Parameter: { readonly codec: Codec<Parameter> } = {
+  codec: {
+    encode: (value: Parameter): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(Type.codec.encode(value["type"])),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Parameter; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(nameAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          type: typeAndNextIndex.result,
+        },
+        nextIndex: typeAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
 export const Variable: { readonly codec: Codec<Variable> } = {
   codec: {
-    encode: (value: Variable): ReadonlyArray<number> => [],
+    encode: (value: Variable): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(String.codec.encode(value.document))
+        .concat(Type.codec.encode(value["type"]))
+        .concat(Expr.codec.encode(value.expr)),
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Variable; readonly nextIndex: number } => ({
-      result: {},
-      nextIndex: index,
-    }),
+    ): { readonly result: Variable; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const documentAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(documentAndNextIndex.nextIndex, binary);
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(typeAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          document: documentAndNextIndex.result,
+          type: typeAndNextIndex.result,
+          expr: exprAndNextIndex.result,
+        },
+        nextIndex: exprAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 
-export const Statement: { readonly codec: Codec<Statement> } = {
+/**
+ * 単項演算子
+ */
+export const UnaryOperator: {
+  /**
+   * 単項マイナス演算子 `-a`
+   */
+  readonly Minus: UnaryOperator;
+  /**
+   * ビット否定 `~a`
+   */
+  readonly BitwiseNot: UnaryOperator;
+  /**
+   * 論理否定 `!a`
+   */
+  readonly LogicalNot: UnaryOperator;
+  readonly codec: Codec<UnaryOperator>;
+} = {
+  Minus: "Minus",
+  BitwiseNot: "BitwiseNot",
+  LogicalNot: "LogicalNot",
   codec: {
-    encode: (value: Statement): ReadonlyArray<number> => [],
+    encode: (value: UnaryOperator): ReadonlyArray<number> => {
+      switch (value) {
+        case "Minus": {
+          return [0];
+        }
+        case "BitwiseNot": {
+          return [1];
+        }
+        case "LogicalNot": {
+          return [2];
+        }
+      }
+    },
     decode: (
       index: number,
       binary: Uint8Array
-    ): { readonly result: Statement; readonly nextIndex: number } => ({
-      result: {},
-      nextIndex: index,
-    }),
+    ): { readonly result: UnaryOperator; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        return {
+          result: UnaryOperator.Minus,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        return {
+          result: UnaryOperator.BitwiseNot,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 2) {
+        return {
+          result: UnaryOperator.LogicalNot,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * 2項演算子
+ */
+export const BinaryOperator: {
+  /**
+   * べき乗 `a ** b
+   */
+  readonly Exponentiation: BinaryOperator;
+  /**
+   * 数値の掛け算 `a * b
+   */
+  readonly Multiplication: BinaryOperator;
+  /**
+   * 数値の割り算 `a / b`
+   */
+  readonly Division: BinaryOperator;
+  /**
+   * 剰余演算 `a % b`
+   */
+  readonly Remainder: BinaryOperator;
+  /**
+   * 数値の足し算, 文字列の結合 `a + b`
+   */
+  readonly Addition: BinaryOperator;
+  /**
+   * 数値の引き算 `a - b`
+   */
+  readonly Subtraction: BinaryOperator;
+  /**
+   * 左シフト `a << b`
+   */
+  readonly LeftShift: BinaryOperator;
+  /**
+   * 符号を維持する右シフト `a >> b`
+   */
+  readonly SignedRightShift: BinaryOperator;
+  /**
+   * 符号を維持しない(0埋め)右シフト `a >>> b`
+   */
+  readonly UnsignedRightShift: BinaryOperator;
+  /**
+   * 未満 `a < b`
+   */
+  readonly LessThan: BinaryOperator;
+  /**
+   * 以下 `a <= b`
+   */
+  readonly LessThanOrEqual: BinaryOperator;
+  /**
+   * 等号 `a === b`
+   */
+  readonly Equal: BinaryOperator;
+  /**
+   * 不等号 `a !== b`
+   */
+  readonly NotEqual: BinaryOperator;
+  /**
+   * ビットAND `a & b`
+   */
+  readonly BitwiseAnd: BinaryOperator;
+  /**
+   * ビットXOR `a ^ b`
+   */
+  readonly BitwiseXOr: BinaryOperator;
+  /**
+   * ビットOR `a | b`
+   */
+  readonly BitwiseOr: BinaryOperator;
+  /**
+   * 論理AND `a && b`
+   */
+  readonly LogicalAnd: BinaryOperator;
+  /**
+   * 論理OR `a || b`
+   */
+  readonly LogicalOr: BinaryOperator;
+  readonly codec: Codec<BinaryOperator>;
+} = {
+  Exponentiation: "Exponentiation",
+  Multiplication: "Multiplication",
+  Division: "Division",
+  Remainder: "Remainder",
+  Addition: "Addition",
+  Subtraction: "Subtraction",
+  LeftShift: "LeftShift",
+  SignedRightShift: "SignedRightShift",
+  UnsignedRightShift: "UnsignedRightShift",
+  LessThan: "LessThan",
+  LessThanOrEqual: "LessThanOrEqual",
+  Equal: "Equal",
+  NotEqual: "NotEqual",
+  BitwiseAnd: "BitwiseAnd",
+  BitwiseXOr: "BitwiseXOr",
+  BitwiseOr: "BitwiseOr",
+  LogicalAnd: "LogicalAnd",
+  LogicalOr: "LogicalOr",
+  codec: {
+    encode: (value: BinaryOperator): ReadonlyArray<number> => {
+      switch (value) {
+        case "Exponentiation": {
+          return [0];
+        }
+        case "Multiplication": {
+          return [1];
+        }
+        case "Division": {
+          return [2];
+        }
+        case "Remainder": {
+          return [3];
+        }
+        case "Addition": {
+          return [4];
+        }
+        case "Subtraction": {
+          return [5];
+        }
+        case "LeftShift": {
+          return [6];
+        }
+        case "SignedRightShift": {
+          return [7];
+        }
+        case "UnsignedRightShift": {
+          return [8];
+        }
+        case "LessThan": {
+          return [9];
+        }
+        case "LessThanOrEqual": {
+          return [10];
+        }
+        case "Equal": {
+          return [11];
+        }
+        case "NotEqual": {
+          return [12];
+        }
+        case "BitwiseAnd": {
+          return [13];
+        }
+        case "BitwiseXOr": {
+          return [14];
+        }
+        case "BitwiseOr": {
+          return [15];
+        }
+        case "LogicalAnd": {
+          return [16];
+        }
+        case "LogicalOr": {
+          return [17];
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: BinaryOperator; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        return {
+          result: BinaryOperator.Exponentiation,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        return {
+          result: BinaryOperator.Multiplication,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 2) {
+        return {
+          result: BinaryOperator.Division,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 3) {
+        return {
+          result: BinaryOperator.Remainder,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 4) {
+        return {
+          result: BinaryOperator.Addition,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 5) {
+        return {
+          result: BinaryOperator.Subtraction,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 6) {
+        return {
+          result: BinaryOperator.LeftShift,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 7) {
+        return {
+          result: BinaryOperator.SignedRightShift,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 8) {
+        return {
+          result: BinaryOperator.UnsignedRightShift,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 9) {
+        return {
+          result: BinaryOperator.LessThan,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 10) {
+        return {
+          result: BinaryOperator.LessThanOrEqual,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 11) {
+        return {
+          result: BinaryOperator.Equal,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 12) {
+        return {
+          result: BinaryOperator.NotEqual,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 13) {
+        return {
+          result: BinaryOperator.BitwiseAnd,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 14) {
+        return {
+          result: BinaryOperator.BitwiseXOr,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 15) {
+        return {
+          result: BinaryOperator.BitwiseOr,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 16) {
+        return {
+          result: BinaryOperator.LogicalAnd,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 17) {
+        return {
+          result: BinaryOperator.LogicalOr,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * 式
+ */
+export const Expr: {
+  /**
+   * 数値リテラル `123`
+   */
+  readonly NumberLiteral: (a: number) => Expr;
+  /**
+   * 文字列リテラル `"text"`
+   */
+  readonly StringLiteral: (a: string) => Expr;
+  /**
+   * booleanリテラル
+   */
+  readonly BooleanLiteral: (a: boolean) => Expr;
+  /**
+   * `null`
+   */
+  readonly NullLiteral: Expr;
+  /**
+   * `undefined`
+   */
+  readonly UndefinedLiteral: Expr;
+  /**
+   * 単項演算子での式
+   */
+  readonly UnaryOperator: (a: UnaryOperatorExpr) => Expr;
+  /**
+   * 2項演算子での式
+   */
+  readonly BinaryOperator: (a: BinaryOperatorExpr) => Expr;
+  /**
+   * 条件演算子 `a ? b : c`
+   */
+  readonly ConditionalOperator: (a: ConditionalOperatorExpr) => Expr;
+  /**
+   * 配列リテラル `[1, 2, 3]`
+   */
+  readonly ArrayLiteral: (a: ReadonlyArray<ArrayItem>) => Expr;
+  /**
+   * オブジェクトリテラル `{ data: 123, text: "sorena" }`
+   */
+  readonly ObjectLiteral: (a: ReadonlyArray<Member>) => Expr;
+  /**
+   * ラムダ式 `() => {}`
+   */
+  readonly Lambda: (a: LambdaExpr) => Expr;
+  /**
+   * 変数. 変数が存在するかのチャックがされる
+   */
+  readonly Variable: (a: Identifer) => Expr;
+  /**
+   * グローバルオブジェクト
+   */
+  readonly GlobalObjects: (a: Identifer) => Expr;
+  /**
+   * インポートされた変数
+   */
+  readonly ImportedVariable: (a: ImportedVariable) => Expr;
+  /**
+   * プロパティの値を取得する `a.b a[12] data[f(2)]`
+   */
+  readonly Get: (a: GetExpr) => Expr;
+  /**
+   * 関数を呼ぶ f(x)
+   */
+  readonly Call: (a: CallExpr) => Expr;
+  /**
+   * 式からインスタンスを作成する `new Date()`
+   */
+  readonly New: (a: CallExpr) => Expr;
+  /**
+   * 型アサーション `a as string`
+   */
+  readonly TypeAssertion: (a: TypeAssertion) => Expr;
+  readonly codec: Codec<Expr>;
+} = {
+  NumberLiteral: (int32: number): Expr => ({ _: "NumberLiteral", int32 }),
+  StringLiteral: (string_: string): Expr => ({
+    _: "StringLiteral",
+    string: string_,
+  }),
+  BooleanLiteral: (bool: boolean): Expr => ({ _: "BooleanLiteral", bool }),
+  NullLiteral: { _: "NullLiteral" },
+  UndefinedLiteral: { _: "UndefinedLiteral" },
+  UnaryOperator: (unaryOperatorExpr: UnaryOperatorExpr): Expr => ({
+    _: "UnaryOperator",
+    unaryOperatorExpr,
+  }),
+  BinaryOperator: (binaryOperatorExpr: BinaryOperatorExpr): Expr => ({
+    _: "BinaryOperator",
+    binaryOperatorExpr,
+  }),
+  ConditionalOperator: (
+    conditionalOperatorExpr: ConditionalOperatorExpr
+  ): Expr => ({ _: "ConditionalOperator", conditionalOperatorExpr }),
+  ArrayLiteral: (arrayItemList: ReadonlyArray<ArrayItem>): Expr => ({
+    _: "ArrayLiteral",
+    arrayItemList,
+  }),
+  ObjectLiteral: (memberList: ReadonlyArray<Member>): Expr => ({
+    _: "ObjectLiteral",
+    memberList,
+  }),
+  Lambda: (lambdaExpr: LambdaExpr): Expr => ({ _: "Lambda", lambdaExpr }),
+  Variable: (identifer: Identifer): Expr => ({ _: "Variable", identifer }),
+  GlobalObjects: (identifer: Identifer): Expr => ({
+    _: "GlobalObjects",
+    identifer,
+  }),
+  ImportedVariable: (importedVariable: ImportedVariable): Expr => ({
+    _: "ImportedVariable",
+    importedVariable,
+  }),
+  Get: (getExpr: GetExpr): Expr => ({ _: "Get", getExpr }),
+  Call: (callExpr: CallExpr): Expr => ({ _: "Call", callExpr }),
+  New: (callExpr: CallExpr): Expr => ({ _: "New", callExpr }),
+  TypeAssertion: (typeAssertion: TypeAssertion): Expr => ({
+    _: "TypeAssertion",
+    typeAssertion,
+  }),
+  codec: {
+    encode: (value: Expr): ReadonlyArray<number> => {
+      switch (value._) {
+        case "NumberLiteral": {
+          return [0].concat(Int32.codec.encode(value.int32));
+        }
+        case "StringLiteral": {
+          return [1].concat(String.codec.encode(value["string"]));
+        }
+        case "BooleanLiteral": {
+          return [2].concat(Bool.codec.encode(value.bool));
+        }
+        case "NullLiteral": {
+          return [3];
+        }
+        case "UndefinedLiteral": {
+          return [4];
+        }
+        case "UnaryOperator": {
+          return [5].concat(
+            UnaryOperatorExpr.codec.encode(value.unaryOperatorExpr)
+          );
+        }
+        case "BinaryOperator": {
+          return [6].concat(
+            BinaryOperatorExpr.codec.encode(value.binaryOperatorExpr)
+          );
+        }
+        case "ConditionalOperator": {
+          return [7].concat(
+            ConditionalOperatorExpr.codec.encode(value.conditionalOperatorExpr)
+          );
+        }
+        case "ArrayLiteral": {
+          return [8].concat(
+            List.codec(ArrayItem.codec).encode(value.arrayItemList)
+          );
+        }
+        case "ObjectLiteral": {
+          return [9].concat(List.codec(Member.codec).encode(value.memberList));
+        }
+        case "Lambda": {
+          return [10].concat(LambdaExpr.codec.encode(value.lambdaExpr));
+        }
+        case "Variable": {
+          return [11].concat(Identifer.codec.encode(value.identifer));
+        }
+        case "GlobalObjects": {
+          return [12].concat(Identifer.codec.encode(value.identifer));
+        }
+        case "ImportedVariable": {
+          return [13].concat(
+            ImportedVariable.codec.encode(value.importedVariable)
+          );
+        }
+        case "Get": {
+          return [14].concat(GetExpr.codec.encode(value.getExpr));
+        }
+        case "Call": {
+          return [15].concat(CallExpr.codec.encode(value.callExpr));
+        }
+        case "New": {
+          return [16].concat(CallExpr.codec.encode(value.callExpr));
+        }
+        case "TypeAssertion": {
+          return [17].concat(TypeAssertion.codec.encode(value.typeAssertion));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Expr; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: number;
+          readonly nextIndex: number;
+        } = Int32.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.NumberLiteral(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        const result: {
+          readonly result: string;
+          readonly nextIndex: number;
+        } = String.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.StringLiteral(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 2) {
+        const result: {
+          readonly result: boolean;
+          readonly nextIndex: number;
+        } = Bool.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.BooleanLiteral(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 3) {
+        return { result: Expr.NullLiteral, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 4) {
+        return {
+          result: Expr.UndefinedLiteral,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 5) {
+        const result: {
+          readonly result: UnaryOperatorExpr;
+          readonly nextIndex: number;
+        } = UnaryOperatorExpr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.UnaryOperator(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 6) {
+        const result: {
+          readonly result: BinaryOperatorExpr;
+          readonly nextIndex: number;
+        } = BinaryOperatorExpr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.BinaryOperator(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 7) {
+        const result: {
+          readonly result: ConditionalOperatorExpr;
+          readonly nextIndex: number;
+        } = ConditionalOperatorExpr.codec.decode(
+          patternIndex.nextIndex,
+          binary
+        );
+        return {
+          result: Expr.ConditionalOperator(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 8) {
+        const result: {
+          readonly result: ReadonlyArray<ArrayItem>;
+          readonly nextIndex: number;
+        } = List.codec(ArrayItem.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.ArrayLiteral(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 9) {
+        const result: {
+          readonly result: ReadonlyArray<Member>;
+          readonly nextIndex: number;
+        } = List.codec(Member.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.ObjectLiteral(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 10) {
+        const result: {
+          readonly result: LambdaExpr;
+          readonly nextIndex: number;
+        } = LambdaExpr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.Lambda(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 11) {
+        const result: {
+          readonly result: Identifer;
+          readonly nextIndex: number;
+        } = Identifer.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.Variable(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 12) {
+        const result: {
+          readonly result: Identifer;
+          readonly nextIndex: number;
+        } = Identifer.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.GlobalObjects(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 13) {
+        const result: {
+          readonly result: ImportedVariable;
+          readonly nextIndex: number;
+        } = ImportedVariable.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.ImportedVariable(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 14) {
+        const result: {
+          readonly result: GetExpr;
+          readonly nextIndex: number;
+        } = GetExpr.codec.decode(patternIndex.nextIndex, binary);
+        return { result: Expr.Get(result.result), nextIndex: result.nextIndex };
+      }
+      if (patternIndex.result === 15) {
+        const result: {
+          readonly result: CallExpr;
+          readonly nextIndex: number;
+        } = CallExpr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.Call(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 16) {
+        const result: {
+          readonly result: CallExpr;
+          readonly nextIndex: number;
+        } = CallExpr.codec.decode(patternIndex.nextIndex, binary);
+        return { result: Expr.New(result.result), nextIndex: result.nextIndex };
+      }
+      if (patternIndex.result === 17) {
+        const result: {
+          readonly result: TypeAssertion;
+          readonly nextIndex: number;
+        } = TypeAssertion.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Expr.TypeAssertion(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+export const Statement: {
+  /**
+   * expr;
+   * 式を評価する
+   */
+  readonly EvaluateExpr: (a: Expr) => Statement;
+  /**
+   * ```ts
+   * targetObject[targetPropertyName] = expr;
+   * location.href = "https://narumincho.com";
+   * array[0] = 30;
+   * data = 50;
+   * i += 1;
+   * ```
+   * 代入やプロパティの値を設定する。
+   */
+  readonly Set: (a: SetStatement) => Statement;
+  /**
+   * if (condition) { thenStatementList }
+   */
+  readonly If: (a: IfStatement) => Statement;
+  /**
+   * throw new Error("エラーメッセージ");
+   */
+  readonly ThrowError: (a: Expr) => Statement;
+  /**
+   * return expr;
+   */
+  readonly Return: (a: Expr) => Statement;
+  /**
+   * return;
+   * 戻り値がvoidの関数を早く抜ける
+   */
+  readonly ReturnVoid: Statement;
+  /**
+   * continue;
+   * forの繰り返しを次に進める
+   */
+  readonly Continue: Statement;
+  /**
+   * `const a: type_ = expr`
+   * ローカル変数の定義
+   */
+  readonly VariableDefinition: (a: VariableDefinitionStatement) => Statement;
+  /**
+   * `const name = (parameterList): returnType => { statementList }`
+   * ローカル関数の定義
+   */
+  readonly FunctionDefinition: (a: FunctionDefinitionStatement) => Statement;
+  /**
+   * ```ts
+   * for (let counterVariableName = 0; counterVariableName < untilExpr; counterVariableName += 1) {
+   *   statementList
+   * }
+   * ```
+   */
+  readonly For: (a: ForStatement) => Statement;
+  /**
+   * ```ts
+   * for (const elementVariableName of iterableExpr) {
+   *   statementList
+   * }
+   * ```
+   */
+  readonly ForOf: (a: ForOfStatement) => Statement;
+  /**
+   * while (true) { statementList }
+   */
+  readonly WhileTrue: (a: ReadonlyArray<Statement>) => Statement;
+  /**
+   * whileのループから抜ける
+   */
+  readonly Break: Statement;
+  /**
+   * switch文
+   */
+  readonly Switch: (a: SwitchStatement) => Statement;
+  readonly codec: Codec<Statement>;
+} = {
+  EvaluateExpr: (expr: Expr): Statement => ({ _: "EvaluateExpr", expr }),
+  Set: (setStatement: SetStatement): Statement => ({ _: "Set", setStatement }),
+  If: (ifStatement: IfStatement): Statement => ({ _: "If", ifStatement }),
+  ThrowError: (expr: Expr): Statement => ({ _: "ThrowError", expr }),
+  Return: (expr: Expr): Statement => ({ _: "Return", expr }),
+  ReturnVoid: { _: "ReturnVoid" },
+  Continue: { _: "Continue" },
+  VariableDefinition: (
+    variableDefinitionStatement: VariableDefinitionStatement
+  ): Statement => ({ _: "VariableDefinition", variableDefinitionStatement }),
+  FunctionDefinition: (
+    functionDefinitionStatement: FunctionDefinitionStatement
+  ): Statement => ({ _: "FunctionDefinition", functionDefinitionStatement }),
+  For: (forStatement: ForStatement): Statement => ({ _: "For", forStatement }),
+  ForOf: (forOfStatement: ForOfStatement): Statement => ({
+    _: "ForOf",
+    forOfStatement,
+  }),
+  WhileTrue: (statementList: ReadonlyArray<Statement>): Statement => ({
+    _: "WhileTrue",
+    statementList,
+  }),
+  Break: { _: "Break" },
+  Switch: (switchStatement: SwitchStatement): Statement => ({
+    _: "Switch",
+    switchStatement,
+  }),
+  codec: {
+    encode: (value: Statement): ReadonlyArray<number> => {
+      switch (value._) {
+        case "EvaluateExpr": {
+          return [0].concat(Expr.codec.encode(value.expr));
+        }
+        case "Set": {
+          return [1].concat(SetStatement.codec.encode(value.setStatement));
+        }
+        case "If": {
+          return [2].concat(IfStatement.codec.encode(value.ifStatement));
+        }
+        case "ThrowError": {
+          return [3].concat(Expr.codec.encode(value.expr));
+        }
+        case "Return": {
+          return [4].concat(Expr.codec.encode(value.expr));
+        }
+        case "ReturnVoid": {
+          return [5];
+        }
+        case "Continue": {
+          return [6];
+        }
+        case "VariableDefinition": {
+          return [7].concat(
+            VariableDefinitionStatement.codec.encode(
+              value.variableDefinitionStatement
+            )
+          );
+        }
+        case "FunctionDefinition": {
+          return [8].concat(
+            FunctionDefinitionStatement.codec.encode(
+              value.functionDefinitionStatement
+            )
+          );
+        }
+        case "For": {
+          return [9].concat(ForStatement.codec.encode(value.forStatement));
+        }
+        case "ForOf": {
+          return [10].concat(ForOfStatement.codec.encode(value.forOfStatement));
+        }
+        case "WhileTrue": {
+          return [11].concat(
+            List.codec(Statement.codec).encode(value.statementList)
+          );
+        }
+        case "Break": {
+          return [12];
+        }
+        case "Switch": {
+          return [13].concat(
+            SwitchStatement.codec.encode(value.switchStatement)
+          );
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Statement; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: Expr;
+          readonly nextIndex: number;
+        } = Expr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.EvaluateExpr(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        const result: {
+          readonly result: SetStatement;
+          readonly nextIndex: number;
+        } = SetStatement.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.Set(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 2) {
+        const result: {
+          readonly result: IfStatement;
+          readonly nextIndex: number;
+        } = IfStatement.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.If(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 3) {
+        const result: {
+          readonly result: Expr;
+          readonly nextIndex: number;
+        } = Expr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.ThrowError(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 4) {
+        const result: {
+          readonly result: Expr;
+          readonly nextIndex: number;
+        } = Expr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.Return(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 5) {
+        return {
+          result: Statement.ReturnVoid,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 6) {
+        return {
+          result: Statement.Continue,
+          nextIndex: patternIndex.nextIndex,
+        };
+      }
+      if (patternIndex.result === 7) {
+        const result: {
+          readonly result: VariableDefinitionStatement;
+          readonly nextIndex: number;
+        } = VariableDefinitionStatement.codec.decode(
+          patternIndex.nextIndex,
+          binary
+        );
+        return {
+          result: Statement.VariableDefinition(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 8) {
+        const result: {
+          readonly result: FunctionDefinitionStatement;
+          readonly nextIndex: number;
+        } = FunctionDefinitionStatement.codec.decode(
+          patternIndex.nextIndex,
+          binary
+        );
+        return {
+          result: Statement.FunctionDefinition(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 9) {
+        const result: {
+          readonly result: ForStatement;
+          readonly nextIndex: number;
+        } = ForStatement.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.For(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 10) {
+        const result: {
+          readonly result: ForOfStatement;
+          readonly nextIndex: number;
+        } = ForOfStatement.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.ForOf(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 11) {
+        const result: {
+          readonly result: ReadonlyArray<Statement>;
+          readonly nextIndex: number;
+        } = List.codec(Statement.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.WhileTrue(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 12) {
+        return { result: Statement.Break, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 13) {
+        const result: {
+          readonly result: SwitchStatement;
+          readonly nextIndex: number;
+        } = SwitchStatement.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Statement.Switch(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * 型
+ */
+export const Type: {
+  /**
+   * プリミティブの型のnumber
+   */
+  readonly Number: Type;
+  /**
+   * プリミティブの型のstring
+   */
+  readonly String: Type;
+  /**
+   * プリミティブの型のboolean
+   */
+  readonly Boolean: Type;
+  /**
+   * プリミティブの型のundefined
+   */
+  readonly Undefined: Type;
+  /**
+   * プリミティブの型のnull
+   */
+  readonly Null: Type;
+  /**
+   * never型
+   */
+  readonly Never: Type;
+  /**
+   * void型
+   */
+  readonly Void: Type;
+  /**
+   * オブジェクト
+   */
+  readonly Object: (a: ReadonlyArray<MemberType>) => Type;
+  /**
+   * 関数 `(parameter: parameter) => returnType`
+   */
+  readonly Function: (a: FunctionType) => Type;
+  /**
+   * 型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`
+   */
+  readonly WithTypeParameter: (a: TypeWithTypeParameter) => Type;
+  /**
+   * ユニオン型 `a | b`
+   */
+  readonly Union: (a: ReadonlyArray<Type>) => Type;
+  /**
+   * 交差型 `left & right`
+   */
+  readonly Intersection: (a: IntersectionType) => Type;
+  /**
+   * インポートされた外部の型
+   */
+  readonly ImportedType: (a: IntersectionType) => Type;
+  /**
+   * ファイル内で定義された型
+   */
+  readonly ScopeInFile: (a: Identifer) => Type;
+  /**
+   * グローバル空間の型
+   */
+  readonly ScopeInGlobal: (a: Identifer) => Type;
+  /**
+   * 文字列リテラル型
+   */
+  readonly StringLiteral: (a: string) => Type;
+  readonly codec: Codec<Type>;
+} = {
+  Number: { _: "Number" },
+  String: { _: "String" },
+  Boolean: { _: "Boolean" },
+  Undefined: { _: "Undefined" },
+  Null: { _: "Null" },
+  Never: { _: "Never" },
+  Void: { _: "Void" },
+  Object: (memberTypeList: ReadonlyArray<MemberType>): Type => ({
+    _: "Object",
+    memberTypeList,
+  }),
+  Function: (functionType: FunctionType): Type => ({
+    _: "Function",
+    functionType,
+  }),
+  WithTypeParameter: (typeWithTypeParameter: TypeWithTypeParameter): Type => ({
+    _: "WithTypeParameter",
+    typeWithTypeParameter,
+  }),
+  Union: (typeList: ReadonlyArray<Type>): Type => ({ _: "Union", typeList }),
+  Intersection: (intersectionType: IntersectionType): Type => ({
+    _: "Intersection",
+    intersectionType,
+  }),
+  ImportedType: (intersectionType: IntersectionType): Type => ({
+    _: "ImportedType",
+    intersectionType,
+  }),
+  ScopeInFile: (identifer: Identifer): Type => ({
+    _: "ScopeInFile",
+    identifer,
+  }),
+  ScopeInGlobal: (identifer: Identifer): Type => ({
+    _: "ScopeInGlobal",
+    identifer,
+  }),
+  StringLiteral: (string_: string): Type => ({
+    _: "StringLiteral",
+    string: string_,
+  }),
+  codec: {
+    encode: (value: Type): ReadonlyArray<number> => {
+      switch (value._) {
+        case "Number": {
+          return [0];
+        }
+        case "String": {
+          return [1];
+        }
+        case "Boolean": {
+          return [2];
+        }
+        case "Undefined": {
+          return [3];
+        }
+        case "Null": {
+          return [4];
+        }
+        case "Never": {
+          return [5];
+        }
+        case "Void": {
+          return [6];
+        }
+        case "Object": {
+          return [7].concat(
+            List.codec(MemberType.codec).encode(value.memberTypeList)
+          );
+        }
+        case "Function": {
+          return [8].concat(FunctionType.codec.encode(value.functionType));
+        }
+        case "WithTypeParameter": {
+          return [9].concat(
+            TypeWithTypeParameter.codec.encode(value.typeWithTypeParameter)
+          );
+        }
+        case "Union": {
+          return [10].concat(List.codec(Type.codec).encode(value.typeList));
+        }
+        case "Intersection": {
+          return [11].concat(
+            IntersectionType.codec.encode(value.intersectionType)
+          );
+        }
+        case "ImportedType": {
+          return [12].concat(
+            IntersectionType.codec.encode(value.intersectionType)
+          );
+        }
+        case "ScopeInFile": {
+          return [13].concat(Identifer.codec.encode(value.identifer));
+        }
+        case "ScopeInGlobal": {
+          return [14].concat(Identifer.codec.encode(value.identifer));
+        }
+        case "StringLiteral": {
+          return [15].concat(String.codec.encode(value["string"]));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Type; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        return { result: Type.Number, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 1) {
+        return { result: Type.String, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 2) {
+        return { result: Type.Boolean, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 3) {
+        return { result: Type.Undefined, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 4) {
+        return { result: Type.Null, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 5) {
+        return { result: Type.Never, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 6) {
+        return { result: Type.Void, nextIndex: patternIndex.nextIndex };
+      }
+      if (patternIndex.result === 7) {
+        const result: {
+          readonly result: ReadonlyArray<MemberType>;
+          readonly nextIndex: number;
+        } = List.codec(MemberType.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Object(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 8) {
+        const result: {
+          readonly result: FunctionType;
+          readonly nextIndex: number;
+        } = FunctionType.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Function(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 9) {
+        const result: {
+          readonly result: TypeWithTypeParameter;
+          readonly nextIndex: number;
+        } = TypeWithTypeParameter.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.WithTypeParameter(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 10) {
+        const result: {
+          readonly result: ReadonlyArray<Type>;
+          readonly nextIndex: number;
+        } = List.codec(Type.codec).decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Union(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 11) {
+        const result: {
+          readonly result: IntersectionType;
+          readonly nextIndex: number;
+        } = IntersectionType.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.Intersection(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 12) {
+        const result: {
+          readonly result: IntersectionType;
+          readonly nextIndex: number;
+        } = IntersectionType.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.ImportedType(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 13) {
+        const result: {
+          readonly result: Identifer;
+          readonly nextIndex: number;
+        } = Identifer.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.ScopeInFile(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 14) {
+        const result: {
+          readonly result: Identifer;
+          readonly nextIndex: number;
+        } = Identifer.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.ScopeInGlobal(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 15) {
+        const result: {
+          readonly result: string;
+          readonly nextIndex: number;
+        } = String.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Type.StringLiteral(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * 単項演算子と適用される式
+ */
+export const UnaryOperatorExpr: { readonly codec: Codec<UnaryOperatorExpr> } = {
+  codec: {
+    encode: (value: UnaryOperatorExpr): ReadonlyArray<number> =>
+      UnaryOperator.codec
+        .encode(value.operator)
+        .concat(Expr.codec.encode(value.expr)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: UnaryOperatorExpr; readonly nextIndex: number } => {
+      const operatorAndNextIndex: {
+        readonly result: UnaryOperator;
+        readonly nextIndex: number;
+      } = UnaryOperator.codec.decode(index, binary);
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(operatorAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          operator: operatorAndNextIndex.result,
+          expr: exprAndNextIndex.result,
+        },
+        nextIndex: exprAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 2項演算子と左右の式
+ */
+export const BinaryOperatorExpr: {
+  readonly codec: Codec<BinaryOperatorExpr>;
+} = {
+  codec: {
+    encode: (value: BinaryOperatorExpr): ReadonlyArray<number> =>
+      BinaryOperator.codec
+        .encode(value.operator)
+        .concat(Expr.codec.encode(value.left))
+        .concat(Expr.codec.encode(value.right)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: BinaryOperatorExpr; readonly nextIndex: number } => {
+      const operatorAndNextIndex: {
+        readonly result: BinaryOperator;
+        readonly nextIndex: number;
+      } = BinaryOperator.codec.decode(index, binary);
+      const leftAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(operatorAndNextIndex.nextIndex, binary);
+      const rightAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(leftAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          operator: operatorAndNextIndex.result,
+          left: leftAndNextIndex.result,
+          right: rightAndNextIndex.result,
+        },
+        nextIndex: rightAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 条件演算子
+ */
+export const ConditionalOperatorExpr: {
+  readonly codec: Codec<ConditionalOperatorExpr>;
+} = {
+  codec: {
+    encode: (value: ConditionalOperatorExpr): ReadonlyArray<number> =>
+      Expr.codec
+        .encode(value.condition)
+        .concat(Expr.codec.encode(value.thenExpr))
+        .concat(Expr.codec.encode(value.elseExpr)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: ConditionalOperatorExpr;
+      readonly nextIndex: number;
+    } => {
+      const conditionAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const thenExprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(conditionAndNextIndex.nextIndex, binary);
+      const elseExprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(thenExprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          condition: conditionAndNextIndex.result,
+          thenExpr: thenExprAndNextIndex.result,
+          elseExpr: elseExprAndNextIndex.result,
+        },
+        nextIndex: elseExprAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 配列リテラルの要素
+ */
+export const ArrayItem: { readonly codec: Codec<ArrayItem> } = {
+  codec: {
+    encode: (value: ArrayItem): ReadonlyArray<number> =>
+      Expr.codec.encode(value.expr).concat(Bool.codec.encode(value.spread)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ArrayItem; readonly nextIndex: number } => {
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const spreadAndNextIndex: {
+        readonly result: boolean;
+        readonly nextIndex: number;
+      } = Bool.codec.decode(exprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          expr: exprAndNextIndex.result,
+          spread: spreadAndNextIndex.result,
+        },
+        nextIndex: spreadAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * オブジェクトリテラルの要素
+ */
+export const Member: {
+  /**
+   * ...a のようにする
+   */
+  readonly Spread: (a: Expr) => Member;
+  /**
+   * a: b のようにする
+   */
+  readonly KeyValue: (a: KeyValue) => Member;
+  readonly codec: Codec<Member>;
+} = {
+  Spread: (expr: Expr): Member => ({ _: "Spread", expr }),
+  KeyValue: (keyValue: KeyValue): Member => ({ _: "KeyValue", keyValue }),
+  codec: {
+    encode: (value: Member): ReadonlyArray<number> => {
+      switch (value._) {
+        case "Spread": {
+          return [0].concat(Expr.codec.encode(value.expr));
+        }
+        case "KeyValue": {
+          return [1].concat(KeyValue.codec.encode(value.keyValue));
+        }
+      }
+    },
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Member; readonly nextIndex: number } => {
+      const patternIndex: {
+        readonly result: number;
+        readonly nextIndex: number;
+      } = Int32.codec.decode(index, binary);
+      if (patternIndex.result === 0) {
+        const result: {
+          readonly result: Expr;
+          readonly nextIndex: number;
+        } = Expr.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Member.Spread(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      if (patternIndex.result === 1) {
+        const result: {
+          readonly result: KeyValue;
+          readonly nextIndex: number;
+        } = KeyValue.codec.decode(patternIndex.nextIndex, binary);
+        return {
+          result: Member.KeyValue(result.result),
+          nextIndex: result.nextIndex,
+        };
+      }
+      throw new Error("存在しないパターンを指定された 型を更新してください");
+    },
+  },
+};
+
+/**
+ * 文字列のkeyと式のvalue
+ */
+export const KeyValue: { readonly codec: Codec<KeyValue> } = {
+  codec: {
+    encode: (value: KeyValue): ReadonlyArray<number> =>
+      String.codec.encode(value.key).concat(Expr.codec.encode(value.value)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: KeyValue; readonly nextIndex: number } => {
+      const keyAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const valueAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(keyAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          key: keyAndNextIndex.result,
+          value: valueAndNextIndex.result,
+        },
+        nextIndex: valueAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * ラムダ式
+ */
+export const LambdaExpr: { readonly codec: Codec<LambdaExpr> } = {
+  codec: {
+    encode: (value: LambdaExpr): ReadonlyArray<number> =>
+      List.codec(Parameter.codec)
+        .encode(value.parameterList)
+        .concat(List.codec(Identifer.codec).encode(value.typeParameterList))
+        .concat(Type.codec.encode(value.returnType))
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: LambdaExpr; readonly nextIndex: number } => {
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Parameter>;
+        readonly nextIndex: number;
+      } = List.codec(Parameter.codec).decode(index, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Identifer>;
+        readonly nextIndex: number;
+      } = List.codec(Identifer.codec).decode(
+        parameterListAndNextIndex.nextIndex,
+        binary
+      );
+      const returnTypeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(typeParameterListAndNextIndex.nextIndex, binary);
+      const statementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        returnTypeAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          parameterList: parameterListAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+          returnType: returnTypeAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * インポートした変数
+ */
+export const ImportedVariable: { readonly codec: Codec<ImportedVariable> } = {
+  codec: {
+    encode: (value: ImportedVariable): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.moduleName)
+        .concat(Identifer.codec.encode(value.name)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ImportedVariable; readonly nextIndex: number } => {
+      const moduleNameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(moduleNameAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          moduleName: moduleNameAndNextIndex.result,
+          name: nameAndNextIndex.result,
+        },
+        nextIndex: nameAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * プロパティアクセス
+ */
+export const GetExpr: { readonly codec: Codec<GetExpr> } = {
+  codec: {
+    encode: (value: GetExpr): ReadonlyArray<number> =>
+      Expr.codec
+        .encode(value.expr)
+        .concat(Expr.codec.encode(value.propertyExpr)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: GetExpr; readonly nextIndex: number } => {
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const propertyExprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(exprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          expr: exprAndNextIndex.result,
+          propertyExpr: propertyExprAndNextIndex.result,
+        },
+        nextIndex: propertyExprAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 式と呼ぶパラメーター
+ */
+export const CallExpr: { readonly codec: Codec<CallExpr> } = {
+  codec: {
+    encode: (value: CallExpr): ReadonlyArray<number> =>
+      Expr.codec
+        .encode(value.expr)
+        .concat(List.codec(Expr.codec).encode(value.parameterList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: CallExpr; readonly nextIndex: number } => {
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Expr>;
+        readonly nextIndex: number;
+      } = List.codec(Expr.codec).decode(exprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          expr: exprAndNextIndex.result,
+          parameterList: parameterListAndNextIndex.result,
+        },
+        nextIndex: parameterListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 型アサーション
+ */
+export const TypeAssertion: { readonly codec: Codec<TypeAssertion> } = {
+  codec: {
+    encode: (value: TypeAssertion): ReadonlyArray<number> =>
+      Expr.codec.encode(value.expr).concat(Type.codec.encode(value["type"])),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: TypeAssertion; readonly nextIndex: number } => {
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(exprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          expr: exprAndNextIndex.result,
+          type: typeAndNextIndex.result,
+        },
+        nextIndex: typeAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 代入文
+ */
+export const SetStatement: { readonly codec: Codec<SetStatement> } = {
+  codec: {
+    encode: (value: SetStatement): ReadonlyArray<number> =>
+      Expr.codec
+        .encode(value.target)
+        .concat(Maybe.codec(BinaryOperator.codec).encode(value.operatorMaybe))
+        .concat(Expr.codec.encode(value.expr)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: SetStatement; readonly nextIndex: number } => {
+      const targetAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const operatorMaybeAndNextIndex: {
+        readonly result: Maybe<BinaryOperator>;
+        readonly nextIndex: number;
+      } = Maybe.codec(BinaryOperator.codec).decode(
+        targetAndNextIndex.nextIndex,
+        binary
+      );
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(operatorMaybeAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          target: targetAndNextIndex.result,
+          operatorMaybe: operatorMaybeAndNextIndex.result,
+          expr: exprAndNextIndex.result,
+        },
+        nextIndex: exprAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * if文
+ */
+export const IfStatement: { readonly codec: Codec<IfStatement> } = {
+  codec: {
+    encode: (value: IfStatement): ReadonlyArray<number> =>
+      Expr.codec
+        .encode(value.condition)
+        .concat(List.codec(Statement.codec).encode(value.thenStatementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: IfStatement; readonly nextIndex: number } => {
+      const conditionAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const thenStatementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        conditionAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          condition: conditionAndNextIndex.result,
+          thenStatementList: thenStatementListAndNextIndex.result,
+        },
+        nextIndex: thenStatementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * ローカル変数定義
+ */
+export const VariableDefinitionStatement: {
+  readonly codec: Codec<VariableDefinitionStatement>;
+} = {
+  codec: {
+    encode: (value: VariableDefinitionStatement): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(Type.codec.encode(value["type"]))
+        .concat(Expr.codec.encode(value.expr))
+        .concat(Bool.codec.encode(value.isConst)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: VariableDefinitionStatement;
+      readonly nextIndex: number;
+    } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(typeAndNextIndex.nextIndex, binary);
+      const isConstAndNextIndex: {
+        readonly result: boolean;
+        readonly nextIndex: number;
+      } = Bool.codec.decode(exprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          type: typeAndNextIndex.result,
+          expr: exprAndNextIndex.result,
+          isConst: isConstAndNextIndex.result,
+        },
+        nextIndex: isConstAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * ローカル関数定義
+ */
+export const FunctionDefinitionStatement: {
+  readonly codec: Codec<FunctionDefinitionStatement>;
+} = {
+  codec: {
+    encode: (value: FunctionDefinitionStatement): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.name)
+        .concat(List.codec(Identifer.codec).encode(value.typeParameterList))
+        .concat(
+          List.codec(ParameterWithDocument.codec).encode(value.parameterList)
+        )
+        .concat(Type.codec.encode(value.returnType))
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: FunctionDefinitionStatement;
+      readonly nextIndex: number;
+    } => {
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Identifer>;
+        readonly nextIndex: number;
+      } = List.codec(Identifer.codec).decode(
+        nameAndNextIndex.nextIndex,
+        binary
+      );
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<ParameterWithDocument>;
+        readonly nextIndex: number;
+      } = List.codec(ParameterWithDocument.codec).decode(
+        typeParameterListAndNextIndex.nextIndex,
+        binary
+      );
+      const returnTypeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(parameterListAndNextIndex.nextIndex, binary);
+      const statementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        returnTypeAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+          parameterList: parameterListAndNextIndex.result,
+          returnType: returnTypeAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * for文
+ */
+export const ForStatement: { readonly codec: Codec<ForStatement> } = {
+  codec: {
+    encode: (value: ForStatement): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.counterVariableName)
+        .concat(Expr.codec.encode(value.untilExpr))
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ForStatement; readonly nextIndex: number } => {
+      const counterVariableNameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const untilExprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(counterVariableNameAndNextIndex.nextIndex, binary);
+      const statementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        untilExprAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          counterVariableName: counterVariableNameAndNextIndex.result,
+          untilExpr: untilExprAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * forOf文
+ */
+export const ForOfStatement: { readonly codec: Codec<ForOfStatement> } = {
+  codec: {
+    encode: (value: ForOfStatement): ReadonlyArray<number> =>
+      Identifer.codec
+        .encode(value.elementVariableName)
+        .concat(Expr.codec.encode(value.iterableExpr))
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ForOfStatement; readonly nextIndex: number } => {
+      const elementVariableNameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(index, binary);
+      const iterableExprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(elementVariableNameAndNextIndex.nextIndex, binary);
+      const statementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        iterableExprAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          elementVariableName: elementVariableNameAndNextIndex.result,
+          iterableExpr: iterableExprAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * switch文
+ */
+export const SwitchStatement: { readonly codec: Codec<SwitchStatement> } = {
+  codec: {
+    encode: (value: SwitchStatement): ReadonlyArray<number> =>
+      Expr.codec
+        .encode(value.expr)
+        .concat(List.codec(Pattern.codec).encode(value.patternList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: SwitchStatement; readonly nextIndex: number } => {
+      const exprAndNextIndex: {
+        readonly result: Expr;
+        readonly nextIndex: number;
+      } = Expr.codec.decode(index, binary);
+      const patternListAndNextIndex: {
+        readonly result: ReadonlyArray<Pattern>;
+        readonly nextIndex: number;
+      } = List.codec(Pattern.codec).decode(exprAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          expr: exprAndNextIndex.result,
+          patternList: patternListAndNextIndex.result,
+        },
+        nextIndex: patternListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * switch文のcase "text": { statementList } の部分
+ */
+export const Pattern: { readonly codec: Codec<Pattern> } = {
+  codec: {
+    encode: (value: Pattern): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.caseString)
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: Pattern; readonly nextIndex: number } => {
+      const caseStringAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const statementListAndNextIndex: {
+        readonly result: ReadonlyArray<Statement>;
+        readonly nextIndex: number;
+      } = List.codec(Statement.codec).decode(
+        caseStringAndNextIndex.nextIndex,
+        binary
+      );
+      return {
+        result: {
+          caseString: caseStringAndNextIndex.result,
+          statementList: statementListAndNextIndex.result,
+        },
+        nextIndex: statementListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * オブジェクトのメンバーの型
+ */
+export const MemberType: { readonly codec: Codec<MemberType> } = {
+  codec: {
+    encode: (value: MemberType): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.name)
+        .concat(Bool.codec.encode(value.required))
+        .concat(Type.codec.encode(value["type"]))
+        .concat(String.codec.encode(value.document)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: MemberType; readonly nextIndex: number } => {
+      const nameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const requiredAndNextIndex: {
+        readonly result: boolean;
+        readonly nextIndex: number;
+      } = Bool.codec.decode(nameAndNextIndex.nextIndex, binary);
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(requiredAndNextIndex.nextIndex, binary);
+      const documentAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(typeAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          name: nameAndNextIndex.result,
+          required: requiredAndNextIndex.result,
+          type: typeAndNextIndex.result,
+          document: documentAndNextIndex.result,
+        },
+        nextIndex: documentAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 関数の型
+ */
+export const FunctionType: { readonly codec: Codec<FunctionType> } = {
+  codec: {
+    encode: (value: FunctionType): ReadonlyArray<number> =>
+      List.codec(Identifer.codec)
+        .encode(value.typeParameterList)
+        .concat(List.codec(Type.codec).encode(value.parameterList))
+        .concat(Type.codec.encode(value["return"])),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: FunctionType; readonly nextIndex: number } => {
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Identifer>;
+        readonly nextIndex: number;
+      } = List.codec(Identifer.codec).decode(index, binary);
+      const parameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Type>;
+        readonly nextIndex: number;
+      } = List.codec(Type.codec).decode(
+        typeParameterListAndNextIndex.nextIndex,
+        binary
+      );
+      const returnAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(parameterListAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          typeParameterList: typeParameterListAndNextIndex.result,
+          parameterList: parameterListAndNextIndex.result,
+          return: returnAndNextIndex.result,
+        },
+        nextIndex: returnAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * パラメーター付きの型
+ */
+export const TypeWithTypeParameter: {
+  readonly codec: Codec<TypeWithTypeParameter>;
+} = {
+  codec: {
+    encode: (value: TypeWithTypeParameter): ReadonlyArray<number> =>
+      Type.codec
+        .encode(value["type"])
+        .concat(List.codec(Type.codec).encode(value.typeParameterList)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): {
+      readonly result: TypeWithTypeParameter;
+      readonly nextIndex: number;
+    } => {
+      const typeAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(index, binary);
+      const typeParameterListAndNextIndex: {
+        readonly result: ReadonlyArray<Type>;
+        readonly nextIndex: number;
+      } = List.codec(Type.codec).decode(typeAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          type: typeAndNextIndex.result,
+          typeParameterList: typeParameterListAndNextIndex.result,
+        },
+        nextIndex: typeParameterListAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * 交差型
+ */
+export const IntersectionType: { readonly codec: Codec<IntersectionType> } = {
+  codec: {
+    encode: (value: IntersectionType): ReadonlyArray<number> =>
+      Type.codec.encode(value.left).concat(Type.codec.encode(value.right)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: IntersectionType; readonly nextIndex: number } => {
+      const leftAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(index, binary);
+      const rightAndNextIndex: {
+        readonly result: Type;
+        readonly nextIndex: number;
+      } = Type.codec.decode(leftAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          left: leftAndNextIndex.result,
+          right: rightAndNextIndex.result,
+        },
+        nextIndex: rightAndNextIndex.nextIndex,
+      };
+    },
+  },
+};
+
+/**
+ * インポートされた型
+ */
+export const ImportedType: { readonly codec: Codec<ImportedType> } = {
+  codec: {
+    encode: (value: ImportedType): ReadonlyArray<number> =>
+      String.codec
+        .encode(value.moduleName)
+        .concat(Identifer.codec.encode(value.name)),
+    decode: (
+      index: number,
+      binary: Uint8Array
+    ): { readonly result: ImportedType; readonly nextIndex: number } => {
+      const moduleNameAndNextIndex: {
+        readonly result: string;
+        readonly nextIndex: number;
+      } = String.codec.decode(index, binary);
+      const nameAndNextIndex: {
+        readonly result: Identifer;
+        readonly nextIndex: number;
+      } = Identifer.codec.decode(moduleNameAndNextIndex.nextIndex, binary);
+      return {
+        result: {
+          moduleName: moduleNameAndNextIndex.result,
+          name: nameAndNextIndex.result,
+        },
+        nextIndex: nameAndNextIndex.nextIndex,
+      };
+    },
   },
 };
 

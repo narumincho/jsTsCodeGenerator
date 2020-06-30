@@ -928,6 +928,83 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       type: Type.List(customType.statement),
     },
   ]),
+  product(name.memberType, "オブジェクトのメンバーの型", [
+    {
+      name: "name",
+      description: "プロパティ名",
+      type: Type.String,
+    },
+    {
+      name: "required",
+      description: "必須かどうか falseの場合 ? がつく",
+      type: Type.Bool,
+    },
+    {
+      name: "type",
+      description: "型",
+      type: customType.type,
+    },
+    {
+      name: "document",
+      description: "ドキュメント",
+      type: Type.String,
+    },
+  ]),
+  product(name.functionType, "関数の型", [
+    {
+      name: "typeParameterList",
+      description: "型パラメーターのリスト",
+      type: Type.List(customType.identifer),
+    },
+    {
+      name: "parameterList",
+      description: "パラメーターの型. 意味のない引数名は適当に付く",
+      type: Type.List(customType.type),
+    },
+    {
+      name: "return",
+      description: "戻り値の型",
+      type: customType.type,
+    },
+  ]),
+  product(name.typeWithTypeParameter, "パラメーター付きの型", [
+    {
+      name: "type",
+      description: "パラメーターをつけられる型",
+      type: customType.type,
+    },
+    {
+      name: "typeParameterList",
+      description:
+        "パラメーターに指定する型. なにも要素を入れなけければ T<>ではなく T の形式で出力される",
+      type: Type.List(customType.type),
+    },
+  ]),
+  product(name.intersectionType, "交差型", [
+    {
+      name: "left",
+      description: "左に指定する型",
+      type: customType.type,
+    },
+    {
+      name: "right",
+      description: "右に指定する型",
+      type: customType.type,
+    },
+  ]),
+  product(name.importedType, "インポートされた型", [
+    {
+      name: "moduleName",
+      description:
+        "モジュール名. namedImportされるがその識別子は自動的に作成される",
+      type: Type.String,
+    },
+    {
+      name: "name",
+      description: "型の名前",
+      type: customType.identifer,
+    },
+  ]),
   {
     name: name.identifer,
     description: "TypeScriptの識別子として使える文字",
