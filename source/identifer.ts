@@ -29,8 +29,6 @@ export const fromString = (word: string): Identifer => {
   return Identifer.Identifer(result);
 };
 
-export const toString = (identifer: Identifer): string => identifer.string;
-
 const escapeChar = (char: string): string =>
   "$" + char.charCodeAt(0).toString(16);
 
