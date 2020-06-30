@@ -8,9 +8,15 @@ const codeName = "Code";
 const exportDefinitionName = "ExportDefinition";
 const statementName = "Statement";
 const typeAliasName = "TypeAlias";
-const functionName = "Function";
+const functionName = "Function_";
 const variableName = "Variable";
 const identiferName = "Identifer";
+const typeName = "Type";
+const parameterWithDocumentName = "ParameterWithDocument";
+const parameterName = "Parameter";
+const exprName = "Expr";
+const unaryOperatorName = "UnaryOperator";
+const binaryOperatorName = "BinaryOperator";
 
 const codeTypeType = data.Type.Custom({
   name: codeTypeName,
@@ -42,6 +48,30 @@ const variableType = data.Type.Custom({
 });
 const identiferType = data.Type.Custom({
   name: identiferName,
+  parameterList: [],
+});
+const typeType = data.Type.Custom({
+  name: typeName,
+  parameterList: [],
+});
+const parameterWithDocumentType = data.Type.Custom({
+  name: parameterWithDocumentName,
+  parameterList: [],
+});
+const parameterType = data.Type.Custom({
+  name: parameterName,
+  parameterList: [],
+});
+const exprType = data.Type.Custom({
+  name: exprName,
+  parameterList: [],
+});
+const unaryOperatorType = data.Type.Custom({
+  name: unaryOperatorName,
+  parameterList: [],
+});
+const binaryOperatorType = data.Type.Custom({
+  name: binaryOperatorName,
   parameterList: [],
 });
 
@@ -107,19 +137,251 @@ const customTypeDefinitionList: ReadonlyArray<data.CustomTypeDefinition> = [
     name: typeAliasName,
     description: "TypeAlias. `export type T = {}`",
     typeParameterList: [],
-    body: data.CustomTypeDefinitionBody.Product([]),
+    body: data.CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "型の名前",
+        type: identiferType,
+      },
+      {
+        name: "typeParameterList",
+        description: "型パラメーターのリスト",
+        type: data.Type.List(identiferType),
+      },
+      {
+        name: "document",
+        description: "ドキュメント",
+        type: data.Type.String,
+      },
+      {
+        name: "type",
+        description: "型本体",
+        type: typeType,
+      },
+    ]),
   },
   {
     name: functionName,
     description: "",
     typeParameterList: [],
-    body: data.CustomTypeDefinitionBody.Product([]),
+    body: data.CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "外部に公開する関数の名前",
+        type: identiferType,
+      },
+      {
+        name: "document",
+        description: "ドキュメント",
+        type: data.Type.String,
+      },
+      {
+        name: "typeParameterList",
+        description: "型パラメーターのリスト",
+        type: data.Type.List(identiferType),
+      },
+      {
+        name: "parameterList",
+        description: "パラメーター",
+        type: data.Type.List(parameterWithDocumentType),
+      },
+      {
+        name: "returnType",
+        description: "戻り値の型",
+        type: typeType,
+      },
+      {
+        name: "statementList",
+        description: "関数の本体",
+        type: statementType,
+      },
+    ]),
+  },
+  {
+    name: parameterWithDocumentName,
+    description:
+      "ドキュメント付きの関数のパラメーター. パラメーター名, ドキュメント, 型",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "パラメーター名",
+        type: identiferType,
+      },
+      {
+        name: "document",
+        description: "ドキュメント",
+        type: data.Type.String,
+      },
+      {
+        name: "type",
+        description: "パラメーターの型",
+        type: typeType,
+      },
+    ]),
+  },
+  {
+    name: parameterName,
+    description: "関数のパラメーター. パラメーター名, ドキュメント",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "パラメーター名",
+        type: identiferType,
+      },
+      {
+        name: "type",
+        description: "パラメーターの型",
+        type: typeType,
+      },
+    ]),
   },
   {
     name: variableName,
     description: "",
     typeParameterList: [],
-    body: data.CustomTypeDefinitionBody.Product([]),
+    body: data.CustomTypeDefinitionBody.Product([
+      {
+        name: "name",
+        description: "変数の名前",
+        type: identiferType,
+      },
+      {
+        name: "document",
+        description: "ドキュメント",
+        type: data.Type.String,
+      },
+      {
+        name: "type",
+        description: "変数の型",
+        type: typeType,
+      },
+      {
+        name: "expr",
+        description: "変数の式",
+        type: exprType,
+      },
+    ]),
+  },
+  {
+    name: unaryOperatorName,
+    description: "単項演算子",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Sum([
+      {
+        name: "Minus",
+        description: "-",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "BitwiseNot",
+        description: "~",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "LogicalNot",
+        description: "!",
+        parameter: data.Maybe.Nothing(),
+      },
+    ]),
+  },
+  {
+    name: binaryOperatorName,
+    description: "2項演算子",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Sum([
+      {
+        name: "Exponentiation",
+        description: "**",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "Multiplication",
+        description: "*",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "Division",
+        description: "/",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "Remainder",
+        description: "%",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "Addition",
+        description: "+",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "Subtraction",
+        description: "-",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "LeftShift",
+        description: "<<",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "SignedRightShift",
+        description: ">>",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "UnsignedRightShift",
+        description: ">>>",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "LessThan",
+        description: "<",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "LessThanOrEqual",
+        description: "<=",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "Equal",
+        description: "===",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "NotEqual",
+        description: "!==",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "BitwiseAnd",
+        description: "&",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "BitwiseXor",
+        description: "^",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "BitwiseOr",
+        description: "|",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "LogicalAnd",
+        description: "&&",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "LogicalOr",
+        description: "||",
+        parameter: data.Maybe.Nothing(),
+      },
+    ]),
   },
   {
     name: statementName,
