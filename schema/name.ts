@@ -17,6 +17,7 @@ export const binaryOperatorExpr = "BinaryOperatorExpr";
 export const conditionalOperatorExpr = "ConditionalOperatorExpr";
 export const arrayItem = "ArrayItem";
 export const member = "Member";
+export const keyValue = "KeyValue";
 export const lambdaExpr = "LambdaExpr";
 export const importedVariable = "ImportedVariable";
 export const getExpr = "GetExpr";

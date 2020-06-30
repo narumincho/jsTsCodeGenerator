@@ -30,6 +30,7 @@ export const conditionalOperatorExpr = noParameterType(
 );
 export const arrayItem = noParameterType(name.arrayItem);
 export const member = noParameterType(name.member);
+export const keyValue = noParameterType(name.keyValue);
 export const lambdaExpr = noParameterType(name.lambdaExpr);
 export const importedVariable = noParameterType(name.importedVariable);
 export const getExpr = noParameterType(name.getExpr);

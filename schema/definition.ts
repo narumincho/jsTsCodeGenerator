@@ -419,160 +419,373 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     body: CustomTypeDefinitionBody.Sum([
       {
         name: "EvaluateExpr",
-        description: "",
+        description: "expr;\n式を評価する",
         parameter: Maybe.Just(customType.expr),
       },
       {
         name: "Set",
-        description: "",
+        description:
+          '```ts\ntargetObject[targetPropertyName] = expr;\nlocation.href = "https://narumincho.com";\narray[0] = 30;\ndata = 50;\ni += 1;\n```\n代入やプロパティの値を設定する。',
         parameter: Maybe.Just(customType.setStatement),
       },
       {
         name: "If",
-        description: "",
+        description: "if (condition) { thenStatementList }",
         parameter: Maybe.Just(customType.ifStatement),
       },
       {
         name: "ThrowError",
-        description: "",
+        description: 'throw new Error("エラーメッセージ");',
         parameter: Maybe.Just(customType.expr),
       },
       {
         name: "Return",
-        description: "",
+        description: "return expr;",
         parameter: Maybe.Just(customType.expr),
       },
       {
         name: "ReturnVoid",
-        description: "",
+        description: "return;\n戻り値がvoidの関数を早く抜ける",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Continue",
-        description: "",
+        description: "continue;\nforの繰り返しを次に進める",
         parameter: Maybe.Nothing(),
       },
       {
         name: "VariableDefinition",
-        description: "",
+        description: "`const a: type_ = expr`\nローカル変数の定義",
         parameter: Maybe.Just(customType.variableDefinitionStatement),
       },
       {
         name: "FunctionDefinition",
-        description: "",
+        description:
+          "`const name = (parameterList): returnType => { statementList }`\nローカル関数の定義",
         parameter: Maybe.Just(customType.functionDefinitionStatement),
       },
       {
         name: "For",
-        description: "",
+        description:
+          "```ts\nfor (let counterVariableName = 0; counterVariableName < untilExpr; counterVariableName += 1) {\n  statementList\n}\n```",
         parameter: Maybe.Just(customType.forStatement),
       },
       {
         name: "ForOf",
-        description: "",
+        description:
+          "```ts\nfor (const elementVariableName of iterableExpr) {\n  statementList\n}\n```",
         parameter: Maybe.Just(customType.forOfStatement),
       },
       {
         name: "WhileTrue",
-        description: "",
+        description: "while (true) { statementList }",
         parameter: Maybe.Just(Type.List(customType.statement)),
       },
       {
         name: "Break",
-        description: "",
+        description: "whileのループから抜ける",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Switch",
-        description: "",
+        description: "switch文",
         parameter: Maybe.Just(customType.switchStatement),
       },
     ]),
   },
   {
     name: name.type,
-    description: "",
+    description: "型",
     typeParameterList: [],
     body: CustomTypeDefinitionBody.Sum([
       {
         name: "Number",
-        description: "",
+        description: "プリミティブの型のnumber",
         parameter: Maybe.Nothing(),
       },
       {
         name: "String",
-        description: "",
+        description: "プリミティブの型のstring",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Boolean",
-        description: "",
+        description: "プリミティブの型のboolean",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Undefined",
-        description: "",
+        description: "プリミティブの型のundefined",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Null",
-        description: "",
+        description: "プリミティブの型のnull",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Never",
-        description: "",
+        description: "never型",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Void",
-        description: "",
+        description: "void型",
         parameter: Maybe.Nothing(),
       },
       {
         name: "Object",
-        description: "",
+        description: "オブジェクト",
         parameter: Maybe.Just(Type.List(customType.memberType)),
       },
       {
         name: "Function",
-        description: "",
+        description: "関数 `(parameter: parameter) => returnType`",
         parameter: Maybe.Just(customType.functionType),
       },
       {
         name: "WithTypeParameter",
-        description: "",
+        description:
+          "型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`",
         parameter: Maybe.Just(customType.typeWithTypeParameter),
       },
       {
         name: "Union",
-        description: "",
+        description: "ユニオン型 `a | b`",
         parameter: Maybe.Just(Type.List(customType.type)),
       },
       {
         name: "Intersection",
-        description: "",
+        description: "交差型 `left & right`",
         parameter: Maybe.Just(customType.intersectionType),
       },
       {
         name: "ImportedType",
-        description: "",
+        description: "インポートされた外部の型",
         parameter: Maybe.Just(customType.intersectionType),
       },
       {
         name: "ScopeInFile",
-        description: "",
+        description: "ファイル内で定義された型",
         parameter: Maybe.Just(customType.identifer),
       },
       {
         name: "ScopeInGlobal",
-        description: "",
+        description: "グローバル空間の型",
         parameter: Maybe.Just(customType.identifer),
       },
       {
         name: "StringLiteral",
-        description: "",
+        description: "文字列リテラル型",
         parameter: Maybe.Just(Type.String),
+      },
+    ]),
+  },
+  {
+    name: name.unaryOperatorExpr,
+    description: "単項演算子と適用される式",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "operator",
+        description: "単項演算子",
+        type: customType.unaryOperator,
+      },
+      {
+        name: "expr",
+        description: "適用される式",
+        type: customType.expr,
+      },
+    ]),
+  },
+  {
+    name: name.binaryOperatorExpr,
+    description: "2項演算子と左右の式",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "operator",
+        description: "2項演算子",
+        type: customType.binaryOperator,
+      },
+      {
+        name: "left",
+        description: "左の式",
+        type: customType.expr,
+      },
+      {
+        name: "right",
+        description: "右の式",
+        type: customType.expr,
+      },
+    ]),
+  },
+  {
+    name: name.conditionalOperatorExpr,
+    description: "条件演算子",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "condition",
+        description: "条件の式",
+        type: customType.expr,
+      },
+      {
+        name: "thenExpr",
+        description: "条件がtrueのときに評価される式",
+        type: customType.expr,
+      },
+      {
+        name: "elseExpr",
+        description: "条件がfalseのときに評価される式",
+        type: customType.expr,
+      },
+    ]),
+  },
+  {
+    name: name.arrayItem,
+    description: "配列リテラルの要素",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "expr",
+        description: "式",
+        type: customType.expr,
+      },
+      {
+        name: "spread",
+        description: "スプレッド ...a のようにするか",
+        type: Type.Bool,
+      },
+    ]),
+  },
+  {
+    name: name.member,
+    description: "オブジェクトリテラルの要素",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Sum([
+      {
+        name: "Spread",
+        description: "...a のようにする",
+        parameter: Maybe.Just(customType.expr),
+      },
+      {
+        name: "KeyValue",
+        description: "a: b のようにする",
+        parameter: Maybe.Just(customType.keyValue),
+      },
+    ]),
+  },
+  {
+    name: name.keyValue,
+    description: "文字列のkeyと式のvalue",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "key",
+        description: "key",
+        type: Type.String,
+      },
+      {
+        name: "value",
+        description: "value",
+        type: customType.expr,
+      },
+    ]),
+  },
+  {
+    name: name.lambdaExpr,
+    description: "ラムダ式",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "parameterList",
+        description: "パラメーターのリスト",
+        type: Type.List(customType.parameter),
+      },
+      {
+        name: "typeParameterList",
+        description: "型パラメーターのリスト",
+        type: Type.List(customType.identifer),
+      },
+      {
+        name: "returnType",
+        description: "戻り値の型",
+        type: customType.type,
+      },
+      {
+        name: "statementList",
+        description: "ラムダ式本体",
+        type: Type.List(customType.statement),
+      },
+    ]),
+  },
+  {
+    name: name.importedVariable,
+    description: "インポートした変数",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "moduleName",
+        description:
+          "モジュール名, 使うときにはnamedインポートされ, そのモジュール識別子は自動的につけられる",
+        type: Type.String,
+      },
+      {
+        name: "name",
+        description: "変数名",
+        type: customType.identifer,
+      },
+    ]),
+  },
+  {
+    name: name.getExpr,
+    description: "プロパティアクセス",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "expr",
+        description: "式",
+        type: customType.expr,
+      },
+      {
+        name: "propertyExpr",
+        description: "プロパティの式",
+        type: customType.expr,
+      },
+    ]),
+  },
+  {
+    name: name.callExpr,
+    description: "式と呼ぶパラメーター",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "expr",
+        description: "呼ばれる式",
+        type: customType.expr,
+      },
+      {
+        name: "parameterList",
+        description: "パラメーター",
+        type: Type.List(customType.expr),
+      },
+    ]),
+  },
+  {
+    name: name.typeAssertion,
+    description: "型アサーション",
+    typeParameterList: [],
+    body: CustomTypeDefinitionBody.Product([
+      {
+        name: "expr",
+        description: "型アサーションを受ける式",
+        type: customType.expr,
+      },
+      {
+        name: "type",
+        description: "型",
+        type: customType.type,
       },
     ]),
   },
