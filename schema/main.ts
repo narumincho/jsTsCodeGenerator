@@ -17,6 +17,16 @@ const parameterName = "Parameter";
 const exprName = "Expr";
 const unaryOperatorName = "UnaryOperator";
 const binaryOperatorName = "BinaryOperator";
+const unaryOperatorExprName = "UnaryOperatorExpr";
+const binaryOperatorExprName = "BinaryOperatorExpr";
+const conditionalOperatorExprName = "ConditionalOperatorExpr";
+const arrayItemName = "ArrayItem";
+const memberName = "Member";
+const lambdaExprName = "LambdaExpr";
+const importedVariableName = "ImportedVariable";
+const getExprName = "GetExpr";
+const callExprName = "CallExpr";
+const typeAssertionName = "TypeAssertion";
 
 const codeTypeType = data.Type.Custom({
   name: codeTypeName,
@@ -72,6 +82,46 @@ const unaryOperatorType = data.Type.Custom({
 });
 const binaryOperatorType = data.Type.Custom({
   name: binaryOperatorName,
+  parameterList: [],
+});
+const unaryOperatorExprType = data.Type.Custom({
+  name: unaryOperatorExprName,
+  parameterList: [],
+});
+const binaryOperatorExprType = data.Type.Custom({
+  name: binaryOperatorExprName,
+  parameterList: [],
+});
+const conditionalOperatorExprType = data.Type.Custom({
+  name: conditionalOperatorExprName,
+  parameterList: [],
+});
+const arrayItemType = data.Type.Custom({
+  name: arrayItemName,
+  parameterList: [],
+});
+const memberType = data.Type.Custom({
+  name: memberName,
+  parameterList: [],
+});
+const lambdaExprType = data.Type.Custom({
+  name: lambdaExprName,
+  parameterList: [],
+});
+const importedVariableType = data.Type.Custom({
+  name: importedVariableName,
+  parameterList: [],
+});
+const getExprType = data.Type.Custom({
+  name: getExprName,
+  parameterList: [],
+});
+const callExprType = data.Type.Custom({
+  name: callExprName,
+  parameterList: [],
+});
+const TypeAssertionType = data.Type.Custom({
+  name: typeAssertionName,
   parameterList: [],
 });
 
@@ -271,17 +321,17 @@ const customTypeDefinitionList: ReadonlyArray<data.CustomTypeDefinition> = [
     body: data.CustomTypeDefinitionBody.Sum([
       {
         name: "Minus",
-        description: "-",
+        description: "単項マイナス演算子 `-a`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "BitwiseNot",
-        description: "~",
+        description: "ビット否定 `~a`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "LogicalNot",
-        description: "!",
+        description: "論理否定 `!a`",
         parameter: data.Maybe.Nothing(),
       },
     ]),
@@ -293,93 +343,190 @@ const customTypeDefinitionList: ReadonlyArray<data.CustomTypeDefinition> = [
     body: data.CustomTypeDefinitionBody.Sum([
       {
         name: "Exponentiation",
-        description: "**",
+        description: "べき乗 `a ** b",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "Multiplication",
-        description: "*",
+        description: "数値の掛け算 `a * b",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "Division",
-        description: "/",
+        description: "数値の割り算 `a / b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "Remainder",
-        description: "%",
+        description: "剰余演算 `a % b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "Addition",
-        description: "+",
+        description: "数値の足し算, 文字列の結合 `a + b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "Subtraction",
-        description: "-",
+        description: "数値の引き算 `a - b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "LeftShift",
-        description: "<<",
+        description: "左シフト `a << b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "SignedRightShift",
-        description: ">>",
+        description: "符号を維持する右シフト `a >> b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "UnsignedRightShift",
-        description: ">>>",
+        description: "符号を維持しない(0埋め)右シフト `a >>> b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "LessThan",
-        description: "<",
+        description: "未満 `a < b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "LessThanOrEqual",
-        description: "<=",
+        description: "以下 `a <= b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "Equal",
-        description: "===",
+        description: "等号 `a === b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "NotEqual",
-        description: "!==",
+        description: "不等号 `a !== b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "BitwiseAnd",
-        description: "&",
+        description: "ビットAND `a & b`",
         parameter: data.Maybe.Nothing(),
       },
       {
-        name: "BitwiseXor",
-        description: "^",
+        name: "BitwiseXOr",
+        description: "ビットXOR `a ^ b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "BitwiseOr",
-        description: "|",
+        description: "ビットOR `a | b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "LogicalAnd",
-        description: "&&",
+        description: "論理AND `a && b`",
         parameter: data.Maybe.Nothing(),
       },
       {
         name: "LogicalOr",
-        description: "||",
+        description: "論理OR `a || b`",
         parameter: data.Maybe.Nothing(),
+      },
+    ]),
+  },
+  {
+    name: exprName,
+    description: "式",
+    typeParameterList: [],
+    body: data.CustomTypeDefinitionBody.Sum([
+      {
+        name: "NumberLiteral",
+        description: "数値リテラル `123`",
+        parameter: data.Maybe.Just(data.Type.Int32),
+      },
+      {
+        name: "StringLiteral",
+        description: '文字列リテラル `"text"`',
+        parameter: data.Maybe.Just(data.Type.String),
+      },
+      {
+        name: "BooleanLiteral",
+        description: "booleanリテラル",
+        parameter: data.Maybe.Just(data.Type.Bool),
+      },
+      {
+        name: "NullLiteral",
+        description: "`null`",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "UndefinedLiteral",
+        description: "`undefined`",
+        parameter: data.Maybe.Nothing(),
+      },
+      {
+        name: "UnaryOperator",
+        description: "単項演算子での式",
+        parameter: data.Maybe.Just(unaryOperatorExprType),
+      },
+      {
+        name: "BinaryOperator",
+        description: "2項演算子での式",
+        parameter: data.Maybe.Just(binaryOperatorExprType),
+      },
+      {
+        name: "ConditionalOperator",
+        description: "条件演算子 `a ? b : c`",
+        parameter: data.Maybe.Just(conditionalOperatorExprType),
+      },
+      {
+        name: "ArrayLiteral",
+        description: "配列リテラル `[1, 2, 3]`",
+        parameter: data.Maybe.Just(data.Type.List(arrayItemType)),
+      },
+      {
+        name: "ObjectLiteral",
+        description: 'オブジェクトリテラル `{ data: 123, text: "sorena" }`',
+        parameter: data.Maybe.Just(data.Type.List(memberType)),
+      },
+      {
+        name: "Lambda",
+        description: "ラムダ式 `() => {}`",
+        parameter: data.Maybe.Just(lambdaExprType),
+      },
+      {
+        name: "Variable",
+        description: "変数. 変数が存在するかのチャックがされる",
+        parameter: data.Maybe.Just(identiferType),
+      },
+      {
+        name: "GlobalObjects",
+        description: "グローバルオブジェクト",
+        parameter: data.Maybe.Just(identiferType),
+      },
+      {
+        name: "ImportedVariable",
+        description: "インポートされた変数",
+        parameter: data.Maybe.Just(importedVariableType),
+      },
+      {
+        name: "Get",
+        description: "プロパティの値を取得する `a.b a[12] data[f(2)]`",
+        parameter: data.Maybe.Just(getExprType),
+      },
+      {
+        name: "Call",
+        description: "関数を呼ぶ f(x)",
+        parameter: data.Maybe.Just(callExprType),
+      },
+      {
+        name: "New",
+        description: "式からインスタンスを作成する `new Date()`",
+        parameter: data.Maybe.Just(callExprType),
+      },
+      {
+        name: "TypeAssertion",
+        description: "型アサーション `a as string`",
+        parameter: data.Maybe.Just(TypeAssertionType),
       },
     ]),
   },
