@@ -1,4 +1,4 @@
-export type Identifer = string & { _identifer: never };
+import { Identifer } from "./newData";
 
 /**
  * 識別子を文字列から無理矢理でも生成する.
@@ -8,7 +8,7 @@ export type Identifer = string & { _identifer: never };
  */
 export const fromString = (word: string): Identifer => {
   if (word.length <= 0) {
-    return "$00" as Identifer;
+    return Identifer.Identifer("$00");
   }
   let result = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
     word[0]
@@ -24,9 +24,9 @@ export const fromString = (word: string): Identifer => {
       : escapeChar(char);
   }
   if (reservedByLanguageWordSet.has(word)) {
-    return (result + "_") as Identifer;
+    return Identifer.Identifer(result + "_");
   }
-  return result as Identifer;
+  return Identifer.Identifer(result);
 };
 
 const escapeChar = (char: string): string =>
@@ -127,7 +127,7 @@ export const createIdentifer = (
     const result = createIdentiferByIndex(identiferIndex);
     if (!reserved.has(result) && !reservedByLanguageWordSet.has(result)) {
       return {
-        identifer: result as Identifer,
+        identifer: Identifer.Identifer(result),
         nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex,
       };
     }

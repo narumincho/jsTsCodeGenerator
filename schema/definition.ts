@@ -8,7 +8,6 @@ import {
   Pattern,
   Type,
 } from "@narumincho/type/source/data";
-import { count } from "console";
 
 const sum = (
   typeName: string,
@@ -129,7 +128,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "statementList",
       description: "関数の本体",
-      type: customType.statement,
+      type: Type.List(customType.statement),
     },
   ]),
   {
@@ -565,7 +564,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "ImportedType",
         description: "インポートされた外部の型",
-        parameter: Maybe.Just(customType.intersectionType),
+        parameter: Maybe.Just(customType.importedType),
       },
       {
         name: "ScopeInFile",

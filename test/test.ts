@@ -1,19 +1,29 @@
-import { data, generateCodeAsString, identifer } from "../source/main";
-import { cachedDataVersionTag } from "v8";
+import * as data from "../source/data";
+import {
+  BinaryOperator,
+  Code,
+  ExportDefinition,
+  Expr,
+  Maybe,
+  Member,
+  Statement,
+  Type,
+} from "../source/newData";
+import { generateCodeAsString, identifer } from "../source/main";
 
 describe("test", () => {
-  const expressRequest = data.typeImported(
-    "express",
-    identifer.fromString("Request")
-  );
-  const expressResponse = data.typeImported(
-    "express",
-    identifer.fromString("Response")
-  );
+  const expressRequest = Type.ImportedType({
+    moduleName: "express",
+    name: identifer.fromString("Request"),
+  });
+  const expressResponse = Type.ImportedType({
+    moduleName: "express",
+    name: identifer.fromString("Response"),
+  });
 
-  const sampleCode: data.Code = {
+  const sampleCode: Code = {
     exportDefinitionList: [
-      data.ExportDefinition.Function({
+      ExportDefinition.Function({
         name: identifer.fromString("middleware"),
         typeParameterList: [],
         parameterList: [
@@ -29,7 +39,7 @@ describe("test", () => {
           },
         ],
         document: "ミドルウェア",
-        returnType: data.typeVoid,
+        returnType: Type.Void,
         statementList: [],
       }),
     ],
@@ -50,12 +60,12 @@ describe("test", () => {
     const codeAsString = generateCodeAsString(
       {
         exportDefinitionList: [
-          data.ExportDefinition.Function({
+          ExportDefinition.Function({
             name: identifer.fromString("new"),
             document: "newという名前の関数",
             typeParameterList: [],
             parameterList: [],
-            returnType: data.typeVoid,
+            returnType: Type.Void,
             statementList: [],
           }),
         ],
@@ -71,12 +81,12 @@ describe("test", () => {
     const codeAsString = generateCodeAsString(
       {
         exportDefinitionList: [
-          data.ExportDefinition.Function({
+          ExportDefinition.Function({
             name: identifer.fromString("0name"),
             document: "0から始まる識別子",
             typeParameterList: [],
             parameterList: [],
-            returnType: data.typeVoid,
+            returnType: Type.Void,
             statementList: [],
           }),
         ],
@@ -97,23 +107,23 @@ describe("test", () => {
           reserved
         );
         index = createIdentiferResult.nextIdentiferIndex;
-        if (!identifer.isIdentifer(createIdentiferResult.identifer)) {
+        if (!identifer.isIdentifer(createIdentiferResult.identifer.string)) {
           throw new Error(
             "create not identifer. identifer=" +
-              (createIdentiferResult.identifer as string)
+              createIdentiferResult.identifer.string
           );
         }
       }
     }).not.toThrow();
   });
   it("escape string literal", () => {
-    const nodeJsCode: data.Code = {
+    const nodeJsCode: Code = {
       exportDefinitionList: [
-        data.ExportDefinition.Variable({
+        ExportDefinition.Variable({
           name: identifer.fromString("stringValue"),
           document: "文字列リテラルでエスケープしているか調べる",
-          type: data.typeString,
-          expr: data.stringLiteral(`
+          type: Type.String,
+          expr: Expr.StringLiteral(`
 
           改行
           "ダブルクオーテーション"
@@ -129,9 +139,9 @@ describe("test", () => {
   });
 
   it("include function parameter name", () => {
-    const nodeJsCode: data.Code = {
+    const nodeJsCode: Code = {
       exportDefinitionList: [
-        data.ExportDefinition.Function({
+        ExportDefinition.Function({
           name: identifer.fromString("middleware"),
           document: "ミドルウェア",
           typeParameterList: [],
@@ -139,58 +149,61 @@ describe("test", () => {
             {
               name: identifer.fromString("request"),
               document: "リクエスト",
-              type: data.typeImported(
-                "express",
-                identifer.fromString("Request")
-              ),
+              type: Type.ImportedType({
+                moduleName: "express",
+                name: identifer.fromString("Request"),
+              }),
             },
             {
               name: identifer.fromString("response"),
               document: "レスポンス",
-              type: data.typeImported(
-                "express",
-                identifer.fromString("Response")
-              ),
+              type: Type.ImportedType({
+                moduleName: "express",
+                name: identifer.fromString("Response"),
+              }),
             },
           ],
-          returnType: data.typeVoid,
+          returnType: Type.Void,
           statementList: [
-            data.statementVariableDefinition(
-              identifer.fromString("accept"),
-              data.typeUnion([data.typeString, data.typeUndefined]),
-              data.get(
+            Statement.VariableDefinition({
+              name: identifer.fromString("accept"),
+              type: Type.Union([Type.String, Type.Undefined]),
+              isConst: true,
+              expr: data.get(
                 data.get(
-                  data.variable(identifer.fromString("request")),
+                  Expr.Variable(identifer.fromString("request")),
                   "headers"
                 ),
                 "accept"
-              )
-            ),
-            data.statementIf(
-              data.logicalAnd(
-                data.notEqual(
-                  data.variable(identifer.fromString("accept")),
-                  data.undefinedLiteral
-                ),
-                data.callMethod(
-                  data.variable(identifer.fromString("accept")),
-                  "includes",
-                  [data.stringLiteral("text/html")]
-                )
               ),
-              [
-                data.statementEvaluateExpr(
+            }),
+            Statement.If({
+              condition: Expr.BinaryOperator({
+                left: Expr.BinaryOperator({
+                  left: Expr.Variable(identifer.fromString("accept")),
+                  operator: "NotEqual",
+                  right: Expr.UndefinedLiteral,
+                }),
+                operator: "LogicalAnd",
+                right: data.callMethod(
+                  Expr.Variable(identifer.fromString("accept")),
+                  "includes",
+                  [Expr.StringLiteral("text/html")]
+                ),
+              }),
+              thenStatementList: [
+                Statement.EvaluateExpr(
                   data.callMethod(
-                    data.variable(identifer.fromString("response")),
+                    Expr.Variable(identifer.fromString("response")),
                     "setHeader",
                     [
-                      data.stringLiteral("content-type"),
-                      data.stringLiteral("text/html"),
+                      Expr.StringLiteral("content-type"),
+                      Expr.StringLiteral("text/html"),
                     ]
                   )
                 ),
-              ]
-            ),
+              ],
+            }),
           ],
         }),
       ],
@@ -204,7 +217,7 @@ describe("test", () => {
     const code = generateCodeAsString(
       {
         exportDefinitionList: [
-          data.ExportDefinition.Function({
+          ExportDefinition.Function({
             name: identifer.fromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
             typeParameterList: [],
@@ -215,13 +228,13 @@ describe("test", () => {
                 type: data.uint8ArrayType,
               },
             ],
-            returnType: data.typeNumber,
+            returnType: Type.Number,
             statementList: [
-              data.statementReturn(
-                data.getByExpr(
-                  data.variable(identifer.fromString("array")),
-                  data.numberLiteral(0)
-                )
+              Statement.Return(
+                Expr.Get({
+                  expr: Expr.Variable(identifer.fromString("array")),
+                  propertyExpr: Expr.NumberLiteral(0),
+                })
               ),
             ],
           }),
@@ -237,12 +250,13 @@ describe("test", () => {
     {
       exportDefinitionList: [],
       statementList: [
-        data.statementLetVariableDefinition(
-          identifer.fromString("sorena"),
-          data.typeString,
-          data.stringLiteral("それな")
-        ),
-        data.consoleLog(data.variable(identifer.fromString("sorena"))),
+        Statement.VariableDefinition({
+          name: identifer.fromString("sorena"),
+          isConst: false,
+          type: Type.String,
+          expr: Expr.StringLiteral("それな"),
+        }),
+        data.consoleLog(Expr.Variable(identifer.fromString("sorena"))),
       ],
     },
     "JavaScript"
@@ -259,12 +273,12 @@ describe("test", () => {
     const code = generateCodeAsString(
       {
         exportDefinitionList: [
-          data.ExportDefinition.Function({
+          ExportDefinition.Function({
             name: identifer.fromString("sample"),
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: data.promiseType(data.typeString),
+            returnType: data.promiseType(Type.String),
             statementList: [],
           }),
         ],
@@ -280,10 +294,13 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          data.statementEvaluateExpr(
-            data.objectLiteral([
-              data.memberKeyValue("abc", data.numberLiteral(3)),
-              data.memberKeyValue("a b c", data.stringLiteral("separated")),
+          Statement.EvaluateExpr(
+            Expr.ObjectLiteral([
+              Member.KeyValue({ key: "abc", value: Expr.NumberLiteral(3) }),
+              Member.KeyValue({
+                key: "a b c",
+                value: Expr.StringLiteral("separated"),
+              }),
             ])
           ),
         ],
@@ -298,27 +315,27 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          data.statementEvaluateExpr(
+          Statement.EvaluateExpr(
             data.equal(
               data.equal(
                 data.addition(
                   data.multiplication(
-                    data.numberLiteral(3),
-                    data.numberLiteral(9)
+                    Expr.NumberLiteral(3),
+                    Expr.NumberLiteral(9)
                   ),
                   data.multiplication(
-                    data.numberLiteral(7),
-                    data.numberLiteral(6)
+                    Expr.NumberLiteral(7),
+                    Expr.NumberLiteral(6)
                   )
                 ),
                 data.addition(
-                  data.addition(data.numberLiteral(2), data.numberLiteral(3)),
-                  data.addition(data.numberLiteral(5), data.numberLiteral(8))
+                  data.addition(Expr.NumberLiteral(2), Expr.NumberLiteral(3)),
+                  data.addition(Expr.NumberLiteral(5), Expr.NumberLiteral(8))
                 )
               ),
               data.multiplication(
-                data.numberLiteral(5),
-                data.addition(data.numberLiteral(7), data.numberLiteral(8))
+                Expr.NumberLiteral(5),
+                data.addition(Expr.NumberLiteral(7), Expr.NumberLiteral(8))
               )
             )
           ),
@@ -333,28 +350,26 @@ describe("test", () => {
     const code = generateCodeAsString(
       {
         exportDefinitionList: [
-          data.ExportDefinition.Function({
+          ExportDefinition.Function({
             name: identifer.fromString("returnObject"),
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: data.typeObject(
-              new Map([
-                [
-                  "name",
-                  { required: true, type: data.typeString, document: "" },
-                ],
-                [
-                  "age",
-                  { required: true, type: data.typeNumber, document: "" },
-                ],
-              ])
-            ),
+            returnType: Type.Object([
+              { name: "name", required: true, type: Type.String, document: "" },
+              { name: "age", required: true, type: Type.Number, document: "" },
+            ]),
             statementList: [
-              data.statementReturn(
-                data.objectLiteral([
-                  data.memberKeyValue("name", data.stringLiteral("mac")),
-                  data.memberKeyValue("age", data.numberLiteral(10)),
+              Statement.Return(
+                Expr.ObjectLiteral([
+                  Member.KeyValue({
+                    key: "name",
+                    value: Expr.StringLiteral("mac"),
+                  }),
+                  Member.KeyValue({
+                    key: "age",
+                    value: Expr.NumberLiteral(10),
+                  }),
                 ])
               ),
             ],
@@ -373,13 +388,22 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          data.statementLetVariableDefinition(
-            v,
-            data.typeNumber,
-            data.numberLiteral(10)
-          ),
-          data.statementSet(data.variable(v), null, data.numberLiteral(30)),
-          data.statementSet(data.variable(v), "+", data.numberLiteral(1)),
+          Statement.VariableDefinition({
+            name: v,
+            type: Type.Number,
+            expr: Expr.NumberLiteral(10),
+            isConst: false,
+          }),
+          Statement.Set({
+            target: Expr.Variable(v),
+            operatorMaybe: Maybe.Nothing(),
+            expr: Expr.NumberLiteral(30),
+          }),
+          Statement.Set({
+            target: Expr.Variable(v),
+            operatorMaybe: Maybe.Just<BinaryOperator>("Addition"),
+            expr: Expr.NumberLiteral(1),
+          }),
         ],
       },
       "TypeScript"
@@ -388,25 +412,27 @@ describe("test", () => {
     expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
   });
   it("for of", () => {
-    const code: data.Code = {
+    const code: Code = {
       exportDefinitionList: [],
       statementList: [
-        data.statementForOf(
-          identifer.fromString("element"),
-          data.arrayLiteral([
-            { expr: data.numberLiteral(1), spread: false },
-            { expr: data.numberLiteral(2), spread: false },
+        Statement.ForOf({
+          elementVariableName: identifer.fromString("element"),
+          iterableExpr: Expr.ArrayLiteral([
+            { expr: Expr.NumberLiteral(1), spread: false },
+            { expr: Expr.NumberLiteral(2), spread: false },
             {
-              expr: data.arrayLiteral([
-                { expr: data.numberLiteral(3), spread: false },
-                { expr: data.numberLiteral(4), spread: false },
-                { expr: data.numberLiteral(5), spread: false },
+              expr: Expr.ArrayLiteral([
+                { expr: Expr.NumberLiteral(3), spread: false },
+                { expr: Expr.NumberLiteral(4), spread: false },
+                { expr: Expr.NumberLiteral(5), spread: false },
               ]),
               spread: true,
             },
           ]),
-          [data.consoleLog(data.variable(identifer.fromString("element")))]
-        ),
+          statementList: [
+            data.consoleLog(Expr.Variable(identifer.fromString("element"))),
+          ],
+        }),
       ],
     };
     const codeAsString = generateCodeAsString(code, "TypeScript");
@@ -414,59 +440,47 @@ describe("test", () => {
     expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
   });
   it("switch", () => {
-    const code: data.Code = {
+    const code: Code = {
       exportDefinitionList: [
-        data.ExportDefinition.TypeAlias({
+        ExportDefinition.TypeAlias({
           name: identifer.fromString("Result"),
           document: "Result型",
-          parameterList: [
+          typeParameterList: [
             identifer.fromString("error"),
             identifer.fromString("ok"),
           ],
-          type: data.typeUnion([
-            data.typeObject(
-              new Map([
-                [
-                  "_",
-                  {
-                    required: true,
-                    type: data.typeStringLiteral("Ok"),
-                    document: "",
-                  },
-                ],
-                [
-                  "ok",
-                  {
-                    required: true,
-                    type: data.typeScopeInGlobal(identifer.fromString("ok")),
-                    document: "",
-                  },
-                ],
-              ])
-            ),
-            data.typeObject(
-              new Map([
-                [
-                  "_",
-                  {
-                    required: true,
-                    type: data.typeStringLiteral("Error"),
-                    document: "Error",
-                  },
-                ],
-                [
-                  "error",
-                  {
-                    required: true,
-                    type: data.typeScopeInGlobal(identifer.fromString("error")),
-                    document: "",
-                  },
-                ],
-              ])
-            ),
+          type: Type.Union([
+            Type.Object([
+              {
+                name: "_",
+                required: true,
+                type: Type.StringLiteral("Ok"),
+                document: "",
+              },
+              {
+                name: "ok",
+                required: true,
+                type: Type.ScopeInFile(identifer.fromString("ok")),
+                document: "",
+              },
+            ]),
+            Type.Object([
+              {
+                name: "_",
+                required: true,
+                type: Type.StringLiteral("Error"),
+                document: "Error",
+              },
+              {
+                name: "error",
+                required: true,
+                type: Type.ScopeInFile(identifer.fromString("error")),
+                document: "",
+              },
+            ]),
           ]),
         }),
-        data.ExportDefinition.Function({
+        ExportDefinition.Function({
           name: identifer.fromString("switchSample"),
           document: "switch文のテスト",
           typeParameterList: [
@@ -477,27 +491,27 @@ describe("test", () => {
             {
               name: identifer.fromString("value"),
               document: "",
-              type: data.typeWithParameter(
-                data.typeScopeInGlobal(identifer.fromString("Result")),
-                [
-                  data.typeScopeInGlobal(identifer.fromString("ok")),
-                  data.typeScopeInGlobal(identifer.fromString("error")),
-                ]
-              ),
+              type: Type.WithTypeParameter({
+                type: Type.ScopeInGlobal(identifer.fromString("Result")),
+                typeParameterList: [
+                  Type.ScopeInFile(identifer.fromString("ok")),
+                  Type.ScopeInFile(identifer.fromString("error")),
+                ],
+              }),
             },
           ],
-          returnType: data.typeString,
+          returnType: Type.String,
           statementList: [
-            data.statementSwitch({
-              expr: data.get(data.variable(identifer.fromString("value")), "_"),
+            Statement.Switch({
+              expr: data.get(Expr.Variable(identifer.fromString("value")), "_"),
               patternList: [
                 {
-                  caseTag: "Ok",
+                  caseString: "Ok",
                   statementList: [
-                    data.statementReturn(
+                    Statement.Return(
                       data.callMethod(
                         data.get(
-                          data.variable(identifer.fromString("value")),
+                          Expr.Variable(identifer.fromString("value")),
                           "ok"
                         ),
                         "toString",
@@ -507,12 +521,12 @@ describe("test", () => {
                   ],
                 },
                 {
-                  caseTag: "Error",
+                  caseString: "Error",
                   statementList: [
-                    data.statementReturn(
+                    Statement.Return(
                       data.callMethod(
                         data.get(
-                          data.variable(identifer.fromString("value")),
+                          Expr.Variable(identifer.fromString("value")),
                           "error"
                         ),
                         "toString",
@@ -533,11 +547,14 @@ describe("test", () => {
     expect(codeAsString).toMatch(/switch \(.+\) \{\n +case .+:/u);
   });
   it("Type Assertion", () => {
-    const code: data.Code = {
+    const code: Code = {
       exportDefinitionList: [],
       statementList: [
-        data.statementEvaluateExpr(
-          data.typeAssertion(data.objectLiteral([]), data.dateType)
+        Statement.EvaluateExpr(
+          Expr.TypeAssertion({
+            expr: Expr.ObjectLiteral([]),
+            type: data.dateType,
+          })
         ),
       ],
     };
@@ -546,13 +563,16 @@ describe("test", () => {
     expect(codeAsString).toMatch(/as Date/u);
   });
   it("Type Intersection", () => {
-    const code: data.Code = {
+    const code: Code = {
       exportDefinitionList: [
-        data.ExportDefinition.TypeAlias({
+        ExportDefinition.TypeAlias({
           name: identifer.fromString("SampleIntersectionType"),
           document: "",
-          parameterList: [],
-          type: data.typeIntersection(data.dateType, data.uint8ArrayType),
+          typeParameterList: [],
+          type: Type.Intersection({
+            left: data.dateType,
+            right: data.uint8ArrayType,
+          }),
         }),
       ],
       statementList: [],
@@ -563,26 +583,25 @@ describe("test", () => {
   });
 
   it("object literal spread syntax", () => {
-    const code: data.Code = {
+    const code: Code = {
       exportDefinitionList: [],
       statementList: [
-        data.statementVariableDefinition(
-          identifer.fromString("value"),
-          data.typeObject(
-            new Map([
-              ["a", { required: true, type: data.typeString, document: "" }],
-              ["b", { required: true, type: data.typeNumber, document: "" }],
-            ])
-          ),
-          data.objectLiteral([
-            data.memberKeyValue("a", data.stringLiteral("aValue")),
-            data.memberKeyValue("b", data.numberLiteral(123)),
-          ])
-        ),
+        Statement.VariableDefinition({
+          name: identifer.fromString("value"),
+          isConst: true,
+          type: Type.Object([
+            { name: "a", required: true, type: Type.String, document: "" },
+            { name: "b", required: true, type: Type.Number, document: "" },
+          ]),
+          expr: Expr.ObjectLiteral([
+            Member.KeyValue({ key: "a", value: Expr.StringLiteral("aValue") }),
+            Member.KeyValue({ key: "b", value: Expr.NumberLiteral(123) }),
+          ]),
+        }),
         data.consoleLog(
-          data.objectLiteral([
-            data.memberSpread(data.variable(identifer.fromString("value"))),
-            data.memberKeyValue("b", data.numberLiteral(987)),
+          Expr.ObjectLiteral([
+            Member.Spread(Expr.Variable(identifer.fromString("value"))),
+            Member.KeyValue({ key: "b", value: Expr.NumberLiteral(987) }),
           ])
         ),
       ],
@@ -593,34 +612,26 @@ describe("test", () => {
   });
 
   it("type property document", () => {
-    const code: data.Code = {
+    const code: Code = {
       exportDefinitionList: [
-        data.ExportDefinition.TypeAlias({
+        ExportDefinition.TypeAlias({
           name: identifer.fromString("Time"),
           document: "初期のDefinyで使う時間の内部表現",
-          parameterList: [],
-          type: data.typeObject(
-            new Map([
-              [
-                "day",
-                {
-                  required: true,
-                  type: data.typeNumber,
-                  document:
-                    "1970-01-01からの経過日数. マイナスになることもある",
-                },
-              ],
-              [
-                "millisecond",
-                {
-                  required: true,
-                  type: data.typeNumber,
-                  document:
-                    "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
-                },
-              ],
-            ])
-          ),
+          typeParameterList: [],
+          type: Type.Object([
+            {
+              name: "day",
+              required: true,
+              type: Type.Number,
+              document: "1970-01-01からの経過日数. マイナスになることもある",
+            },
+            {
+              name: "millisecond",
+              required: true,
+              type: Type.Number,
+              document: "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
+            },
+          ]),
         }),
       ],
       statementList: [],
@@ -633,73 +644,64 @@ describe("test", () => {
 
 it("output lambda type parameter", () => {
   const typeParameterIdentifer = identifer.fromString("t");
-  const code: data.Code = {
+  const code: Code = {
     exportDefinitionList: [],
     statementList: [
-      data.statementVariableDefinition(
-        identifer.fromString("sampleFunction"),
-        data.typeFunction(
-          [typeParameterIdentifer],
-          [data.typeScopeInFile(typeParameterIdentifer)],
-          data.typeObject(
-            new Map([
-              [
-                "value",
-                {
-                  required: true,
-                  document: "",
-                  type: data.typeScopeInFile(typeParameterIdentifer),
-                },
-              ],
-              [
-                "s",
-                {
-                  required: true,
-                  document: "",
-                  type: data.typeWithParameter(
-                    data.typeImported(
-                      "sampleModule",
-                      identifer.fromString("Type")
-                    ),
-                    [data.typeNumber]
-                  ),
-                },
-              ],
-            ])
-          )
-        ),
-        data.lambda(
-          [
+      Statement.VariableDefinition({
+        name: identifer.fromString("sampleFunction"),
+        isConst: true,
+        type: Type.Function({
+          typeParameterList: [typeParameterIdentifer],
+          parameterList: [Type.ScopeInFile(typeParameterIdentifer)],
+          return: Type.Object([
+            {
+              name: "value",
+              required: true,
+              document: "",
+              type: Type.ScopeInFile(typeParameterIdentifer),
+            },
+            {
+              name: "s",
+              required: true,
+              document: "",
+              type: Type.WithTypeParameter({
+                type: Type.ImportedType({
+                  moduleName: "sampleModule",
+                  name: identifer.fromString("Type"),
+                }),
+                typeParameterList: [Type.Number],
+              }),
+            },
+          ]),
+        }),
+        expr: Expr.Lambda({
+          parameterList: [
             {
               name: identifer.fromString("input"),
-              type: data.typeScopeInFile(typeParameterIdentifer),
+              type: Type.ScopeInFile(typeParameterIdentifer),
             },
           ],
-          [typeParameterIdentifer],
-          data.typeObject(
-            new Map([
-              [
-                "value",
-                {
-                  required: true,
-                  document: "",
-                  type: data.typeScopeInFile(typeParameterIdentifer),
-                },
-              ],
-            ])
-          ),
-          [
-            data.statementReturn(
-              data.objectLiteral([
-                data.memberKeyValue(
-                  "value",
-                  data.variable(identifer.fromString("input"))
-                ),
+          typeParameterList: [typeParameterIdentifer],
+          returnType: Type.Object([
+            {
+              name: "value",
+              required: true,
+              document: "",
+              type: Type.ScopeInFile(typeParameterIdentifer),
+            },
+          ]),
+          statementList: [
+            Statement.Return(
+              Expr.ObjectLiteral([
+                Member.KeyValue({
+                  key: "value",
+                  value: Expr.Variable(identifer.fromString("input")),
+                }),
               ])
             ),
-          ]
-        )
-      ),
+          ],
+        }),
+      }),
     ],
   };
   const codeAsString = generateCodeAsString(code, "TypeScript");
@@ -710,29 +712,25 @@ it("output lambda type parameter", () => {
 });
 
 it("output optional type member", () => {
-  const code: data.Code = {
+  const code: Code = {
     exportDefinitionList: [
-      data.ExportDefinition.Variable({
+      ExportDefinition.Variable({
         name: identifer.fromString("value"),
         document: "年齢があってもなくてもいいやつ",
-        type: data.typeObject(
-          new Map([
-            [
-              "name",
-              { required: true, document: "名前", type: data.typeString },
-            ],
-            [
-              "age",
-              {
-                required: false,
-                document: "年齢",
-                type: data.typeNumber,
-              },
-            ],
-          ])
-        ),
-        expr: data.objectLiteral([
-          data.memberKeyValue("name", data.stringLiteral("narumincho")),
+        type: Type.Object([
+          { name: "name", required: true, document: "名前", type: Type.String },
+          {
+            name: "age",
+            required: false,
+            document: "年齢",
+            type: Type.Number,
+          },
+        ]),
+        expr: Expr.ObjectLiteral([
+          Member.KeyValue({
+            key: "name",
+            value: Expr.StringLiteral("narumincho"),
+          }),
         ]),
       }),
     ],

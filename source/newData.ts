@@ -101,7 +101,7 @@ export type Function = {
   /**
    * 関数の本体
    */
-  readonly statementList: Statement;
+  readonly statementList: ReadonlyArray<Statement>;
 };
 
 /**
@@ -265,7 +265,7 @@ export type Type =
     }
   | { readonly _: "Union"; readonly typeList: ReadonlyArray<Type> }
   | { readonly _: "Intersection"; readonly intersectionType: IntersectionType }
-  | { readonly _: "ImportedType"; readonly intersectionType: IntersectionType }
+  | { readonly _: "ImportedType"; readonly importedType: ImportedType }
   | { readonly _: "ScopeInFile"; readonly identifer: Identifer }
   | { readonly _: "ScopeInGlobal"; readonly identifer: Identifer }
   | { readonly _: "StringLiteral"; readonly string: string };
@@ -1287,7 +1287,7 @@ export const Function: { readonly codec: Codec<Function> } = {
           List.codec(ParameterWithDocument.codec).encode(value.parameterList)
         )
         .concat(Type.codec.encode(value.returnType))
-        .concat(Statement.codec.encode(value.statementList)),
+        .concat(List.codec(Statement.codec).encode(value.statementList)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -1319,9 +1319,12 @@ export const Function: { readonly codec: Codec<Function> } = {
         readonly nextIndex: number;
       } = Type.codec.decode(parameterListAndNextIndex.nextIndex, binary);
       const statementListAndNextIndex: {
-        readonly result: Statement;
+        readonly result: ReadonlyArray<Statement>;
         readonly nextIndex: number;
-      } = Statement.codec.decode(returnTypeAndNextIndex.nextIndex, binary);
+      } = List.codec(Statement.codec).decode(
+        returnTypeAndNextIndex.nextIndex,
+        binary
+      );
       return {
         result: {
           name: nameAndNextIndex.result,
@@ -2529,7 +2532,7 @@ export const Type: {
   /**
    * インポートされた外部の型
    */
-  readonly ImportedType: (a: IntersectionType) => Type;
+  readonly ImportedType: (a: ImportedType) => Type;
   /**
    * ファイル内で定義された型
    */
@@ -2568,9 +2571,9 @@ export const Type: {
     _: "Intersection",
     intersectionType,
   }),
-  ImportedType: (intersectionType: IntersectionType): Type => ({
+  ImportedType: (importedType: ImportedType): Type => ({
     _: "ImportedType",
-    intersectionType,
+    importedType,
   }),
   ScopeInFile: (identifer: Identifer): Type => ({
     _: "ScopeInFile",
@@ -2630,9 +2633,7 @@ export const Type: {
           );
         }
         case "ImportedType": {
-          return [12].concat(
-            IntersectionType.codec.encode(value.intersectionType)
-          );
+          return [12].concat(ImportedType.codec.encode(value.importedType));
         }
         case "ScopeInFile": {
           return [13].concat(Identifer.codec.encode(value.identifer));
@@ -2726,9 +2727,9 @@ export const Type: {
       }
       if (patternIndex.result === 12) {
         const result: {
-          readonly result: IntersectionType;
+          readonly result: ImportedType;
           readonly nextIndex: number;
-        } = IntersectionType.codec.decode(patternIndex.nextIndex, binary);
+        } = ImportedType.codec.decode(patternIndex.nextIndex, binary);
         return {
           result: Type.ImportedType(result.result),
           nextIndex: result.nextIndex,
