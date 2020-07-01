@@ -34,6 +34,247 @@ export const callMethod = (
 ): Expr => Expr.Call({ expr: get(expr, methodName), parameterList });
 
 /**
+ * 単項マイナス演算子 `-a`
+ * @param expr 式
+ */
+export const minus = (expr: Expr): Expr =>
+  Expr.UnaryOperator({
+    operator: "Minus",
+    expr,
+  });
+
+/**
+ * ビット否定 `~a`
+ * @param expr 式
+ */
+export const bitwiseNot = (expr: Expr): Expr =>
+  Expr.UnaryOperator({
+    operator: "BitwiseNot",
+    expr,
+  });
+
+/**
+ * 論理否定 `!a`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const logicalNot = (expr: Expr): Expr =>
+  Expr.UnaryOperator({
+    operator: "LogicalNot",
+    expr,
+  });
+
+/**
+ * べき乗 `a ** b`
+ * @param left
+ * @param right
+ */
+export const exponentiation = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Multiplication",
+    left,
+    right,
+  });
+
+/**
+ * 数値の掛け算 `a * b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const multiplication = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Multiplication",
+    left,
+    right,
+  });
+
+/**
+ * 数値の割り算 `a / b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const division = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Division",
+    left,
+    right,
+  });
+
+/**
+ * 剰余演算 `a % b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const modulo = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Remainder",
+    left,
+    right,
+  });
+
+/**
+ * 数値の足し算、文字列の結合 `a + b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const addition = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Addition",
+    left,
+    right,
+  });
+
+/**
+ * 数値の引き算 `a - b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const subtraction = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Subtraction",
+    left,
+    right,
+  });
+
+/**
+ * 左シフト `a << b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const leftShift = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "LeftShift",
+    left,
+    right,
+  });
+
+/**
+ * 符号を維持する右シフト `a >> b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const signedRightShift = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "SignedRightShift",
+    left,
+    right,
+  });
+
+/**
+ * 符号を維持しない(0埋め)右シフト `a >>> b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const unsignedRightShift = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "UnsignedRightShift",
+    left,
+    right,
+  });
+
+/**
+ * 未満 `a < b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const lessThan = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "LessThan",
+    left,
+    right,
+  });
+
+/**
+ * 以下 `a <= b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const lessThanOrEqual = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "LessThanOrEqual",
+    left,
+    right,
+  });
+/**
+ * 等号 `a === b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const equal = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "Equal",
+    left,
+    right,
+  });
+
+/**
+ * 不等号 `a !== b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const notEqual = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "NotEqual",
+    left,
+    right,
+  });
+
+/**
+ * ビットAND `a & b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const bitwiseAnd = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "BitwiseAnd",
+    left,
+    right,
+  });
+
+export const bitwiseXOr = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "BitwiseXOr",
+    left,
+    right,
+  });
+
+/**
+ * ビットOR `a | b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const bitwiseOr = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "BitwiseOr",
+    left,
+    right,
+  });
+
+/**
+ * 論理AND `a && b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const logicalAnd = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "LogicalAnd",
+    left,
+    right,
+  });
+
+/**
+ * 論理OR `a || b`
+ * @param left 左辺
+ * @param right 右辺
+ */
+export const logicalOr = (left: Expr, right: Expr): Expr =>
+  Expr.BinaryOperator({
+    operator: "LogicalOr",
+    left,
+    right,
+  });
+
+/**
  * ```ts
  * Number.parseInt(parameter)
  * Number.isNaN(parameter)
