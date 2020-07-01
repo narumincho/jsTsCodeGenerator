@@ -1179,7 +1179,7 @@ export const ExportDefinition: {
           return [0].concat(TypeAlias.codec.encode(value.typeAlias));
         }
         case "Function": {
-          return [1].concat(Function.codec.encode(value["function"]));
+          return [1].concat(Function.codec.encode(value.function));
         }
         case "Variable": {
           return [2].concat(Variable.codec.encode(value.variable));
@@ -1239,7 +1239,7 @@ export const TypeAlias: { readonly codec: Codec<TypeAlias> } = {
         .encode(value.name)
         .concat(List.codec(Identifer.codec).encode(value.typeParameterList))
         .concat(String.codec.encode(value.document))
-        .concat(Type.codec.encode(value["type"])),
+        .concat(Type.codec.encode(value.type)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -1351,7 +1351,7 @@ export const ParameterWithDocument: {
       Identifer.codec
         .encode(value.name)
         .concat(String.codec.encode(value.document))
-        .concat(Type.codec.encode(value["type"])),
+        .concat(Type.codec.encode(value.type)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -1389,9 +1389,7 @@ export const ParameterWithDocument: {
 export const Parameter: { readonly codec: Codec<Parameter> } = {
   codec: {
     encode: (value: Parameter): ReadonlyArray<number> =>
-      Identifer.codec
-        .encode(value.name)
-        .concat(Type.codec.encode(value["type"])),
+      Identifer.codec.encode(value.name).concat(Type.codec.encode(value.type)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -1421,7 +1419,7 @@ export const Variable: { readonly codec: Codec<Variable> } = {
       Identifer.codec
         .encode(value.name)
         .concat(String.codec.encode(value.document))
-        .concat(Type.codec.encode(value["type"]))
+        .concat(Type.codec.encode(value.type))
         .concat(Expr.codec.encode(value.expr)),
     decode: (
       index: number,
@@ -1927,7 +1925,7 @@ export const Expr: {
           return [0].concat(Int32.codec.encode(value.int32));
         }
         case "StringLiteral": {
-          return [1].concat(String.codec.encode(value["string"]));
+          return [1].concat(String.codec.encode(value.string));
         }
         case "BooleanLiteral": {
           return [2].concat(Bool.codec.encode(value.bool));
@@ -2642,7 +2640,7 @@ export const Type: {
           return [14].concat(Identifer.codec.encode(value.identifer));
         }
         case "StringLiteral": {
-          return [15].concat(String.codec.encode(value["string"]));
+          return [15].concat(String.codec.encode(value.string));
         }
       }
     },
@@ -3157,7 +3155,7 @@ export const CallExpr: { readonly codec: Codec<CallExpr> } = {
 export const TypeAssertion: { readonly codec: Codec<TypeAssertion> } = {
   codec: {
     encode: (value: TypeAssertion): ReadonlyArray<number> =>
-      Expr.codec.encode(value.expr).concat(Type.codec.encode(value["type"])),
+      Expr.codec.encode(value.expr).concat(Type.codec.encode(value.type)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -3267,7 +3265,7 @@ export const VariableDefinitionStatement: {
     encode: (value: VariableDefinitionStatement): ReadonlyArray<number> =>
       Identifer.codec
         .encode(value.name)
-        .concat(Type.codec.encode(value["type"]))
+        .concat(Type.codec.encode(value.type))
         .concat(Expr.codec.encode(value.expr))
         .concat(Bool.codec.encode(value.isConst)),
     decode: (
@@ -3530,7 +3528,7 @@ export const MemberType: { readonly codec: Codec<MemberType> } = {
       String.codec
         .encode(value.name)
         .concat(Bool.codec.encode(value.required))
-        .concat(Type.codec.encode(value["type"]))
+        .concat(Type.codec.encode(value.type))
         .concat(String.codec.encode(value.document)),
     decode: (
       index: number,
@@ -3574,7 +3572,7 @@ export const FunctionType: { readonly codec: Codec<FunctionType> } = {
       List.codec(Identifer.codec)
         .encode(value.typeParameterList)
         .concat(List.codec(Type.codec).encode(value.parameterList))
-        .concat(Type.codec.encode(value["return"])),
+        .concat(Type.codec.encode(value.return)),
     decode: (
       index: number,
       binary: Uint8Array
@@ -3615,7 +3613,7 @@ export const TypeWithTypeParameter: {
   codec: {
     encode: (value: TypeWithTypeParameter): ReadonlyArray<number> =>
       Type.codec
-        .encode(value["type"])
+        .encode(value.type)
         .concat(List.codec(Type.codec).encode(value.typeParameterList)),
     decode: (
       index: number,
@@ -3723,7 +3721,7 @@ export const Identifer: {
     encode: (value: Identifer): ReadonlyArray<number> => {
       switch (value._) {
         case "Identifer": {
-          return [0].concat(String.codec.encode(value["string"]));
+          return [0].concat(String.codec.encode(value.string));
         }
       }
     },

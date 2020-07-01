@@ -3,6 +3,7 @@ import {
   createIdentifer,
   initialIdentiferIndex,
   isIdentifer,
+  isSafePropertyName,
 } from "./identifer";
 
 /**
@@ -358,7 +359,7 @@ const indexAccessToString = (
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
 ): string => {
-  if (indexExpr._ === "StringLiteral" && isIdentifer(indexExpr.string)) {
+  if (indexExpr._ === "StringLiteral" && isSafePropertyName(indexExpr.string)) {
     return "." + indexExpr.string;
   }
   return "[" + exprToString(indexExpr, indent, moduleMap, codeType) + "]";
@@ -438,7 +439,7 @@ const objectLiteralToString = (
               return member.keyValue.key;
             }
             return (
-              (isIdentifer(member.keyValue.key)
+              (isSafePropertyName(member.keyValue.key)
                 ? member.keyValue.key
                 : stringLiteralValueToString(member.keyValue.key)) +
               ": " +

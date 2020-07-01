@@ -168,6 +168,22 @@ const createIdentiferByIndex = (index: number): string => {
  * @param word 識別子として使えるかどうか調べるワード
  */
 export const isIdentifer = (word: string): boolean => {
+  if (!isSafePropertyName(word)) {
+    return false;
+  }
+  return !reservedByLanguageWordSet.has(word);
+};
+
+/**
+ * ```ts
+ * ({ await: 32 }.await)
+ * ({ "": "empty"}[""])
+ *
+ * プロパティ名として直接コードで指定できるかどうか
+ * `isIdentifer`とは予約語を指定できるかの面で違う
+ * ```
+ */
+export const isSafePropertyName = (word: string): boolean => {
   if (word.length <= 0) {
     return false;
   }
@@ -186,5 +202,5 @@ export const isIdentifer = (word: string): boolean => {
       return false;
     }
   }
-  return !reservedByLanguageWordSet.has(word);
+  return true;
 };
