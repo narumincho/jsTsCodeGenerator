@@ -224,7 +224,7 @@ const exprToString = (
 
     case "UnaryOperator":
       return (
-        expr.unaryOperatorExpr.operator +
+        unaryOperatorToString(expr.unaryOperatorExpr.operator) +
         exprToStringWithCombineStrength(
           expr,
           expr.unaryOperatorExpr.expr,
@@ -533,6 +533,17 @@ const binaryOperatorExprToString = (
         ")"
       : exprToString(binaryOperatorExpr.right, indent, moduleMap, codeType))
   );
+};
+
+const unaryOperatorToString = (unaryOperator: nd.UnaryOperator): string => {
+  switch (unaryOperator) {
+    case "Minus":
+      return "-";
+    case "BitwiseNot":
+      return "~";
+    case "LogicalNot":
+      return "!";
+  }
 };
 
 const binaryOperatorToString = (binaryOperator: nd.BinaryOperator): string => {
