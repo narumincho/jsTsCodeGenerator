@@ -1,11 +1,9 @@
-import * as data from "./data";
 import * as nd from "./newData";
 import {
   createIdentifer,
   initialIdentiferIndex,
   isIdentifer,
 } from "./identifer";
-import { NodeTracing } from "inspector";
 
 /**
  * コードを文字列にする
