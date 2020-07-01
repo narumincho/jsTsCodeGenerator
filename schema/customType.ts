@@ -54,4 +54,4 @@ export const typeWithTypeParameter = noParameterType(
   name.typeWithTypeParameter
 );
 export const intersectionType = noParameterType(name.intersectionType);
-export const importedType = noParameterType(name.intersectionType);
+export const importedType = noParameterType(name.importedType);
