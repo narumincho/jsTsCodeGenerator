@@ -4,9 +4,7 @@
     "module": "CommonJS",
     "lib": ["ES2019"],
     "strict": true,
-    "moduleResolution": "node",
-    "newLine": "LF",
-    "outDir": "distribution",
-    "declaration": true
+    "moduleResolution": "Node",
+    "newLine": "lf"
   }
 }

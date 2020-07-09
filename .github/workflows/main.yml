@@ -3,19 +3,17 @@ name: npm publish
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   test:
     name: test
     runs-on: ubuntu-latest
     steps:
-      - name: checkout repository
-        uses: actions/checkout@master
-      - name: setup Node.js
-        uses: actions/setup-node@master
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
+          node-version: "12"
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: npm test (using jest)
@@ -26,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout repository
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
       - name: setup Node.js
-        uses: actions/setup-node@master
+        uses: actions/setup-node@v1
         with:
           node-version: "12.x"
       - name: Install npm dependencies (npm ci)
@@ -42,7 +40,7 @@ jobs:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
       - name: create release tag
         if: steps.publish.outputs.type != 'none'
-        uses: actions/create-release@latest
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

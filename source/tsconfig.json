@@ -4,9 +4,9 @@
     "module": "CommonJS",
     "lib": ["ES2019", "DOM"],
     "strict": true,
-    "moduleResolution": "node",
-    "newLine": "LF",
-    "outDir": "../distribution",
+    "moduleResolution": "Node",
+    "newLine": "lf",
+    "forceConsistentCasingInFileNames": true,
     "declaration": true
   }
 }
