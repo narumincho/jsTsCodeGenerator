@@ -1,4 +1,5 @@
 import * as data from "../source/data";
+import * as identifer from "../source/identifer";
 import {
   BinaryOperator,
   Code,
@@ -9,7 +10,7 @@ import {
   Statement,
   Type,
 } from "../source/newData";
-import { generateCodeAsString, identifer } from "../source/main";
+import { generateCodeAsString } from "../source/main";
 
 describe("test", () => {
   const expressRequest = Type.ImportedType({

@@ -4,9 +4,6 @@ import * as identifer from "./identifer";
 import * as nd from "./newData";
 import * as toString from "./toString";
 
-export { data };
-export { identifer };
-
 export const generateCodeAsString = (
   code: nd.Code,
   codeType: nd.CodeType
