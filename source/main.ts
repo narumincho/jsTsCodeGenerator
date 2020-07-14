@@ -1,15 +1,15 @@
 import * as collect from "./collect";
-import * as data from "./data";
 import * as identifer from "./identifer";
-import * as nd from "./newData";
 import * as toString from "./toString";
+import * as util from "./util";
+import { Code, CodeType, Identifer } from "./data";
 
 export const generateCodeAsString = (
-  code: nd.Code,
-  codeType: nd.CodeType
+  code: Code,
+  codeType: CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
-  const usedNameAndModulePath: data.UsedNameAndModulePathSet = collect.collectInCode(
+  const usedNameAndModulePath: util.UsedNameAndModulePathSet = collect.collectInCode(
     code
   );
 
@@ -25,10 +25,10 @@ export const generateCodeAsString = (
  * @param usedNameAndModulePath
  */
 const createImportedModuleName = (
-  usedNameAndModulePath: data.UsedNameAndModulePathSet
-): ReadonlyMap<string, nd.Identifer> => {
+  usedNameAndModulePath: util.UsedNameAndModulePathSet
+): ReadonlyMap<string, Identifer> => {
   let identiferIndex = identifer.initialIdentiferIndex;
-  const importedModuleNameMap = new Map<string, nd.Identifer>();
+  const importedModuleNameMap = new Map<string, Identifer>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identiferAndNextIdentiferIndex = identifer.createIdentifer(
       identiferIndex,

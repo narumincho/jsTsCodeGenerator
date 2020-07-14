@@ -14,8 +14,8 @@ const code = prettier.format(
   }
 );
 
-const outFilePath = "./source/newData.ts";
+const outFilePath = "./source/data.ts";
 
 fileSystem.writeFile(outFilePath, code).then(() => {
-  console.log("output newData.ts");
+  console.log("output data.ts");
 });

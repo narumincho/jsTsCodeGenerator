@@ -1,12 +1,23 @@
-import * as nd from "./newData";
-import { UsedNameAndModulePathSet } from "./data";
+import {
+  CallExpr,
+  Code,
+  ExportDefinition,
+  Expr,
+  Function as Function_,
+  Identifer,
+  Statement,
+  Type,
+  TypeAlias,
+  Variable,
+} from "./data";
+import { UsedNameAndModulePathSet } from "./util";
 
 /**
  * グローバル空間とルートにある関数名の引数名、使っている外部モジュールのパスを集める
  * コードのエラーもチェックする
  * @throws コードにエラーが見つかった
  */
-export const collectInCode = (code: nd.Code): UsedNameAndModulePathSet => {
+export const collectInCode = (code: Code): UsedNameAndModulePathSet => {
   const rootScopeIdentiferSet = collectRootScopeIdentifer(
     code.exportDefinitionList
   );
@@ -35,7 +46,7 @@ type RootScopeIdentiferSet = {
  * @throws 同名の定義があった場合
  */
 const collectRootScopeIdentifer = (
-  definitionList: ReadonlyArray<nd.ExportDefinition>
+  definitionList: ReadonlyArray<ExportDefinition>
 ): RootScopeIdentiferSet => {
   const typeNameSet: Set<string> = new Set();
   const variableNameSet: Set<string> = new Set();
@@ -77,7 +88,7 @@ const collectRootScopeIdentifer = (
 };
 
 const collectInDefinition = (
-  definition: nd.ExportDefinition,
+  definition: ExportDefinition,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): UsedNameAndModulePathSet => {
   switch (definition._) {
@@ -102,7 +113,7 @@ const collectInDefinition = (
 };
 
 const collectInTypeAlias = (
-  typeAlias: nd.TypeAlias,
+  typeAlias: TypeAlias,
   rootScopeTypeNameSet: ReadonlySet<string>
 ): UsedNameAndModulePathSet => {
   return concatCollectData(
@@ -117,7 +128,7 @@ const collectInTypeAlias = (
 };
 
 const collectInFunctionDefinition = (
-  function_: nd.Function,
+  function_: Function_,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): UsedNameAndModulePathSet => {
   const parameterNameSet = checkDuplicateIdentifer(
@@ -166,7 +177,7 @@ const collectInFunctionDefinition = (
 };
 
 const collectInVariableDefinition = (
-  variable: nd.Variable,
+  variable: Variable,
   rootScopeIdentiferSet: RootScopeIdentiferSet
 ): UsedNameAndModulePathSet =>
   concatCollectData(
@@ -188,7 +199,7 @@ const collectInVariableDefinition = (
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectInExpr = (
-  expr: nd.Expr,
+  expr: Expr,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
@@ -397,7 +408,7 @@ const collectInExpr = (
 };
 
 const collectCallExpr = (
-  callExpr: nd.CallExpr,
+  callExpr: CallExpr,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
@@ -421,7 +432,7 @@ const collectCallExpr = (
 };
 
 const collectStatementList = (
-  statementList: ReadonlyArray<nd.Statement>,
+  statementList: ReadonlyArray<Statement>,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet,
@@ -441,7 +452,7 @@ const collectStatementList = (
 };
 
 const collectNameInStatement = (
-  statementList: ReadonlyArray<nd.Statement>
+  statementList: ReadonlyArray<Statement>
 ): ReadonlySet<string> => {
   const identiferSet: Set<string> = new Set();
   for (const statement of statementList) {
@@ -457,7 +468,7 @@ const collectNameInStatement = (
 };
 
 const collectInStatement = (
-  statement: nd.Statement,
+  statement: Statement,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
@@ -654,7 +665,7 @@ const collectInStatement = (
 const checkVariableIsDefinedOrThrow = (
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeNameSet: ReadonlySet<string>,
-  variableName: nd.Identifer
+  variableName: Identifer
 ): void => {
   const reversedLocalVariableNameSetList = [
     ...localVariableNameSetList,
@@ -688,7 +699,7 @@ const checkVariableIsDefinedOrThrow = (
  * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectInType = (
-  type_: nd.Type,
+  type_: Type,
   rootScopeTypeNameSet: ReadonlySet<string>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>
 ): UsedNameAndModulePathSet => {
@@ -800,7 +811,7 @@ const collectInType = (
 const checkTypeIsDefinedOrThrow = (
   rootScopeTypeNameSet: ReadonlySet<string>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeName: nd.Identifer
+  typeName: Identifer
 ): void => {
   const reversedTypeParameterSetList = [...typeParameterSetList].reverse();
   for (const typeParameter of reversedTypeParameterSetList) {
@@ -869,7 +880,7 @@ const collectList = <element>(
  */
 const checkDuplicateIdentifer = (
   name: string,
-  identiferList: ReadonlyArray<nd.Identifer>
+  identiferList: ReadonlyArray<Identifer>
 ): ReadonlySet<string> => {
   const set: Set<string> = new Set();
   for (const identifer of identiferList) {

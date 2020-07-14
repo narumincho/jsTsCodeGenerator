@@ -1,5 +1,5 @@
-import * as data from "../source/data";
 import * as identifer from "../source/identifer";
+import * as util from "../source/util";
 import {
   BinaryOperator,
   Code,
@@ -9,7 +9,7 @@ import {
   Member,
   Statement,
   Type,
-} from "../source/newData";
+} from "../source/data";
 import { generateCodeAsString } from "../source/main";
 
 describe("test", () => {
@@ -170,8 +170,8 @@ describe("test", () => {
               name: identifer.fromString("accept"),
               type: Type.Union([Type.String, Type.Undefined]),
               isConst: true,
-              expr: data.get(
-                data.get(
+              expr: util.get(
+                util.get(
                   Expr.Variable(identifer.fromString("request")),
                   "headers"
                 ),
@@ -186,7 +186,7 @@ describe("test", () => {
                   right: Expr.UndefinedLiteral,
                 }),
                 operator: "LogicalAnd",
-                right: data.callMethod(
+                right: util.callMethod(
                   Expr.Variable(identifer.fromString("accept")),
                   "includes",
                   [Expr.StringLiteral("text/html")]
@@ -194,7 +194,7 @@ describe("test", () => {
               }),
               thenStatementList: [
                 Statement.EvaluateExpr(
-                  data.callMethod(
+                  util.callMethod(
                     Expr.Variable(identifer.fromString("response")),
                     "setHeader",
                     [
@@ -226,7 +226,7 @@ describe("test", () => {
               {
                 name: identifer.fromString("array"),
                 document: "Uint8Array",
-                type: data.uint8ArrayType,
+                type: util.uint8ArrayType,
               },
             ],
             returnType: Type.Number,
@@ -257,7 +257,7 @@ describe("test", () => {
           type: Type.String,
           expr: Expr.StringLiteral("それな"),
         }),
-        data.consoleLog(Expr.Variable(identifer.fromString("sorena"))),
+        util.consoleLog(Expr.Variable(identifer.fromString("sorena"))),
       ],
     },
     "JavaScript"
@@ -279,7 +279,7 @@ describe("test", () => {
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: data.promiseType(Type.String),
+            returnType: util.promiseType(Type.String),
             statementList: [],
           }),
         ],
@@ -317,26 +317,26 @@ describe("test", () => {
         exportDefinitionList: [],
         statementList: [
           Statement.EvaluateExpr(
-            data.equal(
-              data.equal(
-                data.addition(
-                  data.multiplication(
+            util.equal(
+              util.equal(
+                util.addition(
+                  util.multiplication(
                     Expr.NumberLiteral(3),
                     Expr.NumberLiteral(9)
                   ),
-                  data.multiplication(
+                  util.multiplication(
                     Expr.NumberLiteral(7),
                     Expr.NumberLiteral(6)
                   )
                 ),
-                data.addition(
-                  data.addition(Expr.NumberLiteral(2), Expr.NumberLiteral(3)),
-                  data.addition(Expr.NumberLiteral(5), Expr.NumberLiteral(8))
+                util.addition(
+                  util.addition(Expr.NumberLiteral(2), Expr.NumberLiteral(3)),
+                  util.addition(Expr.NumberLiteral(5), Expr.NumberLiteral(8))
                 )
               ),
-              data.multiplication(
+              util.multiplication(
                 Expr.NumberLiteral(5),
-                data.addition(Expr.NumberLiteral(7), Expr.NumberLiteral(8))
+                util.addition(Expr.NumberLiteral(7), Expr.NumberLiteral(8))
               )
             )
           ),
@@ -431,7 +431,7 @@ describe("test", () => {
             },
           ]),
           statementList: [
-            data.consoleLog(Expr.Variable(identifer.fromString("element"))),
+            util.consoleLog(Expr.Variable(identifer.fromString("element"))),
           ],
         }),
       ],
@@ -504,14 +504,14 @@ describe("test", () => {
           returnType: Type.String,
           statementList: [
             Statement.Switch({
-              expr: data.get(Expr.Variable(identifer.fromString("value")), "_"),
+              expr: util.get(Expr.Variable(identifer.fromString("value")), "_"),
               patternList: [
                 {
                   caseString: "Ok",
                   statementList: [
                     Statement.Return(
-                      data.callMethod(
-                        data.get(
+                      util.callMethod(
+                        util.get(
                           Expr.Variable(identifer.fromString("value")),
                           "ok"
                         ),
@@ -525,8 +525,8 @@ describe("test", () => {
                   caseString: "Error",
                   statementList: [
                     Statement.Return(
-                      data.callMethod(
-                        data.get(
+                      util.callMethod(
+                        util.get(
                           Expr.Variable(identifer.fromString("value")),
                           "error"
                         ),
@@ -554,7 +554,7 @@ describe("test", () => {
         Statement.EvaluateExpr(
           Expr.TypeAssertion({
             expr: Expr.ObjectLiteral([]),
-            type: data.dateType,
+            type: util.dateType,
           })
         ),
       ],
@@ -571,8 +571,8 @@ describe("test", () => {
           document: "",
           typeParameterList: [],
           type: Type.Intersection({
-            left: data.dateType,
-            right: data.uint8ArrayType,
+            left: util.dateType,
+            right: util.uint8ArrayType,
           }),
         }),
       ],
@@ -599,7 +599,7 @@ describe("test", () => {
             Member.KeyValue({ key: "b", value: Expr.NumberLiteral(123) }),
           ]),
         }),
-        data.consoleLog(
+        util.consoleLog(
           Expr.ObjectLiteral([
             Member.Spread(Expr.Variable(identifer.fromString("value"))),
             Member.KeyValue({ key: "b", value: Expr.NumberLiteral(987) }),

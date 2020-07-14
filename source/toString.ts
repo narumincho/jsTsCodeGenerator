@@ -1,4 +1,4 @@
-import * as nd from "./newData";
+import * as nd from "./data";
 import {
   createIdentifer,
   initialIdentiferIndex,
