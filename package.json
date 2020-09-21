@@ -4,8 +4,7 @@
   "description": "TypeScript And JavaScript Code Generator",
   "main": "source/main.js",
   "scripts": {
-    "test": "jest --watch --verbose false",
-    "generateDataCode": "node schema/start.js"
+    "test": "jest --watch --verbose false"
   },
   "repository": {
     "type": "git",
@@ -18,7 +17,6 @@
   },
   "homepage": "https://github.com/narumincho/js-ts-code-generator#readme",
   "devDependencies": {
-    "@narumincho/type": "1.1.0",
     "@types/jest": "26.0.13",
     "@types/node": "14.6.4",
     "@typescript-eslint/eslint-plugin": "4.1.0",

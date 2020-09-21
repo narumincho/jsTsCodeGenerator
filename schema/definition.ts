@@ -1,13 +1,6 @@
-import * as customType from "./customType";
-import * as name from "./name";
-import {
-  CustomTypeDefinition,
-  CustomTypeDefinitionBody,
-  Maybe,
-  Member,
-  Pattern,
-  Type,
-} from "@narumincho/type/source/data";
+import * as customType from "./type";
+import * as name from "./typePartId";
+import * as definyCoreData from "definy-core/source/data";
 
 const sum = (
   typeName: string,
@@ -51,12 +44,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "exportDefinitionList",
         description: "外部に公開する定義",
-        type: Type.List(customType.exportDefinition),
+        type: Type.List(customType.ExportDefinition),
       },
       {
         name: "statementList",
         description: "定義した後に実行するコード",
-        type: Type.List(customType.statement),
+        type: Type.List(customType.Statement),
       },
     ]
   ),
@@ -64,29 +57,29 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "TypeAlias",
       description: "TypeAlias. `export type T = {}`",
-      parameter: Maybe.Just(customType.typeAlias),
+      parameter: Maybe.Just(customType.TypeAlias),
     },
     {
       name: "Function",
       description: "Function `export const f = () => {}`",
-      parameter: Maybe.Just(customType.function_),
+      parameter: Maybe.Just(customType.Function_),
     },
     {
       name: "Variable",
       description: "Variable `export const v = {}`",
-      parameter: Maybe.Just(customType.variable),
+      parameter: Maybe.Just(customType.Variable),
     },
   ]),
   product(name.typeAlias, "TypeAlias. `export type T = {}`", [
     {
       name: "name",
       description: "型の名前",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
     {
       name: "typeParameterList",
       description: "型パラメーターのリスト",
-      type: Type.List(customType.identifer),
+      type: Type.List(customType.Identifer),
     },
     {
       name: "document",
@@ -96,14 +89,14 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "type",
       description: "型本体",
-      type: customType.type,
+      type: customType.Type,
     },
   ]),
   product(name.function_, "", [
     {
       name: "name",
       description: "外部に公開する関数の名前",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
     {
       name: "document",
@@ -113,22 +106,22 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "typeParameterList",
       description: "型パラメーターのリスト",
-      type: Type.List(customType.identifer),
+      type: Type.List(customType.Identifer),
     },
     {
       name: "parameterList",
       description: "パラメーター",
-      type: Type.List(customType.parameterWithDocument),
+      type: Type.List(customType.ParameterWithDocument),
     },
     {
       name: "returnType",
       description: "戻り値の型",
-      type: customType.type,
+      type: customType.Type,
     },
     {
       name: "statementList",
       description: "関数の本体",
-      type: Type.List(customType.statement),
+      type: Type.List(customType.Statement),
     },
   ]),
   {
@@ -140,7 +133,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "name",
         description: "パラメーター名",
-        type: customType.identifer,
+        type: customType.Identifer,
       },
       {
         name: "document",
@@ -150,7 +143,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "type",
         description: "パラメーターの型",
-        type: customType.type,
+        type: customType.Type,
       },
     ]),
   },
@@ -162,12 +155,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "name",
         description: "パラメーター名",
-        type: customType.identifer,
+        type: customType.Identifer,
       },
       {
         name: "type",
         description: "パラメーターの型",
-        type: customType.type,
+        type: customType.Type,
       },
     ]),
   },
@@ -179,7 +172,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "name",
         description: "変数の名前",
-        type: customType.identifer,
+        type: customType.Identifer,
       },
       {
         name: "document",
@@ -189,12 +182,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "type",
         description: "変数の型",
-        type: customType.type,
+        type: customType.Type,
       },
       {
         name: "expr",
         description: "変数の式",
-        type: customType.expr,
+        type: customType.Expr,
       },
     ]),
   },
@@ -350,62 +343,62 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "UnaryOperator",
         description: "単項演算子での式",
-        parameter: Maybe.Just(customType.unaryOperatorExpr),
+        parameter: Maybe.Just(customType.UnaryOperatorExpr),
       },
       {
         name: "BinaryOperator",
         description: "2項演算子での式",
-        parameter: Maybe.Just(customType.binaryOperatorExpr),
+        parameter: Maybe.Just(customType.BinaryOperatorExpr),
       },
       {
         name: "ConditionalOperator",
         description: "条件演算子 `a ? b : c`",
-        parameter: Maybe.Just(customType.conditionalOperatorExpr),
+        parameter: Maybe.Just(customType.ConditionalOperatorExpr),
       },
       {
         name: "ArrayLiteral",
         description: "配列リテラル `[1, 2, 3]`",
-        parameter: Maybe.Just(Type.List(customType.arrayItem)),
+        parameter: Maybe.Just(Type.List(customType.ArrayItem)),
       },
       {
         name: "ObjectLiteral",
         description: 'オブジェクトリテラル `{ data: 123, text: "sorena" }`',
-        parameter: Maybe.Just(Type.List(customType.member)),
+        parameter: Maybe.Just(Type.List(customType.Member)),
       },
       {
         name: "Lambda",
         description: "ラムダ式 `() => {}`",
-        parameter: Maybe.Just(customType.lambdaExpr),
+        parameter: Maybe.Just(customType.LambdaExpr),
       },
       {
         name: "Variable",
         description: "変数. 変数が存在するかのチャックがされる",
-        parameter: Maybe.Just(customType.identifer),
+        parameter: Maybe.Just(customType.Identifer),
       },
       {
         name: "GlobalObjects",
         description: "グローバルオブジェクト",
-        parameter: Maybe.Just(customType.identifer),
+        parameter: Maybe.Just(customType.Identifer),
       },
       {
         name: "ImportedVariable",
         description: "インポートされた変数",
-        parameter: Maybe.Just(customType.importedVariable),
+        parameter: Maybe.Just(customType.ImportedVariable),
       },
       {
         name: "Get",
         description: "プロパティの値を取得する `a.b a[12] data[f(2)]`",
-        parameter: Maybe.Just(customType.getExpr),
+        parameter: Maybe.Just(customType.GetExpr),
       },
       {
         name: "Call",
         description: "関数を呼ぶ f(x)",
-        parameter: Maybe.Just(customType.callExpr),
+        parameter: Maybe.Just(customType.CallExpr),
       },
       {
         name: "New",
         description: "式からインスタンスを作成する `new Date()`",
-        parameter: Maybe.Just(customType.callExpr),
+        parameter: Maybe.Just(customType.CallExpr),
       },
       {
         name: "TypeAssertion",
@@ -422,28 +415,28 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "EvaluateExpr",
         description: "expr;\n式を評価する",
-        parameter: Maybe.Just(customType.expr),
+        parameter: Maybe.Just(customType.Expr),
       },
       {
         name: "Set",
         description:
           '```ts\ntargetObject[targetPropertyName] = expr;\nlocation.href = "https://narumincho.com";\narray[0] = 30;\ndata = 50;\ni += 1;\n```\n代入やプロパティの値を設定する。',
-        parameter: Maybe.Just(customType.setStatement),
+        parameter: Maybe.Just(customType.SetStatement),
       },
       {
         name: "If",
         description: "if (condition) { thenStatementList }",
-        parameter: Maybe.Just(customType.ifStatement),
+        parameter: Maybe.Just(customType.IfStatement),
       },
       {
         name: "ThrowError",
         description: 'throw new Error("エラーメッセージ");',
-        parameter: Maybe.Just(customType.expr),
+        parameter: Maybe.Just(customType.Expr),
       },
       {
         name: "Return",
         description: "return expr;",
-        parameter: Maybe.Just(customType.expr),
+        parameter: Maybe.Just(customType.Expr),
       },
       {
         name: "ReturnVoid",
@@ -458,30 +451,30 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "VariableDefinition",
         description: "`const a: type_ = expr`\nローカル変数の定義",
-        parameter: Maybe.Just(customType.variableDefinitionStatement),
+        parameter: Maybe.Just(customType.VariableDefinitionStatement),
       },
       {
         name: "FunctionDefinition",
         description:
           "`const name = (parameterList): returnType => { statementList }`\nローカル関数の定義",
-        parameter: Maybe.Just(customType.functionDefinitionStatement),
+        parameter: Maybe.Just(customType.FunctionDefinitionStatement),
       },
       {
         name: "For",
         description:
           "```ts\nfor (let counterVariableName = 0; counterVariableName < untilExpr; counterVariableName += 1) {\n  statementList\n}\n```",
-        parameter: Maybe.Just(customType.forStatement),
+        parameter: Maybe.Just(customType.ForStatement),
       },
       {
         name: "ForOf",
         description:
           "```ts\nfor (const elementVariableName of iterableExpr) {\n  statementList\n}\n```",
-        parameter: Maybe.Just(customType.forOfStatement),
+        parameter: Maybe.Just(customType.ForOfStatement),
       },
       {
         name: "WhileTrue",
         description: "while (true) { statementList }",
-        parameter: Maybe.Just(Type.List(customType.statement)),
+        parameter: Maybe.Just(Type.List(customType.Statement)),
       },
       {
         name: "Break",
@@ -491,7 +484,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "Switch",
         description: "switch文",
-        parameter: Maybe.Just(customType.switchStatement),
+        parameter: Maybe.Just(customType.SwitchStatement),
       },
     ]),
   },
@@ -538,43 +531,43 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "Object",
         description: "オブジェクト",
-        parameter: Maybe.Just(Type.List(customType.memberType)),
+        parameter: Maybe.Just(Type.List(customType.MemberType)),
       },
       {
         name: "Function",
         description: "関数 `(parameter: parameter) => returnType`",
-        parameter: Maybe.Just(customType.functionType),
+        parameter: Maybe.Just(customType.FunctionType),
       },
       {
         name: "WithTypeParameter",
         description:
           "型パラメータ付きの型 `Promise<number>` `ReadonlyArray<string>`",
-        parameter: Maybe.Just(customType.typeWithTypeParameter),
+        parameter: Maybe.Just(customType.TypeWithTypeParameter),
       },
       {
         name: "Union",
         description: "ユニオン型 `a | b`",
-        parameter: Maybe.Just(Type.List(customType.type)),
+        parameter: Maybe.Just(Type.List(customType.Type)),
       },
       {
         name: "Intersection",
         description: "交差型 `left & right`",
-        parameter: Maybe.Just(customType.intersectionType),
+        parameter: Maybe.Just(customType.IntersectionType),
       },
       {
         name: "ImportedType",
         description: "インポートされた外部の型",
-        parameter: Maybe.Just(customType.importedType),
+        parameter: Maybe.Just(customType.ImportedType),
       },
       {
         name: "ScopeInFile",
         description: "ファイル内で定義された型",
-        parameter: Maybe.Just(customType.identifer),
+        parameter: Maybe.Just(customType.Identifer),
       },
       {
         name: "ScopeInGlobal",
         description: "グローバル空間の型",
-        parameter: Maybe.Just(customType.identifer),
+        parameter: Maybe.Just(customType.Identifer),
       },
       {
         name: "StringLiteral",
@@ -591,12 +584,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "operator",
         description: "単項演算子",
-        type: customType.unaryOperator,
+        type: customType.UnaryOperator,
       },
       {
         name: "expr",
         description: "適用される式",
-        type: customType.expr,
+        type: customType.Expr,
       },
     ]),
   },
@@ -608,17 +601,17 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "operator",
         description: "2項演算子",
-        type: customType.binaryOperator,
+        type: customType.BinaryOperator,
       },
       {
         name: "left",
         description: "左の式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "right",
         description: "右の式",
-        type: customType.expr,
+        type: customType.Expr,
       },
     ]),
   },
@@ -630,17 +623,17 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "condition",
         description: "条件の式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "thenExpr",
         description: "条件がtrueのときに評価される式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "elseExpr",
         description: "条件がfalseのときに評価される式",
-        type: customType.expr,
+        type: customType.Expr,
       },
     ]),
   },
@@ -652,7 +645,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "expr",
         description: "式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "spread",
@@ -669,12 +662,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "Spread",
         description: "...a のようにする",
-        parameter: Maybe.Just(customType.expr),
+        parameter: Maybe.Just(customType.Expr),
       },
       {
         name: "KeyValue",
         description: "a: b のようにする",
-        parameter: Maybe.Just(customType.keyValue),
+        parameter: Maybe.Just(customType.KeyValue),
       },
     ]),
   },
@@ -691,7 +684,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "value",
         description: "value",
-        type: customType.expr,
+        type: customType.Expr,
       },
     ]),
   },
@@ -703,22 +696,22 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "parameterList",
         description: "パラメーターのリスト",
-        type: Type.List(customType.parameter),
+        type: Type.List(customType.Parameter),
       },
       {
         name: "typeParameterList",
         description: "型パラメーターのリスト",
-        type: Type.List(customType.identifer),
+        type: Type.List(customType.Identifer),
       },
       {
         name: "returnType",
         description: "戻り値の型",
-        type: customType.type,
+        type: customType.Type,
       },
       {
         name: "statementList",
         description: "ラムダ式本体",
-        type: Type.List(customType.statement),
+        type: Type.List(customType.Statement),
       },
     ]),
   },
@@ -736,7 +729,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "name",
         description: "変数名",
-        type: customType.identifer,
+        type: customType.Identifer,
       },
     ]),
   },
@@ -748,12 +741,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "expr",
         description: "式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "propertyExpr",
         description: "プロパティの式",
-        type: customType.expr,
+        type: customType.Expr,
       },
     ]),
   },
@@ -765,12 +758,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "expr",
         description: "呼ばれる式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "parameterList",
         description: "パラメーター",
-        type: Type.List(customType.expr),
+        type: Type.List(customType.Expr),
       },
     ]),
   },
@@ -782,12 +775,12 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
       {
         name: "expr",
         description: "型アサーションを受ける式",
-        type: customType.expr,
+        type: customType.Expr,
       },
       {
         name: "type",
         description: "型",
-        type: customType.type,
+        type: customType.Type,
       },
     ]),
   },
@@ -795,46 +788,46 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "target",
       description: "対象となる式. 指定の仕方によってはJSのSyntaxErrorになる",
-      type: customType.expr,
+      type: customType.Expr,
     },
     {
       name: "operatorMaybe",
       description: "演算子を=の左につける",
-      type: Type.Maybe(customType.binaryOperator),
+      type: Type.Maybe(customType.BinaryOperator),
     },
     {
       name: "expr",
       description: "式",
-      type: customType.expr,
+      type: customType.Expr,
     },
   ]),
   product(name.ifStatement, "if文", [
     {
       name: "condition",
       description: "条件の式",
-      type: customType.expr,
+      type: customType.Expr,
     },
     {
       name: "thenStatementList",
       description: "条件がtrueのときに実行する文",
-      type: Type.List(customType.statement),
+      type: Type.List(customType.Statement),
     },
   ]),
   product(name.variableDefinitionStatement, "ローカル変数定義", [
     {
       name: "name",
       description: "変数名",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
     {
       name: "type",
       description: "変数の型",
-      type: customType.type,
+      type: customType.Type,
     },
     {
       name: "expr",
       description: "式",
-      type: customType.expr,
+      type: customType.Expr,
     },
     {
       name: "isConst",
@@ -846,73 +839,73 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "name",
       description: "変数名",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
     {
       name: "typeParameterList",
       description: "型パラメーターのリスト",
-      type: Type.List(customType.identifer),
+      type: Type.List(customType.Identifer),
     },
     {
       name: "parameterList",
       description: "パラメーターのリスト",
-      type: Type.List(customType.parameterWithDocument),
+      type: Type.List(customType.ParameterWithDocument),
     },
     {
       name: "returnType",
       description: "戻り値の型",
-      type: customType.type,
+      type: customType.Type,
     },
     {
       name: "statementList",
       description: "関数本体",
-      type: Type.List(customType.statement),
+      type: Type.List(customType.Statement),
     },
   ]),
   product(name.forStatement, "for文", [
     {
       name: "counterVariableName",
       description: "カウンタ変数名",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
     {
       name: "untilExpr",
       description: "ループの上限の式",
-      type: customType.expr,
+      type: customType.Expr,
     },
     {
       name: "statementList",
       description: "繰り返す文",
-      type: Type.List(customType.statement),
+      type: Type.List(customType.Statement),
     },
   ]),
   product(name.forOfStatement, "forOf文", [
     {
       name: "elementVariableName",
       description: "要素の変数名",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
     {
       name: "iterableExpr",
       description: "繰り返す対象",
-      type: customType.expr,
+      type: customType.Expr,
     },
     {
       name: "statementList",
       description: "繰り返す文",
-      type: Type.List(customType.statement),
+      type: Type.List(customType.Statement),
     },
   ]),
   product(name.switchStatement, "switch文", [
     {
       name: "expr",
       description: "switch(a) {} の a",
-      type: customType.expr,
+      type: customType.Expr,
     },
     {
       name: "patternList",
       description: 'case "text": { statementList }',
-      type: Type.List(customType.pattern),
+      type: Type.List(customType.Pattern),
     },
   ]),
   product(name.pattern, 'switch文のcase "text": { statementList } の部分', [
@@ -924,7 +917,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "statementList",
       description: "statementList",
-      type: Type.List(customType.statement),
+      type: Type.List(customType.Statement),
     },
   ]),
   product(name.memberType, "オブジェクトのメンバーの型", [
@@ -941,7 +934,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "type",
       description: "型",
-      type: customType.type,
+      type: customType.Type,
     },
     {
       name: "document",
@@ -953,42 +946,42 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "typeParameterList",
       description: "型パラメーターのリスト",
-      type: Type.List(customType.identifer),
+      type: Type.List(customType.Identifer),
     },
     {
       name: "parameterList",
       description: "パラメーターの型. 意味のない引数名は適当に付く",
-      type: Type.List(customType.type),
+      type: Type.List(customType.Type),
     },
     {
       name: "return",
       description: "戻り値の型",
-      type: customType.type,
+      type: customType.Type,
     },
   ]),
   product(name.typeWithTypeParameter, "パラメーター付きの型", [
     {
       name: "type",
       description: "パラメーターをつけられる型",
-      type: customType.type,
+      type: customType.Type,
     },
     {
       name: "typeParameterList",
       description:
         "パラメーターに指定する型. なにも要素を入れなけければ T<>ではなく T の形式で出力される",
-      type: Type.List(customType.type),
+      type: Type.List(customType.Type),
     },
   ]),
   product(name.intersectionType, "交差型", [
     {
       name: "left",
       description: "左に指定する型",
-      type: customType.type,
+      type: customType.Type,
     },
     {
       name: "right",
       description: "右に指定する型",
-      type: customType.type,
+      type: customType.Type,
     },
   ]),
   product(name.importedType, "インポートされた型", [
@@ -1001,7 +994,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
     {
       name: "name",
       description: "型の名前",
-      type: customType.identifer,
+      type: customType.Identifer,
     },
   ]),
   {

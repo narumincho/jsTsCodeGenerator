@@ -1,0 +1,14 @@
+{
+  "name": "schema",
+  "version": "1.0.0",
+  "description": "",
+  "main": "start.js",
+  "scripts": {
+    "generate data.ts": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)",
+  "license": "ISC",
+  "dependencies": {
+    "definy-core": "^0.2.3"
+  }
+}

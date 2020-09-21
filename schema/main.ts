@@ -1,12 +1,12 @@
 import * as definition from "./definition";
+import * as definyCore from "definy-core";
 import * as jsTsCodeGenerator from "../source/main";
 import * as prettier from "prettier";
 import { promises as fileSystem } from "fs";
-import { generateTypeScriptCode } from "@narumincho/type";
 
 const code = prettier.format(
   jsTsCodeGenerator.generateCodeAsString(
-    generateTypeScriptCode(definition.customTypeDefinitionList),
+    definyCore.generateTypeScriptCode(definition.customTypeDefinitionList),
     "TypeScript"
   ),
   {
