@@ -741,3 +741,75 @@ it("output optional type member", () => {
   console.log(codeAsString);
   expect(codeAsString).toMatch(/readonly age\?: number/u);
 });
+
+it("read me code", () => {
+  const serverCode: Code = {
+    exportDefinitionList: [
+      ExportDefinition.Function({
+        name: identifer.fromString("middleware"),
+        document: "ミドルウェア",
+        typeParameterList: [],
+        parameterList: [
+          {
+            name: identifer.fromString("request"),
+            document: "リクエスト",
+            type: Type.ImportedType({
+              moduleName: "express",
+              name: identifer.fromString("Request"),
+            }),
+          },
+          {
+            name: identifer.fromString("response"),
+            document: "レスポンス",
+            type: Type.ImportedType({
+              moduleName: "express",
+              name: identifer.fromString("Response"),
+            }),
+          },
+        ],
+        returnType: Type.Void,
+        statementList: [
+          Statement.VariableDefinition({
+            isConst: true,
+            name: identifer.fromString("accept"),
+            type: Type.Union([Type.String, Type.Undefined]),
+            expr: util.get(
+              util.get(
+                Expr.Variable(identifer.fromString("request")),
+                "headers"
+              ),
+              "accept"
+            ),
+          }),
+          Statement.If({
+            condition: util.logicalAnd(
+              util.notEqual(
+                Expr.Variable(identifer.fromString("accept")),
+                Expr.UndefinedLiteral
+              ),
+              util.callMethod(
+                Expr.Variable(identifer.fromString("accept")),
+                "includes",
+                [Expr.StringLiteral("text/html")]
+              )
+            ),
+            thenStatementList: [
+              Statement.EvaluateExpr(
+                util.callMethod(
+                  Expr.Variable(identifer.fromString("response")),
+                  "setHeader",
+                  [
+                    Expr.StringLiteral("content-type"),
+                    Expr.StringLiteral("text/html"),
+                  ]
+                )
+              ),
+            ],
+          }),
+        ],
+      }),
+    ],
+    statementList: [],
+  };
+  expect(generateCodeAsString(serverCode, "TypeScript")).toMatchSnapshot();
+});
