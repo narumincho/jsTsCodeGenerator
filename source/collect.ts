@@ -115,8 +115,8 @@ const collectInDefinition = (
 const collectInTypeAlias = (
   typeAlias: TypeAlias,
   rootScopeTypeNameSet: ReadonlySet<string>
-): UsedNameAndModulePathSet => {
-  return concatCollectData(
+): UsedNameAndModulePathSet =>
+  concatCollectData(
     {
       usedNameSet: new Set([typeAlias.name.string]),
       modulePathSet: new Set(),
@@ -125,7 +125,6 @@ const collectInTypeAlias = (
       new Set(typeAlias.typeParameterList.map((identifer) => identifer.string)),
     ])
   );
-};
 
 const collectInFunctionDefinition = (
   function_: Function_,
@@ -412,8 +411,8 @@ const collectCallExpr = (
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
   rootScopeIdentiferSet: RootScopeIdentiferSet
-) => {
-  return concatCollectData(
+) =>
+  concatCollectData(
     collectInExpr(
       callExpr.expr,
       localVariableNameSetList,
@@ -429,7 +428,6 @@ const collectCallExpr = (
       )
     )
   );
-};
 
 const collectStatementList = (
   statementList: ReadonlyArray<Statement>,
@@ -839,22 +837,20 @@ const checkTypeIsDefinedOrThrow = (
 const concatCollectData = (
   collectDataA: UsedNameAndModulePathSet,
   collectDataB: UsedNameAndModulePathSet
-): UsedNameAndModulePathSet => {
-  return {
-    modulePathSet: new Set([
-      ...collectDataA.modulePathSet,
-      ...collectDataB.modulePathSet,
-    ]),
-    usedNameSet: new Set([
-      ...collectDataA.usedNameSet,
-      ...collectDataB.usedNameSet,
-    ]),
-  };
-};
+): UsedNameAndModulePathSet => ({
+  modulePathSet: new Set([
+    ...collectDataA.modulePathSet,
+    ...collectDataB.modulePathSet,
+  ]),
+  usedNameSet: new Set([
+    ...collectDataA.usedNameSet,
+    ...collectDataB.usedNameSet,
+  ]),
+});
 
-const collectList = <element>(
-  list: ReadonlyArray<element>,
-  collectFunc: (element: element) => UsedNameAndModulePathSet
+const collectList = <Element>(
+  list: ReadonlyArray<Element>,
+  collectFunc: (element: Element) => UsedNameAndModulePathSet
 ): UsedNameAndModulePathSet => {
   const modulePathSet: Set<string> = new Set();
   const usedNameSet: Set<string> = new Set();

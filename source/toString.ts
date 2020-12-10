@@ -68,62 +68,53 @@ const definitionToString = (
 const typeAliasToString = (
   typeAlias: nd.TypeAlias,
   moduleMap: ReadonlyMap<string, nd.Identifer>
-): string => {
-  return (
-    documentToString(typeAlias.document) +
-    "export type " +
-    typeAlias.name.string +
-    typeParameterListToString(typeAlias.typeParameterList) +
-    " = " +
-    typeToString(typeAlias.type, moduleMap) +
-    ";\n\n"
-  );
-};
+): string =>
+  documentToString(typeAlias.document) +
+  "export type " +
+  typeAlias.name.string +
+  typeParameterListToString(typeAlias.typeParameterList) +
+  " = " +
+  typeToString(typeAlias.type, moduleMap) +
+  ";\n\n";
 
 const exportFunctionToString = (
   function_: nd.Function,
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
-): string => {
-  return (
-    documentToString(
-      function_.document + parameterListToDocument(function_.parameterList)
-    ) +
-    "export const " +
-    function_.name.string +
-    " = " +
-    typeParameterListToString(function_.typeParameterList) +
-    "(" +
-    function_.parameterList
-      .map(
-        (parameter) =>
-          parameter.name.string + ": " + typeToString(parameter.type, moduleMap)
-      )
-      .join(", ") +
-    "): " +
-    typeToString(function_.returnType, moduleMap) +
-    " => " +
-    lambdaBodyToString(function_.statementList, 0, moduleMap, codeType) +
-    ";\n\n"
-  );
-};
+): string =>
+  documentToString(
+    function_.document + parameterListToDocument(function_.parameterList)
+  ) +
+  "export const " +
+  function_.name.string +
+  " = " +
+  typeParameterListToString(function_.typeParameterList) +
+  "(" +
+  function_.parameterList
+    .map(
+      (parameter) =>
+        parameter.name.string + ": " + typeToString(parameter.type, moduleMap)
+    )
+    .join(", ") +
+  "): " +
+  typeToString(function_.returnType, moduleMap) +
+  " => " +
+  lambdaBodyToString(function_.statementList, 0, moduleMap, codeType) +
+  ";\n\n";
 
 const exportVariableToString = (
   variable: nd.Variable,
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
-): string => {
-  return (
-    documentToString(variable.document) +
-    "export const " +
-    variable.name.string +
-    ": " +
-    typeToString(variable.type, moduleMap) +
-    " = " +
-    exprToString(variable.expr, 0, moduleMap, codeType) +
-    ";\n\n"
-  );
-};
+): string =>
+  documentToString(variable.document) +
+  "export const " +
+  variable.name.string +
+  ": " +
+  typeToString(variable.type, moduleMap) +
+  " = " +
+  exprToString(variable.expr, 0, moduleMap, codeType) +
+  ";\n\n";
 
 const documentToString = (document: string): string => {
   const documentTrimmed = document.trim();
@@ -420,52 +411,44 @@ const objectLiteralToString = (
   indent: number,
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
-): string => {
-  return (
-    "{ " +
-    memberList
-      .map((member) => {
-        switch (member._) {
-          case "Spread":
-            return (
-              "..." + exprToString(member.expr, indent, moduleMap, codeType)
-            );
-          case "KeyValue":
-            if (
-              isIdentifer(member.keyValue.key) &&
-              member.keyValue.value._ === "Variable" &&
-              member.keyValue.key === member.keyValue.value.identifer.string
-            ) {
-              return member.keyValue.key;
-            }
-            return (
-              (isSafePropertyName(member.keyValue.key)
-                ? member.keyValue.key
-                : stringLiteralValueToString(member.keyValue.key)) +
-              ": " +
-              exprToString(member.keyValue.value, indent, moduleMap, codeType)
-            );
-        }
-      })
-      .join(", ") +
-    " " +
-    "}"
-  );
-};
+): string =>
+  "{ " +
+  memberList
+    .map((member) => {
+      switch (member._) {
+        case "Spread":
+          return "..." + exprToString(member.expr, indent, moduleMap, codeType);
+        case "KeyValue":
+          if (
+            isIdentifer(member.keyValue.key) &&
+            member.keyValue.value._ === "Variable" &&
+            member.keyValue.key === member.keyValue.value.identifer.string
+          ) {
+            return member.keyValue.key;
+          }
+          return (
+            (isSafePropertyName(member.keyValue.key)
+              ? member.keyValue.key
+              : stringLiteralValueToString(member.keyValue.key)) +
+            ": " +
+            exprToString(member.keyValue.value, indent, moduleMap, codeType)
+          );
+      }
+    })
+    .join(", ") +
+  " " +
+  "}";
 
 /**
  * 文字列を`"`で囲んでエスケープする
  */
-const stringLiteralValueToString = (value: string): string => {
-  return (
-    '"' +
-    value
-      .replace(/\\/gu, "\\\\")
-      .replace(/"/gu, '\\"')
-      .replace(/\r\n|\n/gu, "\\n") +
-    '"'
-  );
-};
+const stringLiteralValueToString = (value: string): string =>
+  '"' +
+  value
+    .replace(/\\/gu, "\\\\")
+    .replace(/"/gu, '\\"')
+    .replace(/\r\n|\n/gu, "\\n") +
+  '"';
 
 type Associativity = "LeftToRight" | "RightToLeft";
 
@@ -871,33 +854,30 @@ const functionDefinitionStatementToString = (
   indent: number,
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
-): string => {
-  return (
-    indentNumberToString(indent) +
-    "const " +
-    functionDefinition.name.string +
-    " = " +
-    typeParameterListToString(functionDefinition.typeParameterList) +
-    "(" +
-    functionDefinition.parameterList
-      .map(
-        (parameter) =>
-          parameter.name.string +
-          typeAnnotation(parameter.type, codeType, moduleMap)
-      )
-      .join(", ") +
-    ")" +
-    typeAnnotation(functionDefinition.returnType, codeType, moduleMap) +
-    " => " +
-    lambdaBodyToString(
-      functionDefinition.statementList,
-      indent,
-      moduleMap,
-      codeType
-    ) +
-    ";"
-  );
-};
+): string =>
+  indentNumberToString(indent) +
+  "const " +
+  functionDefinition.name.string +
+  " = " +
+  typeParameterListToString(functionDefinition.typeParameterList) +
+  "(" +
+  functionDefinition.parameterList
+    .map(
+      (parameter) =>
+        parameter.name.string +
+        typeAnnotation(parameter.type, codeType, moduleMap)
+    )
+    .join(", ") +
+  ")" +
+  typeAnnotation(functionDefinition.returnType, codeType, moduleMap) +
+  " => " +
+  lambdaBodyToString(
+    functionDefinition.statementList,
+    indent,
+    moduleMap,
+    codeType
+  ) +
+  ";";
 
 const switchToString = (
   switch_: nd.SwitchStatement,
@@ -1090,20 +1070,17 @@ export const typeToString = (
 const typeObjectToString = (
   memberList: ReadonlyArray<nd.MemberType>,
   moduleMap: ReadonlyMap<string, nd.Identifer>
-): string => {
-  return (
-    "{ " +
-    memberList
-      .map(
-        (member) =>
-          documentToString(member.document) +
-          "readonly " +
-          member.name +
-          (member.required ? "" : "?") +
-          ": " +
-          typeToString(member.type, moduleMap)
-      )
-      .join("; ") +
-    " }"
-  );
-};
+): string =>
+  "{ " +
+  memberList
+    .map(
+      (member) =>
+        documentToString(member.document) +
+        "readonly " +
+        member.name +
+        (member.required ? "" : "?") +
+        ": " +
+        typeToString(member.type, moduleMap)
+    )
+    .join("; ") +
+  " }";
