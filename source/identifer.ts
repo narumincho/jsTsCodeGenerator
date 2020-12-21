@@ -123,15 +123,16 @@ export const createIdentifer = (
   identiferIndex: IdentiferIndex,
   reserved: ReadonlySet<string>
 ): { identifer: Identifer; nextIdentiferIndex: IdentiferIndex } => {
+  let index: number = identiferIndex;
   while (true) {
-    const result = createIdentiferByIndex(identiferIndex);
+    const result = createIdentiferByIndex(index);
     if (!reserved.has(result) && !reservedByLanguageWordSet.has(result)) {
       return {
         identifer: Identifer.Identifer(result),
-        nextIdentiferIndex: ((identiferIndex as number) + 1) as IdentiferIndex,
+        nextIdentiferIndex: (index + 1) as IdentiferIndex,
       };
     }
-    (identiferIndex as number) += 1;
+    index += 1;
   }
 };
 
