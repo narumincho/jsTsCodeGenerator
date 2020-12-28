@@ -41,7 +41,7 @@
     },
     "globals": {
       "ts-jest": {
-        "tsConfig": "./source/tsconfig.json"
+        "tsconfig": "./source/tsconfig.json"
       }
     },
     "testMatch": [

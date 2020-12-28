@@ -93,11 +93,12 @@ const exportFunctionToString = (
   function_.parameterList
     .map(
       (parameter) =>
-        parameter.name.string + ": " + typeToString(parameter.type, moduleMap)
+        parameter.name.string +
+        typeAnnotation(parameter.type, codeType, moduleMap)
     )
     .join(", ") +
-  "): " +
-  typeToString(function_.returnType, moduleMap) +
+  ")" +
+  typeAnnotation(function_.returnType, codeType, moduleMap) +
   " => " +
   lambdaBodyToString(function_.statementList, 0, moduleMap, codeType) +
   ";\n\n";
@@ -110,8 +111,7 @@ const exportVariableToString = (
   documentToString(variable.document) +
   "export const " +
   variable.name.string +
-  ": " +
-  typeToString(variable.type, moduleMap) +
+  typeAnnotation(variable.type, codeType, moduleMap) +
   " = " +
   exprToString(variable.expr, 0, moduleMap, codeType) +
   ";\n\n";
