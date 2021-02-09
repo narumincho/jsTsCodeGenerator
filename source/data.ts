@@ -123,7 +123,7 @@ export type ParameterWithDocument = {
 };
 
 /**
- * 関数のパラメーター. パラメーター名, ドキュメント
+ * 関数のパラメーター. パラメーター名と, 型
  */
 export type Parameter = {
   /**
@@ -811,9 +811,9 @@ export const List: {
     elementCodec: Codec<element>
   ): Codec<ReadonlyArray<element>> => ({
     encode: (value: ReadonlyArray<element>): ReadonlyArray<number> => {
-      let result: Array<number> = Int32.codec.encode(value.length) as Array<
-        number
-      >;
+      let result: Array<number> = Int32.codec.encode(
+        value.length
+      ) as Array<number>;
       for (const element of value) {
         result = result.concat(elementCodec.encode(element));
       }
@@ -1384,7 +1384,7 @@ export const ParameterWithDocument: {
 };
 
 /**
- * 関数のパラメーター. パラメーター名, ドキュメント
+ * 関数のパラメーター. パラメーター名と, 型
  */
 export const Parameter: { readonly codec: Codec<Parameter> } = {
   codec: {

@@ -156,7 +156,7 @@ export const customTypeDefinitionList: ReadonlyArray<CustomTypeDefinition> = [
   },
   {
     name: name.parameter,
-    description: "関数のパラメーター. パラメーター名, ドキュメント",
+    description: "関数のパラメーター. パラメーター名と, 型",
     typeParameterList: [],
     body: CustomTypeDefinitionBody.Product([
       {
