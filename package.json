@@ -4,8 +4,7 @@
   "description": "TypeScript And JavaScript Code Generator",
   "main": "source/main.js",
   "scripts": {
-    "test": "jest --watch --verbose false",
-    "generateDataCode": "node schema/start.js"
+    "test": "jest --watch"
   },
   "repository": {
     "type": "git",
@@ -36,6 +35,9 @@
     "**/*.d.ts",
     "**/*.js"
   ],
+  "engines": {
+    "node": "14"
+  },
   "eslintConfig": {
     "extends": [
       "eslint:all",

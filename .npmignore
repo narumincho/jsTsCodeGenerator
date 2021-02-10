@@ -1,7 +1,0 @@
-source
-test
-node_modules
-.github
-schemaJs
-*.ts
-!*.d.ts
