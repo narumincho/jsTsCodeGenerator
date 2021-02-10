@@ -153,7 +153,8 @@ export const lambdaBodyToString = (
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
 ): string => {
-  if (statementList.length === 1 && statementList[0]._ === "Return") {
+  const [firstStatement] = statementList;
+  if (firstStatement !== undefined && firstStatement._ === "Return") {
     return exprToStringWithCombineStrength(
       nd.Expr.Lambda({
         typeParameterList: [],
@@ -161,7 +162,7 @@ export const lambdaBodyToString = (
         returnType: nd.Type.Void,
         statementList: [],
       }),
-      statementList[0].expr,
+      firstStatement.expr,
       indent,
       moduleMap,
       codeType

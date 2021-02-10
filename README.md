@@ -32,7 +32,7 @@ import {
 } from "js-ts-code-generator/source/data";
 import * as generator from "js-ts-code-generator";
 
-const serverCode: Code = {
+const serverCode: JsTsCode = JsTsCode.helper({
   exportDefinitionList: [
     ExportDefinition.Function({
       name: identifer.fromString("middleware"),
@@ -96,7 +96,7 @@ const serverCode: Code = {
     }),
   ],
   statementList: [],
-};
+});
 const codeAsString = generator.generateCodeAsString(serverCode, "TypeScript");
 console.log(codeAsString);
 ```

@@ -7,14 +7,15 @@ import { Identifer } from "./data";
  * @param text
  */
 export const fromString = (word: string): Identifer => {
-  if (word.length <= 0) {
+  const [firstChar] = word;
+  if (firstChar === undefined) {
     return Identifer.Identifer("$00");
   }
   let result = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
-    word[0]
+    firstChar
   )
-    ? word[0]
-    : escapeChar(word[0]);
+    ? firstChar
+    : escapeChar(firstChar);
   const slicedWord = word.slice(1);
   for (const char of slicedWord) {
     result += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
@@ -144,22 +145,25 @@ const createIdentiferByIndex = (index: number): string => {
   const headIdentiferCharTable =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const noHeadIdentiferCharTable = headIdentiferCharTable + "0123456789";
-  if (index < headIdentiferCharTable.length) {
-    return headIdentiferCharTable[index];
+  const char = headIdentiferCharTable[index];
+  if (typeof char === "string") {
+    return char;
   }
   let result = "";
   let offsetIndex = index - headIdentiferCharTable.length;
   while (true) {
     const quotient = Math.floor(offsetIndex / noHeadIdentiferCharTable.length);
-    const remainder = offsetIndex % noHeadIdentiferCharTable.length;
-    if (quotient < headIdentiferCharTable.length) {
-      return (
-        headIdentiferCharTable[quotient] +
-        noHeadIdentiferCharTable[remainder] +
-        result
-      );
+    const first =
+      headIdentiferCharTable[
+        Math.floor(offsetIndex / noHeadIdentiferCharTable.length)
+      ];
+    const second = noHeadIdentiferCharTable[
+      offsetIndex % noHeadIdentiferCharTable.length
+    ] as string;
+    if (typeof first === "string") {
+      return first + second + result;
     }
-    result = noHeadIdentiferCharTable[remainder] + result;
+    result = second + result;
     offsetIndex = quotient;
   }
 };
@@ -185,11 +189,14 @@ export const isIdentifer = (word: string): boolean => {
  * ```
  */
 export const isSafePropertyName = (word: string): boolean => {
-  if (word.length <= 0) {
+  const [firstChar] = word;
+  if (firstChar === undefined) {
     return false;
   }
   if (
-    !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(word[0])
+    !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
+      firstChar
+    )
   ) {
     return false;
   }

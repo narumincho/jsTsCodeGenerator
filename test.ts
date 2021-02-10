@@ -1,5 +1,5 @@
-import * as identifer from "../source/identifer";
-import * as util from "../source/util";
+import * as identifer from "./source/identifer";
+import * as util from "./source/util";
 import {
   BinaryOperator,
   ExportDefinition,
@@ -9,8 +9,8 @@ import {
   Member,
   Statement,
   Type,
-} from "../source/data";
-import { generateCodeAsString } from "../source/main";
+} from "./source/data";
+import { generateCodeAsString } from "./source/main";
 
 describe("test", () => {
   const expressRequest = Type.ImportedType({
