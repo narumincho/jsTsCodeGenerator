@@ -2,9 +2,9 @@ import * as identifer from "../source/identifer";
 import * as util from "../source/util";
 import {
   BinaryOperator,
-  Code,
   ExportDefinition,
   Expr,
+  JsTsCode,
   Maybe,
   Member,
   Statement,
@@ -22,7 +22,7 @@ describe("test", () => {
     name: identifer.fromString("Response"),
   });
 
-  const sampleCode: Code = {
+  const sampleCode: JsTsCode = {
     exportDefinitionList: [
       ExportDefinition.Function({
         name: identifer.fromString("middleware"),
@@ -118,7 +118,7 @@ describe("test", () => {
     }).not.toThrow();
   });
   it("escape string literal", () => {
-    const nodeJsCode: Code = {
+    const nodeJsCode: JsTsCode = {
       exportDefinitionList: [
         ExportDefinition.Variable({
           name: identifer.fromString("stringValue"),
@@ -140,7 +140,7 @@ describe("test", () => {
   });
 
   it("include function parameter name", () => {
-    const nodeJsCode: Code = {
+    const nodeJsCode: JsTsCode = {
       exportDefinitionList: [
         ExportDefinition.Function({
           name: identifer.fromString("middleware"),
@@ -413,7 +413,7 @@ describe("test", () => {
     expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
   });
   it("for of", () => {
-    const code: Code = {
+    const code: JsTsCode = {
       exportDefinitionList: [],
       statementList: [
         Statement.ForOf({
@@ -441,7 +441,7 @@ describe("test", () => {
     expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
   });
   it("switch", () => {
-    const code: Code = {
+    const code: JsTsCode = {
       exportDefinitionList: [
         ExportDefinition.TypeAlias({
           name: identifer.fromString("Result"),
@@ -548,7 +548,7 @@ describe("test", () => {
     expect(codeAsString).toMatch(/switch \(.+\) \{\n +case .+:/u);
   });
   it("Type Assertion", () => {
-    const code: Code = {
+    const code: JsTsCode = {
       exportDefinitionList: [],
       statementList: [
         Statement.EvaluateExpr(
@@ -564,7 +564,7 @@ describe("test", () => {
     expect(codeAsString).toMatch(/as Date/u);
   });
   it("Type Intersection", () => {
-    const code: Code = {
+    const code: JsTsCode = JsTsCode.helper({
       exportDefinitionList: [
         ExportDefinition.TypeAlias({
           name: identifer.fromString("SampleIntersectionType"),
@@ -577,14 +577,14 @@ describe("test", () => {
         }),
       ],
       statementList: [],
-    };
+    });
     const codeAsString = generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
     expect(codeAsString).toMatch(/Date & Uint8Array/u);
   });
 
   it("object literal spread syntax", () => {
-    const code: Code = {
+    const code: JsTsCode = {
       exportDefinitionList: [],
       statementList: [
         Statement.VariableDefinition({
@@ -613,7 +613,7 @@ describe("test", () => {
   });
 
   it("type property document", () => {
-    const code: Code = {
+    const code: JsTsCode = {
       exportDefinitionList: [
         ExportDefinition.TypeAlias({
           name: identifer.fromString("Time"),
@@ -645,7 +645,7 @@ describe("test", () => {
 
 it("output lambda type parameter", () => {
   const typeParameterIdentifer = identifer.fromString("t");
-  const code: Code = {
+  const code: JsTsCode = {
     exportDefinitionList: [],
     statementList: [
       Statement.VariableDefinition({
@@ -713,7 +713,7 @@ it("output lambda type parameter", () => {
 });
 
 it("output optional type member", () => {
-  const code: Code = {
+  const code: JsTsCode = {
     exportDefinitionList: [
       ExportDefinition.Variable({
         name: identifer.fromString("value"),
@@ -743,7 +743,7 @@ it("output optional type member", () => {
 });
 
 it("read me code", () => {
-  const serverCode: Code = {
+  const serverCode: JsTsCode = {
     exportDefinitionList: [
       ExportDefinition.Function({
         name: identifer.fromString("middleware"),

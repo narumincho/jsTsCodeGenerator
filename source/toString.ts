@@ -13,7 +13,7 @@ import {
  * @param codeType JavaScriptかTypeScriptか
  */
 export const toString = (
-  code: nd.Code,
+  code: nd.JsTsCode,
   moduleMap: ReadonlyMap<string, nd.Identifer>,
   codeType: nd.CodeType
 ): string => {

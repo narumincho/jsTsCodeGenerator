@@ -1,10 +1,10 @@
 import {
   CallExpr,
-  Code,
   ExportDefinition,
   Expr,
   Function as Function_,
   Identifer,
+  JsTsCode,
   Statement,
   Type,
   TypeAlias,
@@ -17,7 +17,7 @@ import { UsedNameAndModulePathSet } from "./util";
  * コードのエラーもチェックする
  * @throws コードにエラーが見つかった
  */
-export const collectInCode = (code: Code): UsedNameAndModulePathSet => {
+export const collectInCode = (code: JsTsCode): UsedNameAndModulePathSet => {
   const rootScopeIdentiferSet = collectRootScopeIdentifer(
     code.exportDefinitionList
   );

@@ -2,10 +2,10 @@ import * as collect from "./collect";
 import * as identifer from "./identifer";
 import * as toString from "./toString";
 import * as util from "./util";
-import { Code, CodeType, Identifer } from "./data";
+import { CodeType, Identifer, JsTsCode } from "./data";
 
 export const generateCodeAsString = (
-  code: Code,
+  code: JsTsCode,
   codeType: CodeType
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
