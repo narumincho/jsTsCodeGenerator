@@ -1,8 +1,8 @@
 {
   "name": "js-ts-code-generator",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "TypeScript And JavaScript Code Generator",
-  "main": "source/main.js",
+  "main": "main.js",
   "scripts": {
     "test": "jest --watch"
   },
