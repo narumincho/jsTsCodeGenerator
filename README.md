@@ -5,6 +5,8 @@
 [![npm version](https://badge.fury.io/js/js-ts-code-generator.svg)](https://badge.fury.io/js/js-ts-code-generator)
 [![NPM](https://nodei.co/npm/js-ts-code-generator.png)](https://nodei.co/npm/js-ts-code-generator/)
 
+# https://github.com/narumincho/Definy に マージしました. このリポジトリはもう使いません
+
 ## コンセプト
 
 [Definy](https://github.com/narumincho/Definy) で TypeScript, JavaScript のコードを生成したかったので作った.
